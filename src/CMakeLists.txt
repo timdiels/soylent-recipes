@@ -1,13 +1,10 @@
 cmake_minimum_required (VERSION 2.8)
 project (soylentrecipes)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 ############################################
 # find libs
 find_package(ALGLIB REQUIRED)
-
-if ( NOT SDL_FOUND )
-    message ( FATAL_ERROR "SDL not found!" )
-endif ( NOT SDL_FOUND )
 
 ############################################
 
@@ -20,7 +17,7 @@ file(GLOB_RECURSE Sources soylentrecipes/*.cpp)
 add_executable(soylentrecipes ${Sources})
 
 target_link_libraries(soylentrecipes 
-    ${ALGLIB_LIBRARY} 
+    ${LIBALG_LIBRARIES} 
     ${LIBS} 
 )
 
