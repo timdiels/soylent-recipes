@@ -38,6 +38,11 @@ public:
     {
     }
 
+    Nutrient(int id, string description, string unit, double target)
+    : Nutrient(id, description, unit, target, INFINITY)
+    {
+    }
+
     string get_description() const {
         return description;
     }
@@ -71,47 +76,44 @@ class NutrientProfile
 public:
     NutrientProfile()
     {
-        // TODO don't hardcode
-        nutrients.push_back(Nutrient(0, "Calories", "kcal", 2500, INFINITY));
-        nutrients.push_back(Nutrient(1, "Carbohydrates", "g", 400, INFINITY));
-        nutrients.push_back(Nutrient(2, "Protein", "g", 120, INFINITY));
-        nutrients.push_back(Nutrient(3, "Total Fat", "g", 65, INFINITY));
+        // TODO Allow other profiles as well
+        nutrients.push_back(Nutrient(0, "Calories", "kcal", 2500));
+        nutrients.push_back(Nutrient(1, "Carbohydrates", "g", 400));
+        nutrients.push_back(Nutrient(2, "Protein", "g", 120));
+        nutrients.push_back(Nutrient(3, "Total Fat", "g", 65));
         nutrients.push_back(Nutrient(4, "Omega-3 Fatty Acids", "g", 0.75, 3.0));
-
-                /*
-Omega-6 Fatty Acids (g)	1.5	17
-Total Fiber (g)	40	
-Cholesterol (mg)	0	300
-Vitamin A (IU)	5000	10000
-Vitamin B6 (mg)	2	100
-Vitamin B12 (ug)	6	
-Vitamin C (mg)	60	2000
-Vitamin D (IU)	400	4000
-Vitamin E (IU)	30	1500
-Vitamin K (ug)	80	
-Thiamin (mg)	1.5	
-Riboflavin (mg)	1.7	
-Niacin (mg)	20	35
-Folate (ug)	400	1000
-Pantothenic Acid (mg)	10	
-Biotin (ug)	300	
-Choline (mg)	550	3500
-Calcium (g)	1	2.5
-Chloride (g)	3.4	
-Chromium (ug)	120	600
-Copper (mg)	2	10
-Iodine (ug)	150	1100
-Iron (mg)	18	45
-Magnesium (mg)	400	
-Manganese (mg)	2	11
-Molybdenum (ug)	75	2000
-Phosphorus (g)	1	4
-Potassium (g)	3.5	6
-Selenium (ug)	70	400
-Sodium (g)	2.4	2.4
-Sulfur (g)	2	
-Zinc (mg)	15	40
-*/
+        nutrients.push_back(Nutrient(5, "Omega-6 Fatty Acids", "g", 1.5, 17));
+        nutrients.push_back(Nutrient(6, "Total Fiber", "g", 40));
+        nutrients.push_back(Nutrient(7, "Cholesterol", "mg", 0, 300));
+        nutrients.push_back(Nutrient(8, "Vitamin A", "IU", 5000, 10000));
+        nutrients.push_back(Nutrient(9, "Vitamin B6", "mg", 2, 100));
+        nutrients.push_back(Nutrient(10, "Vitamin B12", "ug", 6));
+        nutrients.push_back(Nutrient(11, "Vitamin C", "mg", 60, 2000));
+        nutrients.push_back(Nutrient(12, "Vitamin D", "IU", 400, 4000));
+        nutrients.push_back(Nutrient(13, "Vitamin E", "IU", 30, 1500));
+        nutrients.push_back(Nutrient(14, "Vitamin K", "ug", 80));
+        nutrients.push_back(Nutrient(15, "Thiamin", "mg", 1.5));
+        nutrients.push_back(Nutrient(16, "Riboflavin", "mg", 1.7));
+        nutrients.push_back(Nutrient(17, "Niacin", "mg", 20, 35));
+        nutrients.push_back(Nutrient(18, "Folate", "ug", 400, 1000));
+        nutrients.push_back(Nutrient(19, "Pantothenic Acid", "mg", 10));
+        nutrients.push_back(Nutrient(20, "Biotin", "ug", 300));
+        nutrients.push_back(Nutrient(21, "Choline", "mg", 550, 3500));
+        nutrients.push_back(Nutrient(22, "Calcium", "g", 1, 2.5));
+        nutrients.push_back(Nutrient(23, "Chloride", "g", 3.4));
+        nutrients.push_back(Nutrient(24, "Chromium", "ug", 120, 600));
+        nutrients.push_back(Nutrient(25, "Copper", "mg", 2, 10));
+        nutrients.push_back(Nutrient(26, "Iodine", "ug", 150, 1100));
+        nutrients.push_back(Nutrient(27, "Iron", "mg", 18, 45));
+        nutrients.push_back(Nutrient(28, "Magnesium", "mg", 400));
+        nutrients.push_back(Nutrient(29, "Manganese", "mg", 2, 11));
+        nutrients.push_back(Nutrient(30, "Molybdenum", "ug", 75, 2000));
+        nutrients.push_back(Nutrient(31, "Phosphorus", "g", 1, 4));
+        nutrients.push_back(Nutrient(32, "Potassium", "g", 3.5, 6));
+        nutrients.push_back(Nutrient(33, "Selenium", "ug", 70, 400));
+        nutrients.push_back(Nutrient(34, "Sodium", "g", 2.4, 2.4));
+        nutrients.push_back(Nutrient(35, "Sulfur", "g", 2));
+        nutrients.push_back(Nutrient(36, "Zinc", "mg", 15, 40));
     }
 
     const vector<Nutrient>& get_nutrients() const {
