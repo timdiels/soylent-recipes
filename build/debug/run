@@ -1,0 +1,4 @@
+#!/bin/sh
+rm soylentrecipes.sqlite
+cp ../../data/soylentrecipes.sqlite .
+./soylentrecipes

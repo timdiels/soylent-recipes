@@ -5,6 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 ############################################
 # find libs
 find_package(ALGLIB REQUIRED)
+find_package(Sqlite3 REQUIRED)
 
 ############################################
 
@@ -18,6 +19,7 @@ add_executable(soylentrecipes ${Sources})
 
 target_link_libraries(soylentrecipes 
     ${LIBALG_LIBRARIES} 
+    ${SQLITE3_LIBRARIES} 
     ${LIBS} 
 )
 

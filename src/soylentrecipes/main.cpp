@@ -17,258 +17,112 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libalglib/stdafx.h>
-#include <libalglib/optimization.h>
 #include <iostream>
 #include <vector>
 #include <assert.h>
-#include <cmath>
 #include <stdexcept>
-#include <algorithm>
 
 //using namespace SOYLENT;
 using namespace std;
-using namespace alglib;
 
-class Nutrient
+// data storage classes
+#include "Nutrient.h"
+#include "NutrientProfile.h"
+#include "Food.h"
+
+// data retrieval classes
+#include <sqlite3.h>
+
+class Sqlite3Db {
+public:
+    Sqlite3Db()
+    {
+        if (sqlite3_open("soylentrecipes.sqlite", &connection) != SQLITE_OK) {
+            runtime_error("Failed to open sqlite db");
+        }
+    }
+
+    ~Sqlite3Db()
+    {
+        sqlite3_close(connection);
+    }
+
+    sqlite3_stmt* prepare(string sql) {
+        sqlite3_stmt* stmt;
+        if (sqlite3_prepare_v2(connection, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+            runtime_error("Failed to prepare statement");
+        }
+        return stmt;
+    }
+
+    int step(sqlite3_stmt* stmt) {
+        auto ret = sqlite3_step(stmt);
+        if (ret != SQLITE_ROW && ret != SQLITE_DONE) {
+            runtime_error("Failed to step statement");
+        }
+        return ret;
+    }
+
+    void finalize(sqlite3_stmt* stmt) {
+        if (sqlite3_finalize(stmt) != SQLITE_OK) {
+            runtime_error("Failed to destroy statement");
+        }
+    }
+
+    // throw_sqlite() { http://www.sqlite.org/c3ref/errcode.html }
+
+private:
+    sqlite3* connection;
+};
+
+class NutrientProfiles
 {
 public:
-    Nutrient(int id, string description, string unit, double target, double max_)
-    :   id(id), description(description), unit(unit), target(target), max_(max_)
+    NutrientProfiles(const Sqlite3Db& db)
+    :   db(db)
     {
     }
 
-    Nutrient(int id, string description, string unit, double target)
-    : Nutrient(id, description, unit, target, INFINITY)
-    {
-    }
+    NutrientProfile get(int id) {
+        vector<Nutrient> nutrients;
 
-    string get_description() const {
-        return description;
-    }
+        sqlite3_stmt* profile_qry = db.prepare("SELECT * FROM profile WHERE id = ?");
+        sqlite3_bind_int(profile_qry, 1, id);
+        db.step(profile_qry);
 
-    string get_unit() const {
-        return unit;
-    }
+        sqlite3_stmt* nutrient_qry = db.prepare("SELECT * FROM nutrient ORDER BY id");
+        while (db.step(nutrient_qry) == SQLITE_ROW) {
+            int id = sqlite3_column_int(nutrient_qry, 0);
+            Nutrient nutrient(id, 
+                    reinterpret_cast<const char*>(sqlite3_column_text(nutrient_qry, 1)),
+                    reinterpret_cast<const char*>(sqlite3_column_text(nutrient_qry, 2)), 
+                    sqlite3_column_double(profile_qry, 2 + id * 2),
+                    sqlite3_column_double(profile_qry, 2 + id * 2 + 1)
+            );
+            nutrients.push_back(nutrient);
+        }
+        db.finalize(nutrient_qry);
 
-    double get_target() const {
-        return target;
-    }
+        db.finalize(profile_qry);
 
-    double get_max() const {
-        return max_;
+        return NutrientProfile(nutrients);
     }
 
 private:
-    int id;
-    string description;
-    string unit; // e.g. "mg", "ml", "kCal"
-
-    double target; // desired daily amount
-    double max_; // maximum daily amount
+    Sqlite3Db db;
 };
 
-/**
- * A list of constrained nutrients
- */
-class NutrientProfile
-{
-public:
-    NutrientProfile()
-    {
-        // TODO load from db
-    }
-
-    const vector<Nutrient>& get_nutrients() const {
-        return nutrients;
-    }
-
-private:
-    vector<Nutrient> nutrients;
-};
-
-/**
- * A food (e.g. bread)
- */
-class Food
-{
-public:
-    string get_description() const {
-        return description;
-    }
-
-    const vector<double>& get_nutrient_values() const {
-        return nutrient_values;
-    }
-
-private:
-public: // TODO
-    string description;
-    vector<double> nutrient_values;
-};
-
-/**
- * The problem of balancing the amounts of ingredients in a soylent recipe
- */
-class RecipeProblem
-{
-public:
-    RecipeProblem(const NutrientProfile& profile, const vector<Food>& foods) {
-        // generate A
-        a.setlength(profile.get_nutrients().size(), foods.size());
-        for (int i=0; i < a.rows(); ++i) {
-            for (int j=0; j < a.cols(); ++j) {
-                a[i][j] = foods.at(j).get_nutrient_values().at(i);
-            }
-        }
-        cout << "a " << a.tostring(2) << endl;
-
-        // generate Y
-        y.setlength(a.rows());
-        for (int i=0; i < y.length(); ++i) {
-            y[i] = profile.get_nutrients().at(i).get_target();
-        }
-        cout << "y " << y.tostring(2) << endl;
-
-        // create solver
-        {
-        vector<double> zeros(a.cols(), 0.0);
-        real_1d_array x;
-        x.setcontent(zeros.size(), zeros.data());
-        minbleiccreate(x, solver);
-        }
-
-        // set bounds on x
-        {
-        vector<double> infs(a.cols(), INFINITY);
-        vector<double> zeros(a.cols(), 0.0);
-
-        real_1d_array lower_bounds;
-        lower_bounds.setcontent(zeros.size(), zeros.data());
-
-        real_1d_array upper_bounds;
-        upper_bounds.setcontent(infs.size(), infs.data());
-
-        minbleicsetbc(solver, lower_bounds, upper_bounds);
-        }
-
-        // set inequality constraints
-        {
-        int constraint_count = 0;
-        for (auto& nutrient : profile.get_nutrients()) {
-            if (nutrient.get_max() != INFINITY) {
-                constraint_count++;
-            }
-        }
-
-        real_2d_array constraints;
-        constraints.setlength(constraint_count, a.cols()+1);
-        for (int k=0, i=0; i < a.rows(); ++i) {
-            double max_ = profile.get_nutrients()[i].get_max();
-            if (max_ != INFINITY) {
-                for (int j=0; j < a.cols(); ++j) {
-                    constraints[k][j] = a[i][j];
-                }
-                constraints[k][a.cols()] = profile.get_nutrients().at(i).get_max();
-                k++;
-            }
-        }
-        
-        vector<ae_int_t> negatives(constraints.rows(), -1);
-        integer_1d_array constraint_types;
-        constraint_types.setcontent(constraints.rows(), negatives.data());
-
-        minbleicsetlc(solver, constraints, constraint_types);
-        cout << "c " << constraints.tostring(2) << endl
-            << constraint_types.tostring() << endl;
-        }
-    }
-
-    real_1d_array solve() {
-        minbleicsetcond(solver, 0, 0, 0, 1000); // 1000 its max
-
-        minbleicoptimize(solver, RecipeProblem::f, nullptr, this);
-
-        minbleicreport report;
-        real_1d_array x;
-        x.setlength(a.cols());
-        minbleicresults(solver, x, report);
-
-        cout << report.terminationtype << endl;  // http://www.alglib.net/translator/man/manual.cpp.html#sub_minbleicresults
-        return x;
-    }
-
-    /**
-     * Function for optimizer, func_value = l2_norm(a*x-y)^2
-     */
-    static void f(const real_1d_array& x, double& func_value, real_1d_array& gradient, void* data) {
-        reinterpret_cast<RecipeProblem*>(data)->_f(x, func_value, gradient);
-    }
-
-private:
-    void _f(const real_1d_array& x, double& func_value, real_1d_array& gradient) {
-        // func_value
-        real_1d_array v;
-        v.setlength(a.rows());
-        rmatrixmv(a.rows(), a.cols(), a, 0, 0, 0, x, 0, v, 0); // v = a*x
-        vsub(&v[0], &y[0], y.length()); // v = a*x - y
-        func_value = vdotproduct(&v[0], &v[0], v.length());
-
-        //cout << "x " << x.tostring(2) << endl;
-        //cout << func_value << endl;
-
-        // gradient
-        for (int i = 0; i < x.length(); ++i) {
-            gradient[i] = 0.0;
-            for (int j=0; j < a.rows(); ++j) {
-                gradient[i] += 2.0 * v[j] * a[j][i]; // TODO store a double_a = 2*a
-            }
-        }
-    }
-
-private:
-    real_2d_array a;
-    real_1d_array y;
-
-    minbleicstate solver;
-};
+// math
+#include "RecipeProblem.h"
 
 int main(int argc, char** argv) {
     try {
-        // TODO load from db
-        NutrientProfile nutrient_profile;
+        Sqlite3Db db;
+        NutrientProfiles profiles(db);
+        NutrientProfile nutrient_profile = profiles.get(1);
 
         vector<Food> foods;
-        Food f;
-
-        Food food;
-        food.nutrient_values.push_back(0.0);
-        food.nutrient_values.push_back(0.0);
-        food.nutrient_values.push_back(0.0);
-        food.nutrient_values.push_back(0.0);
-        food.nutrient_values.push_back(0.0);
-
-        f = food;
-        f.description = "f0";
-        f.nutrient_values[0] = 1.0;
-        assert(f.nutrient_values.size() == nutrient_profile.get_nutrients().size());
-        foods.push_back(f);
-
-        f = food;
-        f.description = "f04";
-        f.nutrient_values[0] = 1.0;
-        f.nutrient_values[4] = 1.0;
-        assert(f.nutrient_values.size() == nutrient_profile.get_nutrients().size());
-        foods.push_back(f);
-
-        f = food;
-        f.description = "f123";
-        f.nutrient_values[1] = 2.0;
-        f.nutrient_values[2] = 1.0;
-        f.nutrient_values[3] = 1.0;
-        cout << f.nutrient_values.at(0) << endl;
-        assert(f.nutrient_values.size() == nutrient_profile.get_nutrients().size());
-        foods.push_back(f);
+        //food.nutrient_values.push_back(0.0);
 
         RecipeProblem problem(nutrient_profile, foods);
         auto result = problem.solve();
