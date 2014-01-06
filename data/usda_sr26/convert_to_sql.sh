@@ -79,7 +79,7 @@ Refuse_Pct decimal(2)
 EOF
 
 format() {
-  sed 's///g' | sed 's/\^$/\^NULL/g' | sed 's/\^\^/\^NULL\^/g' | sed 's/\^\^/\^NULL\^/g' | sed 's/~/"/g' | sed 's/\^/, /g' | sed 's/$/\);/'
+  sed 's///g' | sed 's/"/""/g' | sed 's/\^$/\^NULL/g' | sed 's/\^\^/\^NULL\^/g' | sed 's/\^\^/\^NULL\^/g' | sed 's/~/"/g' | sed 's/\^/, /g' | sed 's/$/\);/'
 }
 
 cat FOOD_DES.txt | format | sed 's/^/INSERT INTO temp.food VALUES \(/'
@@ -90,9 +90,9 @@ cat << EOF
 
 INSERT INTO source(name) VALUES('USDA SR26');
 
-INSERT INTO food
+INSERT INTO main.food
 SELECT NULL, shrt_desc, 1, NULL, energ_kcal, carbohydrt, protein, lipid_tot, NULL, NULL, Fiber_TD, cholestrl, vit_a_iu, vit_b6, vit_b12, vit_c, vit_d_iu, NULL, vit_k, thiamin, riboflavin, niacin, folate_tot, panto_acid, NULL, choline_tot, calcium/1000, NULL, NULL, copper, NULL, iron, magnesium, manganese, NULL, phosphorus/1000, potassium/1000, selenium, sodium/1000, NULL, zinc
-  FROM temp.abbrev
+  FROM temp.abbrev;
 
 EOF
 # TODO carbohydrate, by difference = ???
