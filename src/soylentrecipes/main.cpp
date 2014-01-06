@@ -33,52 +33,105 @@ using namespace std;
 // data retrieval classes
 #include <sqlite3.h>
 
-class Sqlite3Db {
+class Query;
+class Database {
 public:
-    Sqlite3Db()
+    Database()
     {
-        if (sqlite3_open("soylentrecipes.sqlite", &connection) != SQLITE_OK) {
-            runtime_error("Failed to open sqlite db");
-        }
+        ensure(sqlite3_open("soylentrecipes.sqlite", &connection), "Failed to open sqlite db");
     }
 
-    ~Sqlite3Db()
+    ~Database()
     {
         sqlite3_close(connection);
     }
 
-    sqlite3_stmt* prepare(string sql) {
-        sqlite3_stmt* stmt;
-        if (sqlite3_prepare_v2(connection, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-            runtime_error("Failed to prepare statement");
-        }
-        return stmt;
-    }
-
-    int step(sqlite3_stmt* stmt) {
-        auto ret = sqlite3_step(stmt);
-        if (ret != SQLITE_ROW && ret != SQLITE_DONE) {
-            runtime_error("Failed to step statement");
-        }
-        return ret;
-    }
-
-    void finalize(sqlite3_stmt* stmt) {
-        if (sqlite3_finalize(stmt) != SQLITE_OK) {
-            runtime_error("Failed to destroy statement");
+    void ensure(int code, string msg) {
+        if (code != SQLITE_OK && code != SQLITE_ROW && code != SQLITE_DONE) {
+            throw_(msg);
         }
     }
 
-    // throw_sqlite() { http://www.sqlite.org/c3ref/errcode.html }
+    void throw_(string msg) {
+        throw runtime_error(msg + ": " + sqlite3_errmsg(connection));
+    }
+
+private:
+    Database(const Database&) = delete;
 
 private:
     sqlite3* connection;
+
+    friend Query;
+};
+
+class Query {
+public:
+    Query(Database& db, string sql)
+    :   db(db)
+    {
+        db.ensure(sqlite3_prepare_v2(db.connection, sql.c_str(), -1, &stmt, nullptr), "Failed to prepare statement");
+    }
+
+    ~Query() {
+        db.ensure(sqlite3_finalize(stmt), "Failed to destroy statement");
+    }
+
+    bool step() {
+        auto ret = sqlite3_step(stmt);
+        db.ensure(ret, "Failed to step statement");
+        return ret == SQLITE_ROW;
+    }
+
+    bool is_null(int column) {
+        assert(column < sqlite3_column_count(stmt));
+        return sqlite3_column_type(stmt, column) == SQLITE_NULL;
+    }
+
+    int get_int(int column) {
+        assert(column < sqlite3_column_count(stmt));
+        assert(sqlite3_column_type(stmt, column) == SQLITE_INTEGER);
+        return sqlite3_column_int(stmt, column);
+    }
+
+    string get_string(int column) {
+        assert(column < sqlite3_column_count(stmt));
+        assert(sqlite3_column_type(stmt, column) == SQLITE3_TEXT);
+        return reinterpret_cast<const char*>(sqlite3_column_text(stmt, column));
+    }
+
+    double get_double(int column) {
+        assert(column < sqlite3_column_count(stmt));
+        assert(sqlite3_column_type(stmt, column) == SQLITE_FLOAT);
+        return sqlite3_column_double(stmt, column);
+    }
+
+    double get_double(int column, double default_) {
+        if (is_null(column)) {
+            return default_;
+        }
+
+        assert(column < sqlite3_column_count(stmt));
+        assert(sqlite3_column_type(stmt, column) == SQLITE_FLOAT);
+        return sqlite3_column_double(stmt, column);
+    }
+
+    void bind_int(int index, int value) {
+        db.ensure(sqlite3_bind_int(stmt, index, value), "Failed to bind");
+    }
+
+private:
+    Query(const Query&) = delete;
+
+private:
+    Database& db;
+    sqlite3_stmt* stmt;
 };
 
 class NutrientProfiles
 {
 public:
-    NutrientProfiles(const Sqlite3Db& db)
+    NutrientProfiles(Database& db)
     :   db(db)
     {
     }
@@ -86,30 +139,64 @@ public:
     NutrientProfile get(int id) {
         vector<Nutrient> nutrients;
 
-        sqlite3_stmt* profile_qry = db.prepare("SELECT * FROM profile WHERE id = ?");
-        sqlite3_bind_int(profile_qry, 1, id);
-        db.step(profile_qry);
+        Query profile_qry(db, "SELECT * FROM profile WHERE id = ?");
+        profile_qry.bind_int(1, id);
+        if (!profile_qry.step()) {
+            runtime_error("Profile not found");
+        }
 
-        sqlite3_stmt* nutrient_qry = db.prepare("SELECT * FROM nutrient ORDER BY id");
-        while (db.step(nutrient_qry) == SQLITE_ROW) {
-            int id = sqlite3_column_int(nutrient_qry, 0);
+        Query nutrient_qry(db, "SELECT * FROM nutrient ORDER BY id");
+        while (nutrient_qry.step()) {
+            int id = nutrient_qry.get_int(0);
             Nutrient nutrient(id, 
-                    reinterpret_cast<const char*>(sqlite3_column_text(nutrient_qry, 1)),
-                    reinterpret_cast<const char*>(sqlite3_column_text(nutrient_qry, 2)), 
-                    sqlite3_column_double(profile_qry, 2 + id * 2),
-                    sqlite3_column_double(profile_qry, 2 + id * 2 + 1)
+                    nutrient_qry.get_string(1),
+                    nutrient_qry.get_string(2), 
+                    profile_qry.get_double(2 + id * 2),
+                    profile_qry.get_double(2 + id * 2 + 1)
             );
             nutrients.push_back(nutrient);
         }
-        db.finalize(nutrient_qry);
-
-        db.finalize(profile_qry);
 
         return NutrientProfile(nutrients);
     }
 
 private:
-    Sqlite3Db db;
+    Database& db;
+};
+
+class Foods
+{
+public:
+    Foods(Database& db)
+    :   db(db)
+    {
+    }
+
+    Food get(int id, const NutrientProfile& profile) {
+        string description;
+        vector<double> nutrient_values;
+
+        Query stmt(db, "SELECT * FROM food WHERE id = ?");
+        stmt.bind_int(1, id);
+
+        if (stmt.step()) {
+            runtime_error("Food not found");
+        }
+
+        for (int i=0; i < profile.get_nutrients().size(); i++) {
+            nutrient_values.push_back(stmt.get_double(4 + i, 0.0));
+        }
+
+        Food food(stmt.get_int(0), 
+                stmt.get_string(1),
+                nutrient_values
+        );
+
+        return food;
+    }
+
+private:
+    Database& db;
 };
 
 // math
@@ -117,17 +204,21 @@ private:
 
 int main(int argc, char** argv) {
     try {
-        Sqlite3Db db;
+        Database db;
         NutrientProfiles profiles(db);
-        NutrientProfile nutrient_profile = profiles.get(1);
+        NutrientProfile profile = profiles.get(1);
 
-        vector<Food> foods;
-        //food.nutrient_values.push_back(0.0);
+        Foods foods(db);
+        vector<Food> foods_;
+        foods_.push_back(foods.get(1, profile));
+        foods_.push_back(foods.get(300, profile));
+        foods_.push_back(foods.get(500, profile));
+        foods_.push_back(foods.get(1000, profile));
 
-        RecipeProblem problem(nutrient_profile, foods);
+        RecipeProblem problem(profile, foods_);
         auto result = problem.solve();
         for (int i=0; i < result.length(); ++i) {
-            auto& food = foods.at(i);
+            auto& food = foods_.at(i);
             cout << food.get_description() << ": " << result[i] << endl;
         }
     }

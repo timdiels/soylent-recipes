@@ -21,8 +21,8 @@
 
 using namespace std;
 
-Food::Food(string description, const vector<double>& nutrient_values)
-:   description(description), nutrient_values(nutrient_values)
+Food::Food(int id, string description, const vector<double>& nutrient_values)
+:   id(id), description(description), nutrient_values(nutrient_values)
 {
 }
 

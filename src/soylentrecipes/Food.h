@@ -28,12 +28,13 @@
 class Food
 {
 public:
-    Food(std::string description, const std::vector<double>& nutrient_values);
+    Food(int id, std::string description, const std::vector<double>& nutrient_values);
 
     std::string get_description() const;
     const std::vector<double>& get_nutrient_values() const;
 
 private:
+    int id;
     std::string description;
-    std::vector<double> nutrient_values;
+    std::vector<double> nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
 };
