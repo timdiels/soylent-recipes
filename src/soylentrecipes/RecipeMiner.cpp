@@ -69,8 +69,13 @@ void RecipeMiner::mine(const vector<FoodIt>& foods) {
 }
 
 bool RecipeMiner::are_orthogonal(const vector<FoodIt>& foods, const FoodIt food) {
-    for (auto& food : foods) {
-        if (food->get_similarity(*food) > max_similarity) {
+    static int total = 0;
+    static int rejected = 0;
+    total++;
+    cout << "Rejection percentage: " << rejected / (double)total << endl;
+    for (auto& food_ : foods) {
+        if (food_->get_similarity(*food) > max_similarity) {
+            rejected++;
             return false;
         }
     }
@@ -94,7 +99,7 @@ void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     if (recipes.add_recipe(foods, completeness)) {
         for (int i=0; i < result.length(); ++i) {
             auto& food = foods.at(i);
-            cout << food->as_matrix().tostring(2) << " * " << result[i] << endl;
+            cout << food->as_matrix().tostring(2) << endl; //<< " * " << result[i] << endl;
         }
         cout << completeness << endl << endl;
     }

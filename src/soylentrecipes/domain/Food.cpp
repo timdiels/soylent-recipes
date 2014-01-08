@@ -51,9 +51,10 @@ const real_1d_array& Food::as_matrix() const {
     return nutrient_values;
 }
 
-#include <iostream>
 double Food::get_similarity(const Food& other) const {
     double dotprod = fabs(vdotproduct(&normalised_nutrient_values[0], &other.normalised_nutrient_values[0], normalised_nutrient_values.length()));
     assert(dotprod < 1 + 1e-6);
+    assert(this != &other); // TODO for debug reasons this assert is now very handy
+    //cout << dotprod << endl;
     return dotprod;
 }
