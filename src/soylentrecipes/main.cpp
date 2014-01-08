@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <vector>
+#include <signal.h>
 #include <assert.h>
 #include <stdexcept>
 #include "domain/NutrientProfiles.h"
@@ -29,7 +30,16 @@
 //using namespace SOYLENT;
 using namespace std;
 
+static RecipeMiner* miner = nullptr;
+
+static void signal_callback(int signum) {
+    miner->stop();
+}
+
 int main(int argc, char** argv) {
+    signal(SIGTERM, signal_callback);
+    signal(SIGINT, signal_callback);
+
     try {
         Database db;
         NutrientProfiles profiles(db);
@@ -38,10 +48,12 @@ int main(int argc, char** argv) {
         Foods foods(db, profile);
         Recipes recipes(db);
 
-        RecipeMiner miner(profile, foods, recipes);
-        miner.mine();
+        miner = new RecipeMiner(profile, foods, recipes);
+        miner->mine();
+        delete miner;
     }
     catch (const alglib::ap_error& e) {
+        // TODO delete miner and stuff
         cerr << e.msg << endl;
         return 1;
     }

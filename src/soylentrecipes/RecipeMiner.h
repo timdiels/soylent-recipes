@@ -20,6 +20,7 @@
 #pragma once
 
 #include <vector>
+#include <ctime>
 #include <soylentrecipes/domain/Recipes.h>
 #include <soylentrecipes/domain/Foods.h>
 #include <soylentrecipes/domain/NutrientProfile.h>
@@ -31,6 +32,7 @@ class RecipeMiner
 {
 public:
     RecipeMiner(const NutrientProfile& profile, Foods& foods, Recipes&);
+    ~RecipeMiner();
 
     /**
      * Depth-first search on all seemingly-useful combinations of foods
@@ -40,6 +42,13 @@ public:
      * Note: When the foods of a combination aren't sufficiently inter-orthogonal, the combination is considered useless
      */
     void mine();
+
+    /**
+     * Stop mining
+     *
+     * May be called asynchronously
+     */
+    void stop();
 
 private:
     /**
@@ -58,5 +67,13 @@ private:
 
     const int max_combo_size = 12;
     const double max_similarity = 0.3;  // = cos theta, where theta is the minimum angle between 2 foods in a valid combination; 0.3 -> 72 degrees
+
+    bool m_stop;
+
+    // stats
+    long orthogonality_rejected = 0;  // how many food combos were rejected due to 'too similar'
+    long orthogonality_total = 0;  // how many food combos were checked for similarity
+    long examine_rejected = 0;  // how many food combos were rejected due to 'too incomplete'
+    long examine_total = 0;  // how many food combos were offered for solving
 };
 
