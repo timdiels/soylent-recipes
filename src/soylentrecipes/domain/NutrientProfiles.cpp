@@ -49,7 +49,7 @@ NutrientProfile NutrientProfiles::get(int id) {
     Query profile_qry(db, "SELECT * FROM profile WHERE id = ?");
     profile_qry.bind_int(1, id);
     if (!profile_qry.step()) {
-        runtime_error("Profile not found");
+        throw runtime_error("Profile not found");
     }
 
     real_1d_array targets;

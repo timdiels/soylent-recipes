@@ -46,7 +46,7 @@ void RecipeMiner::mine(const vector<Food>& foods) {
                 id = foods.back().get_id();
             }
 
-            for (;;) {
+            while (true) {
                 id++;
                 Food next_food = this->foods.get(id, profile);
                 if (!are_orthogonal(foods, next_food)) {

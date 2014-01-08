@@ -40,8 +40,8 @@ Food Foods::get(int id, const NutrientProfile& profile) {
     Query stmt(db, "SELECT * FROM food WHERE id = ?");
     stmt.bind_int(1, id);
 
-    if (stmt.step()) {
-        runtime_error("Food not found");
+    if (!stmt.step()) {
+        throw runtime_error("Food not found");
     }
 
     for (int i=0; i < nutrient_values.length(); i++) {
