@@ -40,6 +40,9 @@ int main(int argc, char** argv) {
         foods_.push_back(foods.get(300, profile));
         foods_.push_back(foods.get(500, profile));
         foods_.push_back(foods.get(1000, profile));
+
+        RecipeProblem p(profile, foods_);
+        p.solve();
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;

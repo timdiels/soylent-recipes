@@ -17,13 +17,15 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <vector>
 #include <stdexcept>
+#include <libalglib/stdafx.h>
+#include <libalglib/linalg.h>
 #include <soylentrecipes/data_access/Query.h>
 #include "Foods.h"
 #include "NutrientProfile.h"
 
 using namespace std;
+using namespace alglib;
 
 Foods::Foods(Database& db)
 :   db(db)
@@ -32,7 +34,8 @@ Foods::Foods(Database& db)
 
 Food Foods::get(int id, const NutrientProfile& profile) {
     string description;
-    vector<double> nutrient_values;
+    real_1d_array nutrient_values;
+    nutrient_values.setlength(profile.get_nutrients().size());
 
     Query stmt(db, "SELECT * FROM food WHERE id = ?");
     stmt.bind_int(1, id);
@@ -41,8 +44,8 @@ Food Foods::get(int id, const NutrientProfile& profile) {
         runtime_error("Food not found");
     }
 
-    for (int i=0; i < profile.get_nutrients().size(); i++) {
-        nutrient_values.push_back(stmt.get_double(4 + i, 0.0));
+    for (int i=0; i < nutrient_values.length(); i++) {
+        nutrient_values[i] = stmt.get_double(4 + i, 0.0);
     }
 
     Food food(stmt.get_int(0), 

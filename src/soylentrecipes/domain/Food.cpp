@@ -21,7 +21,7 @@
 
 using namespace std;
 
-Food::Food(int id, string description, const vector<double>& nutrient_values)
+Food::Food(int id, std::string description, const alglib::real_1d_array& nutrient_values)
 :   id(id), description(description), nutrient_values(nutrient_values)
 {
 }
@@ -34,7 +34,11 @@ string Food::get_description() const {
     return description;
 }
 
-const vector<double>& Food::get_nutrient_values() const {
+double Food::get_nutrient_value(int id) const {
+    return nutrient_values[id];
+}
+
+const alglib::real_1d_array& Food::as_matrix() const {
     return nutrient_values;
 }
 

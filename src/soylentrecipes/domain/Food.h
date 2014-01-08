@@ -20,7 +20,8 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <libalglib/stdafx.h>
+#include <libalglib/linalg.h>
 
 /**
  * A food (e.g. bread)
@@ -28,14 +29,15 @@
 class Food
 {
 public:
-    Food(int id, std::string description, const std::vector<double>& nutrient_values);
+    Food(int id, std::string description, const alglib::real_1d_array& nutrient_values);
 
     int get_id() const;
     std::string get_description() const;
-    const std::vector<double>& get_nutrient_values() const;
+    double get_nutrient_value(int id) const;
+    const alglib::real_1d_array& as_matrix() const;
 
 private:
     int id;
     std::string description;
-    std::vector<double> nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
+    alglib::real_1d_array nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
 };
