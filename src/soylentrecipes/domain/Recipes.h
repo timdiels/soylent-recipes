@@ -27,7 +27,10 @@
 class Recipes
 {
 public:
-    Recipes(Database& db);
+    Recipes(Database& db) 
+    :   db(db), insert_recipe_stmt(db, "INSERT INTO recipe (foods, food_count, completeness) VALUES (?, ?, ?)")
+    {
+    }
 
     /**
      * Add recipe

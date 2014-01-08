@@ -32,7 +32,6 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     for (int j=0; j < a.cols(); ++j) {
         vmove(&a[0][j], a.cols(), &foods.at(j).as_matrix()[0], 1, a.rows());
     }
-    cout << "a " << a.tostring(2) << endl;
 
     // generate Y
     y = profile.get_targets(); // TODO unnecessary copy, use it directly
@@ -84,8 +83,6 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     constraint_types.setcontent(constraints.rows(), negatives.data());
 
     minbleicsetlc(solver, constraints, constraint_types);
-    cout << "c " << constraints.tostring(2) << endl
-        << constraint_types.tostring() << endl;
     }
 }
 
@@ -121,14 +118,11 @@ void RecipeProblem::_f(const real_1d_array& x, double& func_value, real_1d_array
     vsub(&v[0], &y[0], y.length()); // v = a*x - y
     func_value = vdotproduct(&v[0], &v[0], v.length());
 
-    //cout << "x " << x.tostring(2) << endl;
-    //cout << func_value << endl;
-
     // gradient
     for (int i = 0; i < x.length(); ++i) {
         gradient[i] = 0.0;
         for (int j=0; j < a.rows(); ++j) {
-            gradient[i] += 2.0 * v[j] * a[j][i]; // TODO store a double_a = 2*a
+            gradient[i] += 2.0 * v[j] * a[j][i];
         }
     }
 }

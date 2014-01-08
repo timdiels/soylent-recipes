@@ -23,7 +23,8 @@
 #include <stdexcept>
 #include "domain/NutrientProfiles.h"
 #include "domain/Foods.h"
-#include "RecipeProblem.h"
+#include "domain/Recipes.h"
+#include "RecipeMiner.h"
 
 //using namespace SOYLENT;
 using namespace std;
@@ -32,17 +33,12 @@ int main(int argc, char** argv) {
     try {
         Database db;
         NutrientProfiles profiles(db);
-        NutrientProfile profile = profiles.get(1);
-
         Foods foods(db);
-        vector<Food> foods_;
-        foods_.push_back(foods.get(1, profile));
-        foods_.push_back(foods.get(300, profile));
-        foods_.push_back(foods.get(500, profile));
-        foods_.push_back(foods.get(1000, profile));
+        Recipes recipes(db);
 
-        RecipeProblem p(profile, foods_);
-        p.solve();
+        NutrientProfile profile = profiles.get(1);
+        RecipeMiner miner(profile, foods, recipes);
+        miner.mine();
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;

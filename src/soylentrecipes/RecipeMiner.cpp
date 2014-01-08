@@ -18,12 +18,78 @@
  */
 
 #include "RecipeMiner.h"
+#include "RecipeProblem.h"
 
 using namespace std;
 
-/*
-RecipeMiner::RecipeMiner(const NutrientProfile& profile, Foods& foods) 
-:
+RecipeMiner::RecipeMiner(const NutrientProfile& profile, Foods& foods, Recipes& recipes)
+:   profile(profile), foods(foods), recipes(recipes)
 {
 }
-*/
+
+void RecipeMiner::mine() {
+    // TODO resume where we last left off
+    vector<Food> foods;
+    foods.reserve(max_combo_size);
+    mine(foods);
+}
+
+void RecipeMiner::mine(const vector<Food>& foods) {
+    if (foods.size() < max_combo_size) {
+        auto next_foods = foods;
+        //try {
+            int id;
+            if (foods.empty()) {
+                id = 0;
+            }
+            else {
+                id = foods.back().get_id();
+            }
+
+            for (;;) {
+                id++;
+                Food next_food = this->foods.get(id, profile);
+                if (!are_orthogonal(foods, next_food)) {
+                    continue;
+                }
+
+                next_foods.push_back(next_food);
+                mine(next_foods);
+                next_foods.pop_back();
+            }
+        /*}
+        catch (const FoodNotFoundException&) {
+        } TODO*/
+    }
+
+    if (!foods.empty()) {
+        examine_recipe(foods);
+    }
+}
+
+bool RecipeMiner::are_orthogonal(const vector<Food>& foods, const Food& food) {
+    for (auto& food : foods) {
+        if (food.get_similarity(food) > max_similarity) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void RecipeMiner::examine_recipe(const vector<Food>& foods) {
+    // solve recipe
+    RecipeProblem problem(profile, foods);
+    auto result = problem.solve();
+
+    // calculate completeness number (ranges from 0.0 to 1.0)
+    // note: nutrients aren't weighted in the completeness number
+    double completeness = 0.0;
+    for (int i=0; i < result.length(); ++i) {
+        completeness += min(1.0, result[i] / profile.get_targets()[i]);
+    }
+    completeness /= result.length();
+
+    // add recipe
+    recipes.add_recipe(foods, completeness);
+}
+

@@ -35,8 +35,16 @@ public:
     double get_nutrient_value(int id) const;
     const alglib::real_1d_array& as_matrix() const;
 
+    /**
+     * Return how non-orthogonal this and the other vector are to each other
+     *
+     * Ranges from 0.0 (orthogonal) to 1.0 (linear) = cos theta, where theta is angle between this and other food
+     */
+    double get_similarity(const Food& other) const;
+
 private:
     int id;
     std::string description;
     alglib::real_1d_array nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
+    alglib::real_1d_array normalised_nutrient_values;
 };
