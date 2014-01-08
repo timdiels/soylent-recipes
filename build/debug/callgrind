@@ -1,0 +1,9 @@
+#!/bin/bash
+cp ../../data/soylentrecipes.sqlite .
+rm callgrind.out*
+valgrind --tool=callgrind --instr-atstart=no --callgrind-out-file=callgrind.out ./soylentrecipes &
+callgrind_pid=$!
+sleep 10
+kill $callgrind_pid
+sleep 2
+kcachegrind callgrind.out &
