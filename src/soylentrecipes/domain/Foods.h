@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <map>
 #include <soylentrecipes/data_access/Database.h>
 #include "FoodNotFoundException.h"
 #include "Food.h"
@@ -28,11 +29,17 @@ class NutrientProfile;
 class Foods
 {
 public:
-    Foods(Database& db);
+    Foods(Database& db, const NutrientProfile& profile);
 
-    Food get(int id, const NutrientProfile& profile);
+    Food get(int id);
+
+    /**
+     * Return number of foods
+     */
+    int count();
 
 private:
     Database& db;
+    std::map<int, Food> foods;
 };
 

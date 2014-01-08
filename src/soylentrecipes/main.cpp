@@ -33,10 +33,11 @@ int main(int argc, char** argv) {
     try {
         Database db;
         NutrientProfiles profiles(db);
-        Foods foods(db);
+        NutrientProfile profile = profiles.get(1);
+
+        Foods foods(db, profile);
         Recipes recipes(db);
 
-        NutrientProfile profile = profiles.get(1);
         RecipeMiner miner(profile, foods, recipes);
         miner.mine();
     }

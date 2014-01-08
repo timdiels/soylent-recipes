@@ -27,32 +27,32 @@
 using namespace std;
 using namespace alglib;
 
-Foods::Foods(Database& db)
+Foods::Foods(Database& db, const NutrientProfile& profile)
 :   db(db)
 {
-}
-
-Food Foods::get(int id, const NutrientProfile& profile) {
-    string description;
+    // load all the foods into memory
     real_1d_array nutrient_values;
     nutrient_values.setlength(profile.get_nutrients().size());
 
-    Query stmt(db, "SELECT * FROM food WHERE id = ?");
-    stmt.bind_int(1, id);
+    Query stmt(db, "SELECT * FROM food");
 
-    if (!stmt.step()) {
-        throw FoodNotFoundException();
+    while (stmt.step()) {
+        for (int i=0; i < nutrient_values.length(); i++) {
+            nutrient_values[i] = stmt.get_double(4 + i, 0.0);
+        }
+
+        int id = stmt.get_int(0);
+        Food food(id, stmt.get_string(1), nutrient_values);
+        foods.insert(make_pair(id, food));
     }
+}
 
-    for (int i=0; i < nutrient_values.length(); i++) {
-        nutrient_values[i] = stmt.get_double(4 + i, 0.0);
-    }
 
-    Food food(stmt.get_int(0), 
-            stmt.get_string(1),
-            nutrient_values
-    );
+Food Foods::get(int id) {
+    return foods.at(id);
+}
 
-    return food;
+int Foods::count() {
+    return foods.size();
 }
 

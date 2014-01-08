@@ -1,3 +1,5 @@
+-- PRAGMA synchronous=OFF, PRAGMA count_changes=OFF, PRAGMA journal_mode=OFF, PRAGMA locking_mode = EXCLUSIVE
+
 create table nutrient (
 -- Nutrient definition
   id integer primary key not null, -- starts at zero

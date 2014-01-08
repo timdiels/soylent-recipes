@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <valgrind/callgrind.h>
 #include "RecipeMiner.h"
 #include "RecipeProblem.h"
 
@@ -32,35 +33,34 @@ void RecipeMiner::mine() {
     // TODO resume where we last left off
     vector<Food> foods;
     foods.reserve(max_combo_size);
+
+    CALLGRIND_START_INSTRUMENTATION;
     mine(foods);
+    CALLGRIND_STOP_INSTRUMENTATION;
+    CALLGRIND_DUMP_STATS;
 }
 
 void RecipeMiner::mine(const vector<Food>& foods) {
     if (foods.size() < max_combo_size) {
         auto next_foods = foods;
-        try {
-            int id;
-            if (foods.empty()) {
-                id = 0;
-            }
-            else {
-                id = foods.back().get_id();
-            }
-
-            while (true) {
-                id++;
-                Food next_food = this->foods.get(id, profile);
-                if (!are_orthogonal(foods, next_food)) {
-                    continue;
-                }
-
-                next_foods.push_back(next_food);
-                mine(next_foods);
-                next_foods.pop_back();
-            }
+        int id;
+        if (foods.empty()) {
+            id = 0;
         }
-        catch (const FoodNotFoundException&) {
-            // reached the last food
+        else {
+            id = foods.back().get_id();
+        }
+
+        for (; id < this->foods.count(); id++) {
+            id++;
+            Food next_food = this->foods.get(id);
+            if (!are_orthogonal(foods, next_food)) {
+                continue;
+            }
+
+            next_foods.push_back(next_food);
+            mine(next_foods);
+            next_foods.pop_back();
         }
     }
 
