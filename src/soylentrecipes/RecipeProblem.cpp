@@ -25,7 +25,7 @@
 using namespace std;
 using namespace alglib;
 
-// TODO reuse RecipeProblem so we can reuse Y, constraints matrix, and possibly even A (it's a matter of adding columns upon each new food)
+// TODO reuse RecipeProblem so we can reuse Y, perhaps constraints matrix, and possibly even A (it's a matter of adding columns upon each new food)
 RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>& foods) {
     // generate A
     a.setlength(profile.get_nutrients().size(), foods.size());
@@ -35,11 +35,7 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     cout << "a " << a.tostring(2) << endl;
 
     // generate Y
-    y.setlength(a.rows());
-    for (int i=0; i < y.length(); ++i) {
-        y[i] = profile.get_nutrients().at(i).get_target();
-    }
-    cout << "y " << y.tostring(2) << endl;
+    y = profile.get_targets(); // TODO unnecessary copy, use it directly
 
     // create solver
     {
@@ -66,8 +62,8 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     // set inequality constraints
     {
     int constraint_count = 0;
-    for (auto& nutrient : profile.get_nutrients()) {
-        if (nutrient.get_max() != INFINITY) {
+    for (int i=0; i < profile.get_maxima().length(); i++) {
+        if (profile.get_maxima()[i] != INFINITY) {
             constraint_count++;
         }
     }
@@ -75,12 +71,12 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     real_2d_array constraints;
     constraints.setlength(constraint_count, a.cols()+1);
     for (int k=0, i=0; i < a.rows(); ++i) {
-        double max_ = profile.get_nutrients()[i].get_max();
+        double max_ = profile.get_maxima()[i];
         if (max_ != INFINITY) {
             for (int j=0; j < a.cols(); ++j) {
                 constraints[k][j] = a[i][j];
             }
-            constraints[k][a.cols()] = profile.get_nutrients().at(i).get_max();
+            constraints[k][a.cols()] = max_;
             k++;
         }
     }

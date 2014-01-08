@@ -25,6 +25,7 @@
 #include "NutrientProfile.h"
 
 using namespace std;
+using namespace alglib;
 
 NutrientProfiles::NutrientProfiles(Database& db)
 :   db(db)
@@ -32,26 +33,34 @@ NutrientProfiles::NutrientProfiles(Database& db)
 }
 
 NutrientProfile NutrientProfiles::get(int id) {
+    // nutrients
     vector<Nutrient> nutrients;
+    Query nutrient_qry(db, "SELECT * FROM nutrient ORDER BY id");
+    while (nutrient_qry.step()) {
+        int id = nutrient_qry.get_int(0);
+        Nutrient nutrient(id, 
+                nutrient_qry.get_string(1),
+                nutrient_qry.get_string(2)
+        );
+        nutrients.push_back(nutrient);
+    }
 
+    // targets, maxima
     Query profile_qry(db, "SELECT * FROM profile WHERE id = ?");
     profile_qry.bind_int(1, id);
     if (!profile_qry.step()) {
         runtime_error("Profile not found");
     }
 
-    Query nutrient_qry(db, "SELECT * FROM nutrient ORDER BY id");
-    while (nutrient_qry.step()) {
-        int id = nutrient_qry.get_int(0);
-        Nutrient nutrient(id, 
-                nutrient_qry.get_string(1),
-                nutrient_qry.get_string(2), 
-                profile_qry.get_double(2 + id * 2),
-                profile_qry.get_double(2 + id * 2 + 1)
-        );
-        nutrients.push_back(nutrient);
+    real_1d_array targets;
+    real_1d_array maxima;
+    targets.setlength(nutrients.size());
+    maxima.setlength(nutrients.size());
+    for (int id=0; id < nutrients.size(); id++) {
+        targets[id] = profile_qry.get_double(2 + id * 2);
+        maxima[id] = profile_qry.get_double(2 + id * 2 + 1);
     }
 
-    return NutrientProfile(nutrients);
+    return NutrientProfile(nutrients, targets, maxima);
 }
 

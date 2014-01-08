@@ -20,13 +20,22 @@
 #include "NutrientProfile.h"
 
 using namespace std;
+using namespace alglib;
 
-NutrientProfile::NutrientProfile(const vector<Nutrient>& nutrients)
-:   nutrients(nutrients)
+NutrientProfile::NutrientProfile(const vector<Nutrient>& nutrients, const real_1d_array& targets, const real_1d_array& maxima)
+:   nutrients(nutrients), targets(targets), maxima(maxima)
 {
 }
 
 const vector<Nutrient>& NutrientProfile::get_nutrients() const {
     return nutrients;
+}
+
+const real_1d_array& NutrientProfile::get_targets() const {
+    return targets;
+}
+
+const real_1d_array& NutrientProfile::get_maxima() const {
+    return maxima;
 }
 

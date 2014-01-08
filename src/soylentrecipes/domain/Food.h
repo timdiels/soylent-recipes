@@ -20,7 +20,6 @@
 #pragma once
 
 #include <string>
-#include <libalglib/stdafx.h>
 #include <libalglib/linalg.h>
 
 /**

@@ -24,18 +24,13 @@
 class Nutrient
 {
 public:
-    Nutrient(int id, std::string description, std::string unit, double target, double max_);
+    Nutrient(int id, std::string description, std::string unit);
 
     std::string get_description() const;
     std::string get_unit() const;
-    double get_target() const;
-    double get_max() const;
 
 private:
     int id;
     std::string description;
     std::string unit; // e.g. "mg", "ml", "kCal"
-
-    double target; // desired daily amount
-    double max_; // maximum daily amount
 };

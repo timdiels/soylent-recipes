@@ -20,6 +20,7 @@
 #pragma once
 
 #include <vector>
+#include <libalglib/linalg.h>
 #include "Nutrient.h"
 
 /**
@@ -28,11 +29,15 @@
 class NutrientProfile
 {
 public:
-    NutrientProfile(const std::vector<Nutrient>& nutrients);
+    NutrientProfile(const std::vector<Nutrient>& nutrients, const alglib::real_1d_array& targets, const alglib::real_1d_array& maxima);
 
     const std::vector<Nutrient>& get_nutrients() const;
+    const alglib::real_1d_array& get_targets() const;
+    const alglib::real_1d_array& get_maxima() const;
 
 private:
     const std::vector<Nutrient> nutrients;
+    alglib::real_1d_array targets; // targets[i] = desired daily amount of nutrient i
+    alglib::real_1d_array maxima; // maxima[i] = maximum daily amount of nutrient i
 };
 

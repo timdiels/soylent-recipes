@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <libalglib/stdafx.h>
 #include <libalglib/optimization.h>
 #include <soylentrecipes/domain/NutrientProfile.h>
 #include <soylentrecipes/domain/Food.h>

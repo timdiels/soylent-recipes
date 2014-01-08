@@ -21,8 +21,8 @@
 
 using namespace std;
 
-Nutrient::Nutrient(int id, string description, string unit, double target, double max_)
-:   id(id), description(description), unit(unit), target(target), max_(max_)
+Nutrient::Nutrient(int id, string description, string unit)
+:   id(id), description(description), unit(unit)
 {
 }
 
@@ -32,13 +32,5 @@ string Nutrient::get_description() const {
 
 string Nutrient::get_unit() const {
     return unit;
-}
-
-double Nutrient::get_target() const {
-    return target;
-}
-
-double Nutrient::get_max() const {
-    return max_;
 }
 

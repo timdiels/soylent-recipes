@@ -83,8 +83,7 @@ private:
         // note: nutrients aren't weighted in the completeness number
         double completeness = 0.0;
         for (int i=0; i < result.length(); ++i) {
-            auto& nutrient = profile.get_nutrients()[i];
-            completeness += min(1.0, result[i] / nutrient.get_target());
+            completeness += min(1.0, result[i] / profile.get_targets()[i]);
         }
         completeness /= result.length();
 
