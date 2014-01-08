@@ -62,6 +62,7 @@ void RecipeMiner::mine() {
     // print stats
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
     cout << endl;
+    cout << examine_rejected << endl;
     cout << "Rejection percentage (too similar): " << orthogonality_rejected / static_cast<double>(orthogonality_total) << endl;
     cout << "Rejection percentage (too incomplete): " << examine_rejected / static_cast<double>(examine_total) << endl;
     long total_calculated = examine_total - examine_rejected;
@@ -128,9 +129,10 @@ void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
         }
     }
     max_completeness /= profile.get_nutrients().size();
-    if (!recipes.is_useful(max_completeness))
+    if (!recipes.is_useful(max_completeness)) {
         examine_rejected++;
         return; // this recipe won't be useful, so don't bother with calculations
+    }
     }
 
     // solve recipe
