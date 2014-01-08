@@ -26,6 +26,10 @@ Food::Food(int id, string description, const vector<double>& nutrient_values)
 {
 }
 
+int Food::get_id() const {
+    return id;
+}
+
 string Food::get_description() const {
     return description;
 }

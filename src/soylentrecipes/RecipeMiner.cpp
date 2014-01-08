@@ -17,25 +17,13 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "RecipeMiner.h"
 
-#include <string>
-#include <vector>
+using namespace std;
 
-/**
- * A food (e.g. bread)
- */
-class Food
+/*
+RecipeMiner::RecipeMiner(const NutrientProfile& profile, Foods& foods) 
+:
 {
-public:
-    Food(int id, std::string description, const std::vector<double>& nutrient_values);
-
-    int get_id() const;
-    std::string get_description() const;
-    const std::vector<double>& get_nutrient_values() const;
-
-private:
-    int id;
-    std::string description;
-    std::vector<double> nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
-};
+}
+*/

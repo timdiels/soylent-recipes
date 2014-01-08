@@ -11,6 +11,14 @@ create table source (
   name varchar(255) not null
 );
 
+create table recipe (
+-- A list of food combinations, and their attainable completeness value
+  id integer primary key autoincrement not null,
+  foods blob not null,  -- list of food ids (4-byte ints) (notice that using fixed-length char here makes no difference to record size in sqlite3)
+  food_count integer not null,  -- the amount of food items in foods
+  completeness double not null  -- completeness, ranging from 0.0 to 1.0
+);
+
 create table food (
 -- Food and the nutrients it contains
   id integer primary key autoincrement not null,

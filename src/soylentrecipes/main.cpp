@@ -40,25 +40,6 @@ int main(int argc, char** argv) {
         foods_.push_back(foods.get(300, profile));
         foods_.push_back(foods.get(500, profile));
         foods_.push_back(foods.get(1000, profile));
-
-        RecipeProblem problem(profile, foods_);
-        auto result = problem.solve();
-        for (int i=0; i < result.length(); ++i) {
-            auto& food = foods_.at(i);
-            cout << food.get_description() << ": " << result[i] << endl;
-        }
-
-        // calculate completeness number (ranges from 0.0 to 1.0)
-        // note: nutrients aren't weighted in the completeness number
-        double completeness = 0.0;
-        for (int i=0; i < result.length(); ++i) {
-            auto& nutrient = profile.get_nutrients()[i];
-            completeness += min(1.0, result[i] / nutrient.get_target());
-        }
-        completeness /= result.length();
-        cout << completeness << endl;
-
-        // TODO drop food combos with completeness < 50%
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;
