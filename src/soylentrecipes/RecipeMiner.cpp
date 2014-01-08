@@ -37,7 +37,7 @@ void RecipeMiner::mine() {
 void RecipeMiner::mine(const vector<Food>& foods) {
     if (foods.size() < max_combo_size) {
         auto next_foods = foods;
-        //try {
+        try {
             int id;
             if (foods.empty()) {
                 id = 0;
@@ -57,9 +57,10 @@ void RecipeMiner::mine(const vector<Food>& foods) {
                 mine(next_foods);
                 next_foods.pop_back();
             }
-        /*}
+        }
         catch (const FoodNotFoundException&) {
-        } TODO*/
+            // reached the last food
+        }
     }
 
     if (!foods.empty()) {

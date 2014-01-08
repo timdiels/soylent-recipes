@@ -41,7 +41,7 @@ Food Foods::get(int id, const NutrientProfile& profile) {
     stmt.bind_int(1, id);
 
     if (!stmt.step()) {
-        throw runtime_error("Food not found");
+        throw FoodNotFoundException();
     }
 
     for (int i=0; i < nutrient_values.length(); i++) {

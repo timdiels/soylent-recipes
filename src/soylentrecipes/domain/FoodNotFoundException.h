@@ -19,20 +19,12 @@
 
 #pragma once
 
-#include <soylentrecipes/data_access/Database.h>
-#include "FoodNotFoundException.h"
-#include "Food.h"
+#include <stdexcept>
 
-class NutrientProfile;
-
-class Foods
-{
+class FoodNotFoundException : public std::runtime_error {
 public:
-    Foods(Database& db);
-
-    Food get(int id, const NutrientProfile& profile);
-
-private:
-    Database& db;
+    FoodNotFoundException() 
+    : runtime_error("Food not found")  // so hungry
+    {
+    }
 };
-
