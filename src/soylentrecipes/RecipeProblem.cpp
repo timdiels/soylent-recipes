@@ -25,12 +25,14 @@
 using namespace std;
 using namespace alglib;
 
-// TODO reuse RecipeProblem so we can reuse Y, perhaps constraints matrix, and possibly even A (it's a matter of adding columns upon each new food)
-RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food*>& foods) {
+RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt>& foods) {
     // generate A
     a.setlength(profile.get_nutrients().size(), foods.size());
     for (int j=0; j < a.cols(); ++j) {
-        vmove(&a[0][j], a.cols(), &foods.at(j)->as_matrix()[0], 1, a.rows());
+        // This acted as if the source stride was 2, for some reason: vmove(&a[0][j], a.getstride(), &foods.at(j)->as_matrix()[0], 1, a.rows());
+        for (int i=0; i < a.rows(); ++i) {
+            a[i][j] = foods.at(j)->as_matrix()[i];
+        }
     }
 
     // generate Y

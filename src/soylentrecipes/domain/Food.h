@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <libalglib/linalg.h>
 
 /**
@@ -29,10 +30,10 @@ class Food
 {
 public:
     Food(int id, std::string description, const alglib::real_1d_array& nutrient_values);
+    Food(Food&&) = default;
 
     int get_id() const;
     std::string get_description() const;
-    double get_nutrient_value(int id) const;
     const alglib::real_1d_array& as_matrix() const;
 
     /**
@@ -51,3 +52,6 @@ private:
     alglib::real_1d_array nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
     alglib::real_1d_array normalised_nutrient_values;
 };
+
+typedef std::vector<Food>::const_iterator FoodIt;
+

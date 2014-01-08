@@ -35,7 +35,7 @@ public:
      * Note: not all recipes are added, only those deemed useful given current
      * knowledge. E.g. too incomplete ones are discarded.
      */
-    bool add_recipe(const std::vector<Food*>& foods, double completeness);
+    bool add_recipe(const std::vector<FoodIt>& foods, double completeness);
 
 private:
     Database& db;

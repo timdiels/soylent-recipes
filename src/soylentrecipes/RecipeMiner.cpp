@@ -31,7 +31,7 @@ RecipeMiner::RecipeMiner(const NutrientProfile& profile, Foods& foods, Recipes& 
 
 void RecipeMiner::mine() {
     // TODO resume where we last left off
-    vector<Food*> foods;
+    vector<FoodIt> foods;
     foods.reserve(max_combo_size);
 
     CALLGRIND_START_INSTRUMENTATION;
@@ -40,20 +40,19 @@ void RecipeMiner::mine() {
     CALLGRIND_DUMP_STATS;
 }
 
-void RecipeMiner::mine(const vector<Food*>& foods) {
+void RecipeMiner::mine(const vector<FoodIt>& foods) {
     if (foods.size() < max_combo_size) {
         auto next_foods = foods;
-        int id;
+        FoodIt next_food;
         if (foods.empty()) {
-            id = 0;
+            next_food = this->foods.begin();
         }
         else {
-            id = foods.back()->get_id();
+            next_food = foods.back();
+            next_food++;
         }
 
-        for (; id < this->foods.count(); id++) {
-            id++;
-            Food* next_food = this->foods.get(id);
+        for (; next_food != this->foods.end(); next_food++) {
             if (!are_orthogonal(foods, next_food)) {
                 continue;
             }
@@ -69,7 +68,7 @@ void RecipeMiner::mine(const vector<Food*>& foods) {
     }
 }
 
-bool RecipeMiner::are_orthogonal(const vector<Food*>& foods, const Food* food) {
+bool RecipeMiner::are_orthogonal(const vector<FoodIt>& foods, const FoodIt food) {
     for (auto& food : foods) {
         if (food->get_similarity(*food) > max_similarity) {
             return false;
@@ -78,7 +77,7 @@ bool RecipeMiner::are_orthogonal(const vector<Food*>& foods, const Food* food) {
     return true;
 }
 
-void RecipeMiner::examine_recipe(const vector<Food*>& foods) {
+void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     // solve recipe
     RecipeProblem problem(profile, foods);
     auto result = problem.solve();

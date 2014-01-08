@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <cmath>
 #include "Food.h"
 
 using namespace std;
@@ -32,6 +33,10 @@ Food::Food(int id, std::string description, const alglib::real_1d_array& nutrien
     for (int i=0; i < normalised_nutrient_values.length(); i++) {
         normalised_nutrient_values[i] /= length;
     }
+
+    for (int i=0; i<nutrient_values.length(); i++) {
+        assert(isfinite(nutrient_values[i]));
+    }
 }
 
 int Food::get_id() const {
@@ -40,10 +45,6 @@ int Food::get_id() const {
 
 string Food::get_description() const {
     return description;
-}
-
-double Food::get_nutrient_value(int id) const {
-    return nutrient_values[id];
 }
 
 const real_1d_array& Food::as_matrix() const {

@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <map>
 #include <soylentrecipes/data_access/Database.h>
 #include "FoodNotFoundException.h"
 #include "Food.h"
@@ -31,15 +30,12 @@ class Foods
 public:
     Foods(Database& db, const NutrientProfile& profile);
 
-    Food* get(int id);
-
-    /**
-     * Return number of foods
-     */
-    int count();
+    // These iterators are promised not to invalidate
+    FoodIt begin();
+    FoodIt end();
 
 private:
     Database& db;
-    std::map<int, Food> foods;
+    std::vector<Food> foods;
 };
 

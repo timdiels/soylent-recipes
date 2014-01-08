@@ -18,7 +18,7 @@
  */
 
 #include <stdexcept>
-#include <tuple>
+#include <iostream>
 #include <libalglib/stdafx.h>
 #include <libalglib/linalg.h>
 #include <soylentrecipes/data_access/Query.h>
@@ -43,17 +43,15 @@ Foods::Foods(Database& db, const NutrientProfile& profile)
         }
 
         int id = stmt.get_int(0);
-        foods.emplace(piecewise_construct, 
-                forward_as_tuple(id), 
-                forward_as_tuple(id, stmt.get_string(1), nutrient_values));
+        foods.emplace_back(id, stmt.get_string(1), nutrient_values);
     }
 }
 
-Food* Foods::get(int id) {
-    return &foods.at(id);
+vector<Food>::const_iterator Foods::begin() {
+    return foods.cbegin();
 }
 
-int Foods::count() {
-    return foods.size();
+vector<Food>::const_iterator Foods::end() {
+    return foods.cend();
 }
 

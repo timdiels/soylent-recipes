@@ -47,9 +47,9 @@ private:
      *
      * foods: ordered by id
      */
-    void mine(const std::vector<Food*>& foods);
-    bool are_orthogonal(const std::vector<Food*>& foods, const Food* food);
-    void examine_recipe(const std::vector<Food*>& foods);
+    void mine(const std::vector<FoodIt>& foods);
+    bool are_orthogonal(const std::vector<FoodIt>& foods, const FoodIt food);
+    void examine_recipe(const std::vector<FoodIt>& foods);
 
 private:
     const NutrientProfile& profile;
