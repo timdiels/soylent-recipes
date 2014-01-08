@@ -97,7 +97,8 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
 }
 
 real_1d_array RecipeProblem::solve() {
-    minbleicsetcond(solver, 0, 0, 0, 1000); // 1000 its max
+    const int max_iterations = 1000;
+    minbleicsetcond(solver, 0, 0, 0, max_iterations);
 
     minbleicoptimize(solver, RecipeProblem::f, nullptr, this);
 
@@ -106,7 +107,12 @@ real_1d_array RecipeProblem::solve() {
     x.setlength(a.cols());
     minbleicresults(solver, x, report);
 
-    cout << report.terminationtype << endl;  // http://www.alglib.net/translator/man/manual.cpp.html#sub_minbleicresults
+    if (report.terminationtype < 0 || report.terminationtype == 5) {
+        // http://www.alglib.net/translator/man/manual.cpp.html#sub_minbleicresults
+        // Something unexpected happened
+        throw runtime_error("Failed to solve problem");
+    }
+
     return x;
 }
 
