@@ -36,7 +36,7 @@ Recipes::Recipes(Database& db)
     best_completeness = stmt.get_double(0, 0.0);
 }
 
-bool Recipes::add_recipe(const vector<Food>& foods, double completeness) {
+bool Recipes::add_recipe(const vector<Food*>& foods, double completeness) {
     double error_margin = 0.99;
     if (completeness >= best_completeness * error_margin) {
         best_completeness = max(completeness, best_completeness);

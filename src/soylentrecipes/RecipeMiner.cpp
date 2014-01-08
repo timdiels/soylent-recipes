@@ -31,7 +31,7 @@ RecipeMiner::RecipeMiner(const NutrientProfile& profile, Foods& foods, Recipes& 
 
 void RecipeMiner::mine() {
     // TODO resume where we last left off
-    vector<Food> foods;
+    vector<Food*> foods;
     foods.reserve(max_combo_size);
 
     CALLGRIND_START_INSTRUMENTATION;
@@ -40,7 +40,7 @@ void RecipeMiner::mine() {
     CALLGRIND_DUMP_STATS;
 }
 
-void RecipeMiner::mine(const vector<Food>& foods) {
+void RecipeMiner::mine(const vector<Food*>& foods) {
     if (foods.size() < max_combo_size) {
         auto next_foods = foods;
         int id;
@@ -48,12 +48,12 @@ void RecipeMiner::mine(const vector<Food>& foods) {
             id = 0;
         }
         else {
-            id = foods.back().get_id();
+            id = foods.back()->get_id();
         }
 
         for (; id < this->foods.count(); id++) {
             id++;
-            Food next_food = this->foods.get(id);
+            Food* next_food = this->foods.get(id);
             if (!are_orthogonal(foods, next_food)) {
                 continue;
             }
@@ -69,16 +69,16 @@ void RecipeMiner::mine(const vector<Food>& foods) {
     }
 }
 
-bool RecipeMiner::are_orthogonal(const vector<Food>& foods, const Food& food) {
+bool RecipeMiner::are_orthogonal(const vector<Food*>& foods, const Food* food) {
     for (auto& food : foods) {
-        if (food.get_similarity(food) > max_similarity) {
+        if (food->get_similarity(*food) > max_similarity) {
             return false;
         }
     }
     return true;
 }
 
-void RecipeMiner::examine_recipe(const vector<Food>& foods) {
+void RecipeMiner::examine_recipe(const vector<Food*>& foods) {
     // solve recipe
     RecipeProblem problem(profile, foods);
     auto result = problem.solve();
@@ -95,7 +95,7 @@ void RecipeMiner::examine_recipe(const vector<Food>& foods) {
     if (recipes.add_recipe(foods, completeness)) {
         for (int i=0; i < result.length(); ++i) {
             auto& food = foods.at(i);
-            cout << food.get_description() << ": " << result[i] << endl;
+            cout << food->as_matrix().tostring(2) << " * " << result[i] << endl;
         }
         cout << completeness << endl << endl;
     }

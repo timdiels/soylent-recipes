@@ -30,7 +30,7 @@
 class RecipeProblem
 {
 public:
-    RecipeProblem(const NutrientProfile& profile, const std::vector<Food>& foods);
+    RecipeProblem(const NutrientProfile& profile, const std::vector<Food*>& foods);
 
     alglib::real_1d_array solve();
 

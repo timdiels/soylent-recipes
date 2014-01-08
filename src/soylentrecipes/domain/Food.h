@@ -43,6 +43,9 @@ public:
     double get_similarity(const Food& other) const;
 
 private:
+    Food(const Food& food) = delete;
+
+private:
     int id;
     std::string description;
     alglib::real_1d_array nutrient_values;  // nutrient_values[i] = value associated with nutrient{id=i}
