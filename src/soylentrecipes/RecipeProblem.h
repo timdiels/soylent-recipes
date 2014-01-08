@@ -21,8 +21,8 @@
 
 #include <libalglib/stdafx.h>
 #include <libalglib/optimization.h>
-#include "NutrientProfile.h"
-#include "Food.h"
+#include <soylentrecipes/domain/NutrientProfile.h>
+#include <soylentrecipes/domain/Food.h>
 #include <vector>
 
 /**

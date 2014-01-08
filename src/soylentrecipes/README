@@ -1,0 +1,4 @@
+general structure:
+- data_access: data retrieval classes
+- domain: domain classes
+- in the root: other
