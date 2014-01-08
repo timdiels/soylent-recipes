@@ -73,6 +73,7 @@ double Query::get_double(int column, double default_) {
 }
 
 void Query::bind_int(int index, int value) {
+    assert(index > 0);
     db.ensure(sqlite3_bind_int(stmt, index, value), "Failed to bind");
 }
 

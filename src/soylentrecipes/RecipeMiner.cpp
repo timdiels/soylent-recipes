@@ -17,6 +17,7 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include "RecipeMiner.h"
 #include "RecipeProblem.h"
 
@@ -91,6 +92,12 @@ void RecipeMiner::examine_recipe(const vector<Food>& foods) {
     completeness /= result.length();
 
     // add recipe
-    recipes.add_recipe(foods, completeness);
+    if (recipes.add_recipe(foods, completeness)) {
+        for (int i=0; i < result.length(); ++i) {
+            auto& food = foods.at(i);
+            cout << food.get_description() << ": " << result[i] << endl;
+        }
+        cout << completeness << endl << endl;
+    }
 }
 
