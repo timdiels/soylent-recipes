@@ -10,4 +10,6 @@ pushd usda_sr26
 popd
 sqlite3 -init usda_sr26/import.sql soylentrecipes.sqlite 2>>errors.log
 
+sqlite3 -init sanitise.sql soylentrecipes.sqlite 2>>errors.log
+
 less errors.log

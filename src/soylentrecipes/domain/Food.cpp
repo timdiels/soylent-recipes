@@ -17,6 +17,7 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <assert.h>
 #include "Food.h"
 
@@ -27,6 +28,7 @@ Food::Food(int id, std::string description, const alglib::real_1d_array& nutrien
 :   id(id), description(description), nutrient_values(nutrient_values), normalised_nutrient_values(nutrient_values)
 {
     double length = sqrt(vdotproduct(&nutrient_values[0], &nutrient_values[0], nutrient_values.length()));
+    assert(length > 0.0);  // a food with no nutritional value is weird, and useless to us
     for (int i=0; i < normalised_nutrient_values.length(); i++) {
         normalised_nutrient_values[i] /= length;
     }
@@ -48,6 +50,7 @@ const real_1d_array& Food::as_matrix() const {
     return nutrient_values;
 }
 
+#include <iostream>
 double Food::get_similarity(const Food& other) const {
     double dotprod = fabs(vdotproduct(&normalised_nutrient_values[0], &other.normalised_nutrient_values[0], normalised_nutrient_values.length()));
     assert(dotprod < 1 + 1e-6);

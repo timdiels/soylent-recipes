@@ -91,7 +91,44 @@ cat << EOF
 INSERT INTO source(name) VALUES('USDA SR26');
 
 INSERT INTO main.food
-SELECT NULL, shrt_desc, 1, NULL, energ_kcal, carbohydrt, protein, lipid_tot, NULL, NULL, Fiber_TD, cholestrl, vit_a_iu, vit_b6, vit_b12, vit_c, vit_d_iu, NULL, vit_k, thiamin, riboflavin, niacin, folate_tot, panto_acid, NULL, choline_tot, calcium/1000, NULL, NULL, copper, NULL, iron, magnesium, manganese, NULL, phosphorus/1000, potassium/1000, selenium, sodium/1000, NULL, zinc
+SELECT NULL, shrt_desc, 1, NULL, 
+        IFNULL(energ_kcal, 0),
+        IFNULL(carbohydrt, 0),
+        IFNULL(protein, 0),
+        IFNULL(lipid_tot, 0),
+        IFNULL(NULL, 0),
+        IFNULL(NULL, 0),
+        IFNULL(Fiber_TD, 0),
+        IFNULL(cholestrl, 0),
+        IFNULL(vit_a_iu, 0),
+        IFNULL(vit_b6, 0),
+        IFNULL(vit_b12, 0),
+        IFNULL(vit_c, 0),
+        IFNULL(vit_d_iu, 0),
+        IFNULL(NULL, 0),
+        IFNULL(vit_k, 0),
+        IFNULL(thiamin, 0),
+        IFNULL(riboflavin, 0),
+        IFNULL(niacin, 0),
+        IFNULL(folate_tot, 0),
+        IFNULL(panto_acid, 0),
+        IFNULL(NULL, 0),
+        IFNULL(choline_tot, 0),
+        IFNULL(calcium/1000, 0),
+        IFNULL(NULL, 0),
+        IFNULL(NULL, 0),
+        IFNULL(copper, 0),
+        IFNULL(NULL, 0),
+        IFNULL(iron, 0),
+        IFNULL(magnesium, 0),
+        IFNULL(manganese, 0),
+        IFNULL(NULL, 0),
+        IFNULL(phosphorus/1000, 0),
+        IFNULL(potassium/1000, 0),
+        IFNULL(selenium, 0),
+        IFNULL(sodium/1000, 0),
+        IFNULL(NULL, 0),
+        IFNULL(zinc, 0)
   FROM temp.abbrev;
 
 EOF
