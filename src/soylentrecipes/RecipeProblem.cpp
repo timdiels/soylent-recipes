@@ -73,9 +73,7 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<Food>&
     for (int k=0, i=0; i < a.rows(); ++i) {
         double max_ = profile.get_maxima()[i];
         if (max_ != INFINITY) {
-            for (int j=0; j < a.cols(); ++j) {
-                constraints[k][j] = a[i][j];
-            }
+            rmatrixcopy(1, a.cols(), a, i, 0, constraints, k, 0);
             constraints[k][a.cols()] = max_;
             k++;
         }
