@@ -72,7 +72,7 @@ bool RecipeMiner::are_orthogonal(const vector<FoodIt>& foods, const FoodIt food)
     static int total = 0;
     static int rejected = 0;
     total++;
-    cout << "Rejection percentage: " << rejected / (double)total << endl;
+    //cout << "Rejection percentage: " << rejected / (double)total << endl; // TODO only print at the end, and gather more stats damn it
     for (auto& food_ : foods) {
         if (food_->get_similarity(*food) > max_similarity) {
             rejected++;
@@ -83,6 +83,22 @@ bool RecipeMiner::are_orthogonal(const vector<FoodIt>& foods, const FoodIt food)
 }
 
 void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
+    // calculate max completeness
+    {
+    double max_completeness = 0.0;
+    for (int i=0; i<profile.get_nutrients().size(); i++) {
+        for (auto& food : foods) {
+            if (food->as_matrix()[i] > 0.0) {
+                max_completeness += 1.0;
+                break;
+            }
+        }
+    }
+    max_completeness /= profile.get_nutrients().size();
+    if (!recipes.is_useful(max_completeness))
+        return; // this recipe won't be useful, so don't bother with calculations
+    }
+
     // solve recipe
     RecipeProblem problem(profile, foods);
     auto result = problem.solve();
@@ -96,7 +112,9 @@ void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     completeness /= result.length();
 
     // add recipe
-    if (recipes.add_recipe(foods, completeness)) {
+    if (recipes.is_useful(completeness)) {
+        recipes.add_recipe(foods, completeness);
+
         for (int i=0; i < result.length(); ++i) {
             auto& food = foods.at(i);
             cout << food->as_matrix().tostring(2) << endl; //<< " * " << result[i] << endl;

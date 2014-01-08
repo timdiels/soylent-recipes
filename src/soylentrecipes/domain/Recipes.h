@@ -30,12 +30,11 @@ public:
     Recipes(Database& db);
 
     /**
-     * Add recipe
-     *
-     * Note: not all recipes are added, only those deemed useful given current
-     * knowledge. E.g. too incomplete ones are discarded.
+     * Returns true if it's useful to add a recipe with these properties
      */
-    bool add_recipe(const std::vector<FoodIt>& foods, double completeness);
+    bool is_useful(double completeness);
+
+    void add_recipe(const std::vector<FoodIt>& foods, double completeness);
 
 private:
     Database& db;

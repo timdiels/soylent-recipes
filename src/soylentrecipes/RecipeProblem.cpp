@@ -19,6 +19,7 @@
 
 #include "RecipeProblem.h"
 #include <iostream>
+#include <sstream>
 #include <cmath>
 #include <algorithm>
 
@@ -89,8 +90,8 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt
 }
 
 real_1d_array RecipeProblem::solve() {
-    const int max_iterations = 1000;
-    minbleicsetcond(solver, 0, 0, 0, max_iterations);
+    //const int max_iterations = 10000;
+    //minbleicsetcond(solver, 0, 0, 0, max_iterations);
 
     minbleicoptimize(solver, RecipeProblem::f, nullptr, this);
 
@@ -102,7 +103,9 @@ real_1d_array RecipeProblem::solve() {
     if (report.terminationtype < 0 || report.terminationtype == 5) {
         // http://www.alglib.net/translator/man/manual.cpp.html#sub_minbleicresults
         // Something unexpected happened
-        throw runtime_error("Failed to solve problem");
+        ostringstream str;
+        str << "Failed to solve problem: term type " << report.terminationtype;
+        throw runtime_error(str.str());
     }
 
     return x;
