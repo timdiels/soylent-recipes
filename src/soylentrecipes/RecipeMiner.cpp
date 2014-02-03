@@ -152,12 +152,7 @@ void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     // add recipe
     if (recipes.is_useful(completeness)) {
         recipes.add_recipe(foods, completeness);
-
-        for (int i=0; i < result.length(); ++i) {
-            auto& food = foods.at(i);
-            cout << food->as_matrix().tostring(2) << endl; //<< " * " << result[i] << endl;
-        }
-        cout << completeness << endl << endl;
+        //cout << completeness << endl << endl;
     }
 }
 

@@ -26,7 +26,9 @@
 using namespace std;
 using namespace alglib;
 
-RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt>& foods) {
+RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt>& foods) 
+:   y(profile.get_targets())
+{
     // generate A
     a.setlength(profile.get_nutrients().size(), foods.size());
     for (int j=0; j < a.cols(); ++j) {
@@ -36,8 +38,6 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt
         }
     }
 
-    // generate Y
-    y = profile.get_targets(); // TODO unnecessary copy, use it directly
 
     // create solver
     {

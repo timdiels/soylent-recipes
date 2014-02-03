@@ -44,7 +44,7 @@ private:
 
 private:
     alglib::real_2d_array a;
-    alglib::real_1d_array y;
+    const alglib::real_1d_array& y;
 
     alglib::minbleicstate solver;
 };
