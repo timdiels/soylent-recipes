@@ -63,3 +63,16 @@ Performance
 Last noted performance:
 
 - solving a recipe probleem of on average 8.5 foods takes 9834889 instructions (= callgrind instruction fetch cost)
+
+Miner heuristics and tricks (recipe selection)
+----------------------------------------------
+
+This section is a rough draft.
+
+The miner doesn't check all combinations of foods as that would be too expensive.
+
+Elimination heuristics:
+
+- Reject recipes with similar foods (TODO vague)
+- Reject too incomplete recipes (TODO vague)
+- Put a max on number of foods in a recipe (12 as of writing)
