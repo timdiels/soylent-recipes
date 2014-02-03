@@ -34,6 +34,8 @@ public:
     FoodIt begin();
     FoodIt end();
 
+    size_t count();
+
 private:
     Database& db;
     std::vector<Food> foods;

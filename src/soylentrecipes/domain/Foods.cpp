@@ -55,3 +55,6 @@ vector<Food>::const_iterator Foods::end() {
     return foods.cend();
 }
 
+size_t Foods::count() {
+    return foods.size();
+}

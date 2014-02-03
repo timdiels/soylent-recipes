@@ -48,6 +48,7 @@ void RecipeMiner::mine() {
     vector<FoodIt> foods;
     foods.reserve(max_combo_size);
 
+    // mine
     CALLGRIND_START_INSTRUMENTATION;
     clock_t start_time = clock();
     try {
@@ -60,16 +61,37 @@ void RecipeMiner::mine() {
     CALLGRIND_DUMP_STATS;
 
     // print stats
+    //long max_combo_size = 5; // TODO debug
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
+    long total_calculated = examine_total - examine_rejected;
+    double time_per_problem = elapsed_time * 1000.0 / total_calculated; // in ms
+    long food_count = this->foods.count();
+
+    double total_recipes = 1; // max combinations that can be made with given foods
+    int k=1;
+    for (int i=0; i < max_combo_size; i++) {
+        total_recipes *= food_count - i;
+        if (i>0) {
+            k *= i;
+        }
+    }
+    total_recipes /= k;
+
+    double acceptance_rate = total_calculated / static_cast<double>(orthogonality_total);
+    double accepted_recipes = acceptance_rate * total_recipes;
+
     cout << endl;
     cout << examine_rejected << endl;
     cout << "Rejection percentage (too similar): " << orthogonality_rejected / static_cast<double>(orthogonality_total) << endl;
     cout << "Rejection percentage (too incomplete): " << examine_rejected / static_cast<double>(examine_total) << endl;
-    long total_calculated = examine_total - examine_rejected;
     cout << "Total recipe problems calculated: " << total_calculated << endl;
-    cout << "Time spent per problem: " << elapsed_time * 1000.0 / total_calculated << " ms" << endl;
+    cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
     cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
+    cout << "Food count: " << food_count << endl;
+    cout << "Recipe count before rejection: " << total_recipes << endl;
+    cout << "Accepted recipes: " << accepted_recipes << endl;
+    cout << "Time needed to calculate accepted recipes: " << accepted_recipes * time_per_problem / 1000.0 / 60.0 / 60.0 / 24.0 << " days" << endl;
 }
 
 void RecipeMiner::mine(const vector<FoodIt>& foods) {
