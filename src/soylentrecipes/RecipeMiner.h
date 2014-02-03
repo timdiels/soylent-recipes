@@ -75,5 +75,6 @@ private:
     long orthogonality_total = 0;  // how many food combos were checked for similarity
     long examine_rejected = 0;  // how many food combos were rejected due to 'too incomplete'
     long examine_total = 0;  // how many food combos were offered for solving
+    long problem_size_sum = 0;  // sum of len(foods) of recipe problems that were solved
 };
 

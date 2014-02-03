@@ -69,6 +69,7 @@ void RecipeMiner::mine() {
     cout << "Total recipe problems calculated: " << total_calculated << endl;
     cout << "Time spent per problem: " << elapsed_time * 1000.0 / total_calculated << " ms" << endl;
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
+    cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
 }
 
 void RecipeMiner::mine(const vector<FoodIt>& foods) {
@@ -136,6 +137,7 @@ void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     }
 
     // solve recipe
+    problem_size_sum += foods.size();
     RecipeProblem problem(profile, foods);
     auto result = problem.solve();
 
