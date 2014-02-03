@@ -125,10 +125,8 @@ void RecipeProblem::_f(const real_1d_array& x, double& func_value, real_1d_array
 
     // gradient
     for (int i = 0; i < x.length(); ++i) {
-        gradient[i] = 0.0;
-        for (int j=0; j < a.rows(); ++j) {
-            gradient[i] += 2.0 * v[j] * a[j][i];
-        }
+        gradient[i] = 2.0 * vdotproduct(&v[0], 1, &a[0][i], a.getstride(), v.length());
+        // TODO check gradient is correct
     }
 }
 

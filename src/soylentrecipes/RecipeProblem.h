@@ -48,4 +48,5 @@ private:
 
     alglib::minbleicstate solver;
 };
+// TODO could lower accuracy in solver to speed up
 
