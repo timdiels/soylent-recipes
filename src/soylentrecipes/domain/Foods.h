@@ -20,7 +20,6 @@
 #pragma once
 
 #include <soylentrecipes/data_access/Database.h>
-#include "FoodNotFoundException.h"
 #include "Food.h"
 
 class NutrientProfile;
