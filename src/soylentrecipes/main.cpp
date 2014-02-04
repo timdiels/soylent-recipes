@@ -40,6 +40,25 @@ static void signal_callback(int signum) {
     miner->stop();
 }
 
+void mine(FoodDatabase& db) {
+    Recipes recipes(db);
+
+    NutrientProfile profile = db.get_profile(1);
+
+    std::vector<Food> foods;
+    auto emplace_food = [&foods](FoodRecord r) {
+        real_1d_array values;
+        values.setlength(r.nutrient_values.size());
+        for (int i=0; i<values.length(); i++) values[i] = r.nutrient_values.at(i);
+        foods.emplace_back(r.id, r.description, values);
+    };
+    db.get_foods(boost::make_function_output_iterator(emplace_food));
+
+    unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
+    miner = miner_.get();
+    miner->mine();
+}
+
 int main(int argc, char** argv) {
     signal(SIGTERM, signal_callback);
     signal(SIGINT, signal_callback);
@@ -47,22 +66,8 @@ int main(int argc, char** argv) {
     try {
         Database db_;
         FoodDatabase db(db_);
-        Recipes recipes(db_);
 
-        NutrientProfile profile = db.get_profile(1);
-
-        std::vector<Food> foods;
-        auto emplace_food = [&foods](FoodRecord r) {
-            real_1d_array values;
-            values.setlength(r.nutrient_values.size());
-            for (int i=0; i<values.length(); i++) values[i] = r.nutrient_values.at(i);
-            foods.emplace_back(r.id, r.description, values);
-        };
-        db.get_foods(boost::make_function_output_iterator(emplace_food));
-
-        unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
-        miner = miner_.get();
-        miner->mine();
+        mine(db);
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;

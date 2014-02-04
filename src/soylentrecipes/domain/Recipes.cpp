@@ -26,14 +26,14 @@
 
 using namespace std;
 
-Recipes::Recipes(Database& db) 
-:   db(db), insert_recipe_stmt(db, "INSERT INTO recipe (foods, food_count, completeness) VALUES (?, ?, ?);")
+Recipes::Recipes(FoodDatabase& db) 
+:   db(db)//, insert_recipe_stmt(db, "INSERT INTO recipe (foods, food_count, completeness) VALUES (?, ?, ?);")
 {
-    Query stmt(db, "SELECT max(completeness) FROM recipe;");
+    /*Query stmt(db, "SELECT max(completeness) FROM recipe;");
     if (!stmt.step()) {
         throw runtime_error("Unexpected query result");
     }
-    best_completeness = stmt.get_double(0, 0.0);
+    best_completeness = stmt.get_double(0, 0.0);*/ // TODO
 }
 
 bool Recipes::is_useful(double completeness) {

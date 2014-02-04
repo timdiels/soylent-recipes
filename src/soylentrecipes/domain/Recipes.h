@@ -20,14 +20,14 @@
 #pragma once
 
 #include <vector>
-#include <soylentrecipes/data_access/Database.h>
+#include <soylentrecipes/data_access/FoodDatabase.h>
 #include <soylentrecipes/data_access/Query.h>
 #include <soylentrecipes/domain/Food.h>
 
 class Recipes
 {
 public:
-    Recipes(Database& db);
+    Recipes(FoodDatabase& db);
 
     /**
      * Returns true if it's useful to add a recipe with these properties
@@ -37,8 +37,8 @@ public:
     void add_recipe(const std::vector<FoodIt>& foods, double completeness);
 
 private:
-    Database& db;
-    Query insert_recipe_stmt;
+    FoodDatabase& db;
+    //Query insert_recipe_stmt;
 
     double best_completeness; // best completeness found in recipes
 };
