@@ -17,22 +17,18 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <vector>
 #include <stdexcept>
-#include <soylentrecipes/data_access/Query.h>
-#include "NutrientProfiles.h"
-#include "Nutrient.h"
-#include "NutrientProfile.h"
+#include "FoodDatabase.h"
 
 using namespace std;
 using namespace alglib;
 
-NutrientProfiles::NutrientProfiles(Database& db)
+FoodDatabase::FoodDatabase(Database& db)
 :   db(db)
 {
 }
 
-NutrientProfile NutrientProfiles::get(int id) {
+NutrientProfile FoodDatabase::get_profile(int id) {
     // nutrients
     vector<Nutrient> nutrients;
     Query nutrient_qry(db, "SELECT * FROM nutrient ORDER BY id");

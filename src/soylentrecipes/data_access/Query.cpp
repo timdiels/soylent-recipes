@@ -39,6 +39,10 @@ bool Query::step() {
     return ret == SQLITE_ROW;
 }
 
+int Query::get_column_count() {
+    return sqlite3_column_count(stmt);
+}
+
 bool Query::is_null(int column) {
     assert(column < sqlite3_column_count(stmt));
     return sqlite3_column_type(stmt, column) == SQLITE_NULL;

@@ -22,15 +22,19 @@
 #include <signal.h>
 #include <assert.h>
 #include <stdexcept>
-#include "domain/NutrientProfiles.h"
-#include "domain/Foods.h"
+#include <memory>
+#include <tuple>
+#include <boost/function_output_iterator.hpp>
+#include <libalglib/linalg.h>
+#include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
 using namespace std;
+using namespace alglib;
 
-static RecipeMiner* miner = nullptr;
+static RecipeMiner<FoodIt>* miner = nullptr;
 
 static void signal_callback(int signum) {
     miner->stop();
@@ -41,19 +45,26 @@ int main(int argc, char** argv) {
     signal(SIGINT, signal_callback);
 
     try {
-        Database db;
-        NutrientProfiles profiles(db);
-        NutrientProfile profile = profiles.get(1);
+        Database db_;
+        FoodDatabase db(db_);
+        Recipes recipes(db_);
 
-        Foods foods(db, profile);
-        Recipes recipes(db);
+        NutrientProfile profile = db.get_profile(1);
 
-        miner = new RecipeMiner(profile, foods, recipes);
+        std::vector<Food> foods;
+        auto emplace_food = [&foods](FoodRecord r) {
+            real_1d_array values;
+            values.setlength(r.nutrient_values.size());
+            for (int i=0; i<values.length(); i++) values[i] = r.nutrient_values.at(i);
+            foods.emplace_back(r.id, r.description, values);
+        };
+        db.get_foods(boost::make_function_output_iterator(emplace_food));
+
+        unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
+        miner = miner_.get();
         miner->mine();
-        delete miner;
     }
     catch (const alglib::ap_error& e) {
-        // TODO delete miner and stuff
         cerr << e.msg << endl;
         return 1;
     }
