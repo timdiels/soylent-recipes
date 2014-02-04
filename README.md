@@ -71,8 +71,21 @@ This section is a rough draft.
 
 The miner doesn't check all combinations of foods as that would be too expensive.
 
-Elimination heuristics:
+Current elimination heuristics:
 
-- Reject recipes with similar foods (TODO vague)
+- Reject too similar recipes (TODO vague)
 - Reject too incomplete recipes (TODO vague)
 - Put a max on number of foods in a recipe (12 as of writing)
+
+The following is yet to be implemented:
+
+1. Cluster all foods in N clusters
+2. Calculate the average nutritient vector of each cluster
+3. Form recipes with the averages of the clusters
+4. Pick the M best recipes
+5. For each chosen recipe: recurse within each cluster, in some way... (i.e. it's a bit like building a decision tree with RecipeProblem as heuristic)
+
+Other idea:
+
+1. Build a decision tree
+2. Do something with it
