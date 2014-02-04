@@ -66,13 +66,10 @@ private:
     Recipes& recipes;
 
     const int max_combo_size = 12;
-    const double max_similarity = 0.3;  // = cos theta, where theta is the minimum angle between 2 foods in a valid combination; 0.3 -> 72 degrees
 
     bool m_stop;
 
     // stats
-    long orthogonality_rejected = 0;  // how many food combos were rejected due to 'too similar'
-    long orthogonality_total = 0;  // how many food combos were checked for similarity
     long examine_rejected = 0;  // how many food combos were rejected due to 'too incomplete'
     long examine_total = 0;  // how many food combos were offered for solving
     long problem_size_sum = 0;  // sum of len(foods) of recipe problems that were solved

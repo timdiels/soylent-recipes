@@ -77,12 +77,11 @@ void RecipeMiner::mine() {
     }
     total_recipes /= k;
 
-    double acceptance_rate = total_calculated / static_cast<double>(orthogonality_total);
+    double acceptance_rate = total_calculated / static_cast<double>(examine_total);
     double accepted_recipes = acceptance_rate * total_recipes;
 
     cout << endl;
     cout << examine_rejected << endl;
-    cout << "Rejection percentage (too similar): " << orthogonality_rejected / static_cast<double>(orthogonality_total) << endl;
     cout << "Rejection percentage (too incomplete): " << examine_rejected / static_cast<double>(examine_total) << endl;
     cout << "Total recipe problems calculated: " << total_calculated << endl;
     cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
@@ -111,10 +110,6 @@ void RecipeMiner::mine(const vector<FoodIt>& foods) {
         }
 
         for (; next_food != this->foods.end(); next_food++) {
-            if (!are_orthogonal(foods, next_food)) {
-                continue;
-            }
-
             next_foods.push_back(next_food);
             mine(next_foods);
             next_foods.pop_back();
@@ -124,17 +119,6 @@ void RecipeMiner::mine(const vector<FoodIt>& foods) {
     if (!foods.empty()) {
         examine_recipe(foods);
     }
-}
-
-bool RecipeMiner::are_orthogonal(const vector<FoodIt>& foods, const FoodIt food) {
-    orthogonality_total++;
-    for (auto& food_ : foods) {
-        if (food_->get_similarity(*food) > max_similarity) {
-            orthogonality_rejected++;
-            return false;
-        }
-    }
-    return true;
 }
 
 void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
