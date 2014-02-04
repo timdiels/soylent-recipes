@@ -35,6 +35,7 @@ public:
     int get_id() const;
     std::string get_description() const;
     const alglib::real_1d_array& as_matrix() const;
+    size_t nutrient_count() const;
 
     /**
      * Return how non-orthogonal this and the other vector are to each other

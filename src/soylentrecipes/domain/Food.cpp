@@ -58,3 +58,7 @@ double Food::get_similarity(const Food& other) const {
     //cout << dotprod << endl;
     return dotprod;
 }
+
+size_t Food::nutrient_count() const {
+    return nutrient_values.length();
+}
