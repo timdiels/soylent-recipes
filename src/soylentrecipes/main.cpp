@@ -23,11 +23,10 @@
 #include <assert.h>
 #include <stdexcept>
 #include <memory>
-#include <tuple>
-#include <boost/function_output_iterator.hpp>
 #include <libalglib/linalg.h>
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
+#include "clustering/ClusterByDecisionTree.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
@@ -38,6 +37,12 @@ static RecipeMiner<FoodIt>* miner = nullptr;
 
 static void signal_callback(int signum) {
     miner->stop();
+}
+
+void cluster(FoodDatabase& db) {
+    // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
+    ClusterByDecisionTree alg;
+    alg.cluster(db);
 }
 
 void mine(FoodDatabase& db) {
@@ -67,6 +72,8 @@ int main(int argc, char** argv) {
         Database db_;
         FoodDatabase db(db_);
 
+        cluster(db);
+        exit(1); // TODO debug
         mine(db);
     }
     catch (const alglib::ap_error& e) {
