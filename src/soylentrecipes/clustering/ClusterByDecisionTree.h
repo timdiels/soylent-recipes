@@ -57,10 +57,11 @@ private:
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/filter_iterator.hpp>
 #include <valgrind/callgrind.h>
+#include <libalglib/dataanalysis.h>
 
 using namespace std;
+using namespace alglib;
 
-// TODO make class private (not its fields ^^)
 class Item {
 public:
     Item(int id, valarray<double> values);
@@ -79,18 +80,21 @@ Item::Item(int id, valarray<double> values)
 valarray<double> Item::get_values(const Item& item) {
     return item.values;
 }
-
-////////////////////////////////////////////////
-
 void ClusterByDecisionTree::cluster(FoodDatabase& db) {
-    // convert food to items
     vector<Item> items;
-    auto emplace_food = [&items](FoodRecord r) {
+
+    // load datapoints
+    real_2d_array points;
+    points.setlength(db.food_count(),  db.nutrient_count());
+    int current_row = 0;
+
+    db.get_foods(boost::make_function_output_iterator([&items,&points,&current_row](FoodRecord r) {
+        copy(r.nutrient_values.begin(), r.nutrient_values.end(), &points[current_row++][0]);
+
         valarray<double> values(r.nutrient_values.size());
         copy(r.nutrient_values.begin(), r.nutrient_values.end(), begin(values));
         items.emplace_back(r.id, values);
-    };
-    db.get_foods(boost::make_function_output_iterator(emplace_food));
+    }));
 
     // get minmax
     auto dimension_count = items.front().values.size();
@@ -110,71 +114,35 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
         }
     }
 
-    // start splitting
-    auto pointer_to = [](Item& item) -> Item* {
-        return &item;
-    };
-    vector<Item*> ptrs;
-    auto ptrs_begin = boost::make_transform_iterator(items.begin(), pointer_to);
-    auto ptrs_end = boost::make_transform_iterator(items.end(), pointer_to);
     CALLGRIND_START_INSTRUMENTATION;
-    split(ptrs_begin, ptrs_end);
+
+    clusterizerstate s;
+    kmeansreport report;
+    clusterizercreate(s);
+    clusterizersetpoints(s, points, 2);
+    clusterizersetkmeanslimits(s, 5, 0);
+    clusterizerrunkmeans(s, 50, report);
+
     CALLGRIND_STOP_INSTRUMENTATION;
     CALLGRIND_DUMP_STATS;
-    cout << endl << "Average error: " << this->total_error / distance(items.begin(), items.end()) << endl;
-}
 
-// TODO might also want to rerun later with L2 norm instead of L1 norm for distance
-/**
- * ForwardIterator: iter to pointer of item
- */
-template <class ForwardIterator>
-void ClusterByDecisionTree::split(ForwardIterator items_begin, ForwardIterator items_end) {
-    cout << "!";
-    if (items_begin == items_end) return;
+    cout << report.terminationtype << endl;
+    assert(report.terminationtype == 1);
 
-    auto deref_begin = boost::make_indirect_iterator(items_begin);
-    auto deref_end = boost::make_indirect_iterator(items_end);
-
-    // check split stop criterium
-    double total_error = get_total_error(deref_begin, deref_end);
-    double average_error = total_error / distance(deref_begin, deref_end); // note: = average distance to centroid
-
-    //cout << average_error << " ";
-    if (average_error <= max_average_error) {
-        cout << distance(items_begin, items_end) << ": ";
-        cout << average_error << endl;
-        this->total_error += total_error;
-        // TODO cout cluster for debugging info
-        return;  // stop splitting
-    }
-
-    // pick best split: split on average
-    valarray<double> centroid = get_centroid(deref_begin, deref_end);
-    //copy(begin(centroid), end(centroid), ostream_iterator<double>(cout, ","));
-    //cout << endl;
-    size_t dimension_count = centroid.size();
-    double smallest_error = INFINITY;
-    vector<Item*> items(items_begin, items_end);
-    vector<Item*> items1;
-    vector<Item*> items2;
-    for (int i=0; i < dimension_count; i++) {
-        auto ge_centroid = [&centroid, i] (const Item* item) -> bool {
-            return centroid[i] <= item->values[i];
-        };
-        auto separator = partition(items.begin(), items.end(), ge_centroid);
-        double total_error = get_total_error(boost::make_indirect_iterator(items.begin()), boost::make_indirect_iterator(separator));
-        total_error += get_total_error(boost::make_indirect_iterator(separator), boost::make_indirect_iterator(items.end()));
-
-        if (total_error < smallest_error) {
-            smallest_error = total_error;
-            items1.assign(items.begin(), separator);
-            items2.assign(separator, items.end());
+    double total_error = 0.0;
+    for (int i=0; i<report.k; i++) {
+        vector<Item> cluster;
+        for (int j=0; j<items.size(); j++) {
+            if (report.cidx[j] == i) {
+                cluster.push_back(items.at(j));
+            }
         }
+        total_error += get_total_error(cluster.begin(), cluster.end());
     }
 
-    split(items1.begin(), items1.end());
-    split(items2.begin(), items2.end());
+    cout << endl;
+    cout << "Total error: " << total_error << endl;
+    cout << "Average error: " << total_error / distance(items.begin(), items.end()) << endl;
 }
 
 template <class ForwardIterator>
@@ -195,12 +163,6 @@ double ClusterByDecisionTree::get_total_error(ForwardIterator items_begin, Forwa
         valarray<double> diff = centroid - item.values;
         return inner_product(begin(diff), end(diff), begin(diff), 0.0);
     };
-
-    /*auto l1_norm = [&centroid](const Item& item) {
-        valarray<double> diff = centroid - item.values;
-        diff = diff.apply(abs);
-        return diff.sum();
-    };*/
 
     auto distances_begin = boost::make_transform_iterator(items_begin, l2_norm_squared);
     auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);
