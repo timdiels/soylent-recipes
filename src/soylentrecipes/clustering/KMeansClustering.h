@@ -46,8 +46,6 @@ public:
 using namespace std;
 using namespace alglib;
 
-//typedef void clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids);
-
 void evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluster, const real_2d_array& centroids) {
     vector<double> total_errors(centroids.rows(), 0.0);
     vector<size_t> counts(centroids.rows(), 0);
@@ -64,14 +62,54 @@ void evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluste
     }
 
     cout << "Cluster average error: " << endl;
+    double cluster_average_error_sum = 0.0;
     for (int i=0; i < centroids.rows(); i++) {
-        cout << total_errors.at(i) / counts.at(i) << endl;
+        double average_error = total_errors.at(i) / counts.at(i);
+        cout << average_error << endl;
+        cluster_average_error_sum += average_error;
     }
     cout << endl;
 
+    cout << "Average cluster average error: " << cluster_average_error_sum / centroids.rows() << endl;
+
     double total_error = accumulate(total_errors.begin(), total_errors.end(), 0.0);
     cout << "Total error: " << total_error << endl;
-    cout << "Average error: " << total_error / accumulate(counts.begin(), counts.end(), 0) << endl;
+    cout << "Average total error: " << total_error / accumulate(counts.begin(), counts.end(), 0) << endl;
+}
+
+/**
+ * Cluster using agglomerative hierarchical clustering
+ *
+ * http://www.alglib.net/dataanalysis/clustering.php#header0
+ * Using L2 norm, unweighted average linkage. 
+ */
+void ahc_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
+    // TODO does it use unweighted average linkage?
+    clusterizerstate s;
+    ahcreport report;
+    clusterizercreate(s);
+    clusterizersetpoints(s, points, 2);
+    clusterizerrunahc(s, report);
+
+    integer_1d_array cz;
+    clusterizergetkclusters(report, k, row_to_cluster, cz);
+    
+    // calculate centroids
+    centroids.setlength(k, points.cols());
+    for (int i=0; i < centroids.rows(); i++) {
+        fill(&centroids[i][0], &centroids[i][points.cols()], 0.0); // Note: fill per row as 2d matrix isn't necessarily contiguous
+    }
+
+    vector<size_t> counts(k, 0);
+    for (int i=0; i < row_to_cluster.length(); i++) {
+        int ci = row_to_cluster[i];
+        vadd(&centroids[ci][0], &points[i][0], points.cols());
+        counts.at(ci)++;
+    }
+
+    for (int ci=0; ci < k; ci++) {
+        vmul(&centroids[ci][0], centroids.cols(), 1.0 / counts.at(ci));
+    }
 }
 
 /**
@@ -104,14 +142,20 @@ void KMeansClustering::cluster(FoodDatabase& db) {
     Normalizer normalizer(points);
 
     // run algorithms
+    const int k = 5;//TODO k=100 or 50 or so
+
+    cout << "ahc clustering" << endl;
+    integer_1d_array cidx2;
+    real_2d_array c2;
+    ahc_clustering(points, k, cidx2, c2);
+    evaluate(points, cidx2, c2);
+    cout << endl;
+
+    cout << "k-means clustering" << endl;
     integer_1d_array cidx;
     real_2d_array c;
-    const int k = 5;//TODO k=100 or 50 or so
     kmeans_clustering(points, k, cidx, c);
     evaluate(points, cidx, c);
-
-    //ahc_clustering(points, k, cidx, c);
-    //evaluate(cidx2, c2);
 
     /*if (2 better than 1) {
         swap
