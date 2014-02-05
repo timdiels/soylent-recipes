@@ -114,9 +114,9 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
     }
 
     // start splitting
-    auto pointer_to = std::function<Item*(Item&)>([](Item& item){
+    auto pointer_to = [](Item& item) -> Item* {
         return &item;
-    });
+    };
     vector<Item*> ptrs;
     auto ptrs_begin = boost::make_transform_iterator(items.begin(), pointer_to);
     auto ptrs_end = boost::make_transform_iterator(items.end(), pointer_to);
@@ -153,37 +153,33 @@ void ClusterByDecisionTree::split(ForwardIterator items_begin, ForwardIterator i
     cout << endl;
     size_t dimension_count = centroid.size();
     double smallest_error = INFINITY;
+    vector<Item*> items(items_begin, items_end);
     vector<Item*> items1;
     vector<Item*> items2;
     for (int i=0; i < dimension_count; i++) {
-        auto ge_centroid = std::function<bool(Item*)>([&centroid, i](Item* item) {
+            //
+        auto ge_centroid = [&centroid, i] (const Item* item) -> bool {
             return centroid[i] <= item->values[i];
-        });
-        // TODO std partition OP
-        auto partition_begin = boost::make_filter_iterator(ge_centroid, items_begin, items_end);
-        auto partition_end = boost::make_filter_iterator(ge_centroid, items_end, items_end);
-        double total_error = get_total_error(make_indirect_iterator(partition_begin), make_indirect_iterator(partition_end));
-
-        auto partition_begin2 = boost::make_filter_iterator(not1(ge_centroid), items_begin, items_end);
-        auto partition_end2 = boost::make_filter_iterator(not1(ge_centroid), items_end, items_end);
-        total_error += get_total_error(make_indirect_iterator(partition_begin2), make_indirect_iterator(partition_end2));
+        };
+        auto separator = partition(items.begin(), items.end(), ge_centroid);
+        double total_error = get_total_error(boost::make_indirect_iterator(items.begin()), boost::make_indirect_iterator(separator));
+        total_error += get_total_error(boost::make_indirect_iterator(separator), boost::make_indirect_iterator(items.end()));
 
         if (total_error < smallest_error) {
             smallest_error = total_error;
-            items1.clear();
-            items2.clear();
-            copy(partition_begin, partition_end, back_inserter(items1));
-            copy(partition_begin2, partition_end2, back_inserter(items2));
+            items1.assign(items.begin(), separator);
+            items2.assign(separator, items.end());
         }
     }
     // Note: median might work better (but is probably more expensive to compute), or CLTree method
 
     split(items1.begin(), items1.end());
-    split(items2.end(), items2.end());
+    split(items2.begin(), items2.end());
 }
 
 template <class ForwardIterator>
 valarray<double> ClusterByDecisionTree::get_centroid(ForwardIterator items_begin, ForwardIterator items_end) {
+    assert(items_begin != items_end);
     auto values_begin = boost::make_transform_iterator(items_begin, Item::get_values);
     auto values_end = boost::make_transform_iterator(items_end, Item::get_values);
     return accumulate(values_begin, values_end, valarray<double>(values_begin->size())) / static_cast<double>(distance(values_begin, values_end));
@@ -191,6 +187,8 @@ valarray<double> ClusterByDecisionTree::get_centroid(ForwardIterator items_begin
 
 template <class ForwardIterator>
 double ClusterByDecisionTree::get_total_error(ForwardIterator items_begin, ForwardIterator items_end) {
+    if (items_begin == items_end) return 0.0;
+
     auto centroid = get_centroid(items_begin, items_end);
 
     auto l2_norm_squared = [&centroid](const Item& item) {
