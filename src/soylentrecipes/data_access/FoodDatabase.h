@@ -63,11 +63,11 @@ void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
     FoodRecord record;
 
     Query stmt(db, "SELECT * FROM food");
-    record.nutrient_values.resize(stmt.get_column_count() - 4);
+    record.nutrient_values.resize(stmt.get_column_count() - 5);
 
     while (stmt.step()) {
         for (int i=0; i < record.nutrient_values.size(); i++) {
-            record.nutrient_values.at(i) = stmt.get_double(4 + i, 0.0);
+            record.nutrient_values.at(i) = stmt.get_double(5 + i, 0.0);
         }
 
         record.id = stmt.get_int(0);

@@ -3,6 +3,7 @@ create temp table food (
   id integer primary key autoincrement not null,
   name varchar(255) not null,
   source_id int not null references source(id),
+  cluster_id int,
   price double,
   nutrient0 double not null,  -- contained amount of nutrient.unit per 100g of food
   nutrient1 double not null,
@@ -60,7 +61,7 @@ delete from main.food;
 delete from main.sqlite_sequence where name='food';
 
 insert into main.food
-    select NULL, name, source_id, price double,
+    select NULL, name, source_id, cluster_id, price,
           nutrient0, nutrient1, nutrient2, nutrient3, nutrient4,
           nutrient5, nutrient6, nutrient7, nutrient8, nutrient9,
           nutrient10, nutrient11, nutrient12, nutrient13, nutrient14,
