@@ -39,6 +39,7 @@ public:
     double get_double(int column, double default_);
     void bind_int(int index, int value);
     void bind_double(int index, double value);
+    sqlite3_int64 last_insert_id(); // returns id of last inserted row of this database connection (i.e. not per statement!)
 
 private:
     Query(const Query&) = delete;

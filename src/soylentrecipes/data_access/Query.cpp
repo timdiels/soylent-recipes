@@ -90,3 +90,7 @@ void Query::reset() {
     db.ensure(sqlite3_reset(stmt), "Failed to reset statement");
 }
 
+sqlite3_int64 Query::last_insert_id() {
+    return sqlite3_last_insert_rowid(db.connection);
+}
+
