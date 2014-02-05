@@ -20,7 +20,9 @@
 #include <valarray>
 
 /**
- * Cluster using a decision tree.
+ * Cluster by variant of CLTree algorithm
+ *
+ * ftp://ftp.cse.buffalo.edu/users/azhang/disc/disc01/cd1/out/papers/cikm/p20.pdf
  */
 class ClusterByDecisionTree
 {
@@ -41,6 +43,7 @@ private:
 
 private:
     const double max_average_error = 0.1; // the max average member distance to a leaf cluster's centroid (a stop criterium for splitting) (L1 norm distance)
+    size_t dimension_count;
 
     // stats
     double total_error = 0.0;
@@ -83,14 +86,23 @@ valarray<double> Item::get_values(const Item& item) {
 ////////////////////////////////////////////////
 
 void ClusterByDecisionTree::cluster(FoodDatabase& db) {
-    // convert food to items
+    dimension_count = db.nutrient_count();
+
+    // load items
     vector<Item> items;
-    auto emplace_food = [&items](FoodRecord r) {
+    db.get_foods(boost::make_function_output_iterator([&items](FoodRecord& r) {
         valarray<double> values(r.nutrient_values.size());
         copy(r.nutrient_values.begin(), r.nutrient_values.end(), begin(values));
         items.emplace_back(r.id, values);
-    };
-    db.get_foods(boost::make_function_output_iterator(emplace_food));
+    }));
+
+    // construct value_matrix
+    vector<vector<pair<Item*, double>>> value_matrix(dimension_count); // matrix[dimension][item_row]
+    copy(items.begin(), items.end(), boost::make_function_output_iterator([&value_matrix](Item& item) {
+        for (int i=0; i < dimension_count; i++) {
+            value_matrix.at(i).push_back(make_pair(&item, item.values[i]));
+        }
+    }));
 
     // get minmax
     auto dimension_count = items.front().values.size();
@@ -158,18 +170,40 @@ void ClusterByDecisionTree::split(ForwardIterator items_begin, ForwardIterator i
     vector<Item*> items(items_begin, items_end);
     vector<Item*> items1;
     vector<Item*> items2;
-    for (int i=0; i < dimension_count; i++) {
-        auto ge_centroid = [&centroid, i] (const Item* item) -> bool {
-            return centroid[i] <= item->values[i];
-        };
-        auto separator = partition(items.begin(), items.end(), ge_centroid);
-        double total_error = get_total_error(boost::make_indirect_iterator(items.begin()), boost::make_indirect_iterator(separator));
-        total_error += get_total_error(boost::make_indirect_iterator(separator), boost::make_indirect_iterator(items.end()));
+    if (true) { // split on each value of each item
+        for (auto item_ : items) {
+            for (int i=0; i < dimension_count; i++) {
+                auto predicate = [&item_, i] (const Item* item) -> bool {
+                    return item_->values[i] <= item->values[i];
+                };
+                auto separator = partition(items.begin(), items.end(), predicate);
+                double total_error = 0;
+                //double total_error = get_total_error(boost::make_indirect_iterator(items.begin()), boost::make_indirect_iterator(separator));
+                //total_error += get_total_error(boost::make_indirect_iterator(separator), boost::make_indirect_iterator(items.end()));
 
-        if (total_error < smallest_error) {
-            smallest_error = total_error;
-            items1.assign(items.begin(), separator);
-            items2.assign(separator, items.end());
+                if (total_error < smallest_error) {
+                    smallest_error = total_error;
+                    items1.assign(items.begin(), separator);
+                    items2.assign(separator, items.end());
+                }
+            }
+            cout << ".";
+            cout.flush();
+        }
+    } else { // split on average
+        for (int i=0; i < dimension_count; i++) {
+            auto ge_centroid = [&centroid, i] (const Item* item) -> bool {
+                return centroid[i] <= item->values[i];
+            };
+            auto separator = partition(items.begin(), items.end(), ge_centroid);
+            double total_error = get_total_error(boost::make_indirect_iterator(items.begin()), boost::make_indirect_iterator(separator));
+            total_error += get_total_error(boost::make_indirect_iterator(separator), boost::make_indirect_iterator(items.end()));
+
+            if (total_error < smallest_error) {
+                smallest_error = total_error;
+                items1.assign(items.begin(), separator);
+                items2.assign(separator, items.end());
+            }
         }
     }
 
@@ -195,12 +229,6 @@ double ClusterByDecisionTree::get_total_error(ForwardIterator items_begin, Forwa
         valarray<double> diff = centroid - item.values;
         return inner_product(begin(diff), end(diff), begin(diff), 0.0);
     };
-
-    /*auto l1_norm = [&centroid](const Item& item) {
-        valarray<double> diff = centroid - item.values;
-        diff = diff.apply(abs);
-        return diff.sum();
-    };*/
 
     auto distances_begin = boost::make_transform_iterator(items_begin, l2_norm_squared);
     auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);

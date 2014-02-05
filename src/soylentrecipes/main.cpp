@@ -26,7 +26,7 @@
 #include <libalglib/linalg.h>
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
-#include "clustering/ClusterByDecisionTree.h"
+#include "clustering/ClusterByCLTree.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
