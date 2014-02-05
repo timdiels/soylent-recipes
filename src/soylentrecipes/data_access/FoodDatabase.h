@@ -101,6 +101,7 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
 
     // insert cluster
     Query insert_stmt(db, "INSERT INTO cluster_ VALUES(NULL)");
+    insert_stmt.step();
     auto cluster_id = insert_stmt.last_insert_id();
 
     // insert cluster attributes
@@ -110,8 +111,9 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
     for (auto it = centroid_begin; it!=centroid_end; it++) {
         attr_stmt.bind_int(2, index_to_attr[distance(centroid_begin, it)]);
         attr_stmt.bind_double(3, *it);
+        attr_stmt.step();
+        attr_stmt.reset();
     }
-    insert_stmt.step();
 
     // update foods to use cluster (note: mysql doesn't handle large amount of params well, so we use a stringstream to work around it)
     ostringstream qstr;
