@@ -37,6 +37,9 @@ public:
     size_t nutrient_count();
     size_t food_count();
 
+    template <class ForwardIterator, class InputIterator>
+    void add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end);
+
 private:
     Database& db;
 };
@@ -59,7 +62,6 @@ public:
 template <class OutputIterator>
 void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
     using namespace std;
-    using namespace alglib;
     FoodRecord record;
 
     Query stmt(db, "SELECT * FROM food");
@@ -73,5 +75,32 @@ void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
         record.id = stmt.get_int(0);
         record.description = stmt.get_string(1);
         *food_tuple_it++ = record;
+    }
+}
+
+template <class ForwardIterator, class InputIterator>
+void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end) {
+    using namespace std;
+
+    // insert cluster
+    string qstr = "INSERT INTO cluster_ VALUES(NULL";
+    for (auto it = centroid_begin; it!=centroid_end; it++) {
+        qstr += ", ?";
+    }
+    qstr += ")";
+    Query insert_stmt(db, qstr);
+    for (auto it = centroid_begin; it!=centroid_end; it++) {
+        insert_stmt.bind_double(distance(centroid_begin, it) + 1, *it);
+    }
+    insert_stmt.step();
+    auto cluster_id = insert_stmt.last_insert_id();
+
+    // update foods to use cluster
+    Query update_stmt(db, "UPDATE food SET cluster_id = ? WHERE id = ?"); // TODO use id IN (...) to improve performance a plenty
+    update_stmt.bind_int(1, cluster_id);
+    for (auto it = food_ids_begin; it != food_ids_end; it++) {
+        update_stmt.bind_int(2, *it);
+        update_stmt.step();
+        update_stmt.reset();
     }
 }

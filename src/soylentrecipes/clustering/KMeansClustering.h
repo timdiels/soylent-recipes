@@ -62,22 +62,29 @@ void KMeansClustering::cluster(FoodDatabase& db) {
     clusterizercreate(s);
     clusterizersetpoints(s, points, 2);
     clusterizersetkmeanslimits(s, 5, 0);
-    clusterizerrunkmeans(s, 50, report);
+    clusterizerrunkmeans(s, 5, report); //TODO
 
-    assert(report.terminationtype == 1);
+    if (report.terminationtype != 1) {
+        cout << "Clustering failed: " << report.terminationtype << endl;
+    }
 
     double total_error = 0.0;
+    cout << "Cluster average error: " << endl;
     for (int i=0; i<report.k; i++) {
         vector<Item> cluster;
+        vector<int> ids;
         for (int j=0; j<items.size(); j++) {
             if (report.cidx[j] == i) {
                 cluster.push_back(items.at(j));
+                ids.push_back(items.at(j).id);
             }
         }
+        db.add_cluster(&report.c[i][0], &report.c[i][points.cols()], ids.begin(), ids.end());
         total_error += get_total_error(cluster.begin(), cluster.end());
+        cout << total_error / distance(cluster.begin(), cluster.end()) << endl;
     }
-
     cout << endl;
+
     cout << "Total error: " << total_error << endl;
     cout << "Average error: " << total_error / distance(items.begin(), items.end()) << endl;
 }

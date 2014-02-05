@@ -91,7 +91,7 @@ cat << EOF
 INSERT INTO source(name) VALUES('USDA SR26');
 
 INSERT INTO main.food
-SELECT NULL, shrt_desc, 1, 0, NULL, 
+SELECT NULL, shrt_desc, 1, NULL, NULL, 
         IFNULL(energ_kcal, 0),
         IFNULL(carbohydrt, 0),
         IFNULL(protein, 0),
