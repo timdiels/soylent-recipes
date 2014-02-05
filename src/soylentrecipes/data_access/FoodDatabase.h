@@ -58,6 +58,7 @@ private:
 #include <soylentrecipes/data_access/Query.h>
 #include <vector>
 #include <iostream>
+#include <sstream>
 
 class FoodRecord {
 public:
@@ -110,13 +111,16 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
     }
     insert_stmt.step();
 
-    // update foods to use cluster
-    Query update_stmt(db, "UPDATE food SET cluster_id = ? WHERE id = ?"); // TODO use id IN (...) to improve performance a plenty
-    update_stmt.bind_int(1, cluster_id);
-    for (auto it = food_ids_begin; it != food_ids_end; it++) {
-        update_stmt.bind_int(2, *it);
-        update_stmt.step();
-        update_stmt.reset();
+    // update foods to use cluster (note: mysql doesn't handle large amount of params well, so we use a stringstream to work around it)
+    ostringstream qstr;
+    qstr << "UPDATE food SET cluster_id = ? WHERE id IN ("
+        << *food_ids_begin;
+    for (auto it = food_ids_begin+1; it != food_ids_end; it++) {
+        qstr << ", " << *it;
     }
+    qstr << ")";
+    Query update_stmt(db, qstr.str());
+    update_stmt.bind_int(1, cluster_id);
+    update_stmt.step();
 }
 
