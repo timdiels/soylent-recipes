@@ -54,6 +54,16 @@ int Query::get_int(int column) {
     return sqlite3_column_int(stmt, column);
 }
 
+int Query::get_int(int column, int default_) {
+    if (is_null(column)) {
+        return default_;
+    }
+
+    assert(column < sqlite3_column_count(stmt));
+    assert(sqlite3_column_type(stmt, column) == SQLITE_INTEGER);
+    return sqlite3_column_int(stmt, column);
+}
+
 string Query::get_string(int column) {
     assert(column < sqlite3_column_count(stmt));
     assert(sqlite3_column_type(stmt, column) == SQLITE3_TEXT);

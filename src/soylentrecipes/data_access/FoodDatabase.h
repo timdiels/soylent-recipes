@@ -63,6 +63,7 @@ private:
 class FoodRecord {
 public:
     int id;
+    int cluster_id;
     std::string description;
     std::vector<double> nutrient_values;
 };
@@ -73,7 +74,7 @@ void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
     using namespace std;
     FoodRecord record;
 
-    Query stmt(db, "SELECT f.id, f.name, fa.attribute_id, fa.value FROM food f INNER JOIN food_attribute fa ON f.id = fa.food_id ORDER BY f.id");
+    Query stmt(db, "SELECT f.id, f.name, fa.attribute_id, fa.value, f.cluster_id FROM food f INNER JOIN food_attribute fa ON f.id = fa.food_id ORDER BY f.id");
     record.id = -1;
     record.nutrient_values.resize(nutrient_count());
 
@@ -85,6 +86,7 @@ void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
             }
             record.id = stmt.get_int(0);
             record.description = stmt.get_string(1);
+            record.cluster_id = stmt.get_int(4, 0);
             fill(record.nutrient_values.begin(), record.nutrient_values.end(), 0.0);
         }
 

@@ -34,6 +34,7 @@ public:
     int get_column_count();
     bool is_null(int column);
     int get_int(int column);
+    int get_int(int column, int default_);
     std::string get_string(int column);
     double get_double(int column);
     double get_double(int column, double default_);
