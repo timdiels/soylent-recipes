@@ -17,7 +17,10 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <valarray>
+#include "util.h"
 
 /**
  * Cluster using a decision tree.
@@ -32,12 +35,6 @@ private:
 
     template <class ForwardIterator>
     void split(ForwardIterator items_begin, ForwardIterator items_end);
-
-    template <class ForwardIterator>
-    std::valarray<double> get_centroid(ForwardIterator items_begin, ForwardIterator items_end);
-
-    template <class ForwardIterator>
-    double get_total_error(ForwardIterator items_begin, ForwardIterator items_end);
 
 private:
     const double max_average_error = 0.1; // the max average member distance to a leaf cluster's centroid (a stop criterium for splitting) (L1 norm distance)
@@ -62,24 +59,6 @@ private:
 using namespace std;
 using namespace alglib;
 
-class Item {
-public:
-    Item(int id, valarray<double> values);
-    static valarray<double> get_values(const Item& item);
-
-public:
-    int id;
-    valarray<double> values;
-};
-
-Item::Item(int id, valarray<double> values)
-:   id(id), values(values)
-{
-}
-
-valarray<double> Item::get_values(const Item& item) {
-    return item.values;
-}
 void ClusterByDecisionTree::cluster(FoodDatabase& db) {
     vector<Item> items;
 
@@ -112,6 +91,7 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
         for (int i=0; i<dimension_count; i++) {
             item.values[i] = (item.values[i] - min_value.at(i)) / max(max_value.at(i) - min_value.at(i), 1.0);
         }
+        // TODO we're not normalising the points!
     }
 
     CALLGRIND_START_INSTRUMENTATION;
@@ -145,26 +125,3 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
     cout << "Average error: " << total_error / distance(items.begin(), items.end()) << endl;
 }
 
-template <class ForwardIterator>
-valarray<double> ClusterByDecisionTree::get_centroid(ForwardIterator items_begin, ForwardIterator items_end) {
-    assert(items_begin != items_end);
-    auto values_begin = boost::make_transform_iterator(items_begin, Item::get_values);
-    auto values_end = boost::make_transform_iterator(items_end, Item::get_values);
-    return accumulate(values_begin, values_end, valarray<double>(values_begin->size())) / static_cast<double>(distance(values_begin, values_end));
-}
-
-template <class ForwardIterator>
-double ClusterByDecisionTree::get_total_error(ForwardIterator items_begin, ForwardIterator items_end) {
-    if (items_begin == items_end) return 0.0;
-
-    auto centroid = get_centroid(items_begin, items_end);
-
-    auto l2_norm_squared = [&centroid](const Item& item) {
-        valarray<double> diff = centroid - item.values;
-        return inner_product(begin(diff), end(diff), begin(diff), 0.0);
-    };
-
-    auto distances_begin = boost::make_transform_iterator(items_begin, l2_norm_squared);
-    auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);
-    return accumulate(distances_begin, distances_end, 0.0);
-}

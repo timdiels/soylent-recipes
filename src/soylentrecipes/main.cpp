@@ -27,6 +27,7 @@
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
 #include "clustering/ClusterByDecisionTree.h"
+#include "clustering/ClusterByOrthogonality.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
@@ -41,8 +42,22 @@ static void signal_callback(int signum) {
 
 void cluster(FoodDatabase& db) {
     // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
+
+    /*
     ClusterByDecisionTree alg;
     alg.cluster(db);
+    */
+
+    std::vector<Food> foods;
+    auto emplace_food = [&foods](FoodRecord r) {
+        real_1d_array values;
+        values.setlength(r.nutrient_values.size());
+        for (int i=0; i<values.length(); i++) values[i] = r.nutrient_values.at(i);
+        foods.emplace_back(r.id, r.description, values);
+    };
+    db.get_foods(boost::make_function_output_iterator(emplace_food));
+    ClusterByOrthogonality alg;
+    alg.cluster(foods.begin(), foods.end());
 }
 
 void mine(FoodDatabase& db) {
