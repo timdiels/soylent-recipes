@@ -47,7 +47,6 @@ public:
 #include <boost/iterator/indirect_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/filter_iterator.hpp>
-#include <valgrind/callgrind.h>
 #include <libalglib/dataanalysis.h>
 
 using namespace std;
@@ -55,40 +54,8 @@ using namespace alglib;
 
 void KMeansClustering::cluster(FoodDatabase& db) {
     vector<Item> items;
-
-    // load datapoints
     real_2d_array points;
-    points.setlength(db.food_count(),  db.nutrient_count());
-    int current_row = 0;
-
-    db.get_foods(boost::make_function_output_iterator([&items,&points,&current_row](FoodRecord r) {
-        copy(r.nutrient_values.begin(), r.nutrient_values.end(), &points[current_row++][0]);
-
-        valarray<double> values(r.nutrient_values.size());
-        copy(r.nutrient_values.begin(), r.nutrient_values.end(), begin(values));
-        items.emplace_back(r.id, values);
-    }));
-
-    // get minmax
-    auto dimension_count = items.front().values.size();
-    vector<double> min_value(dimension_count, INFINITY);
-    vector<double> max_value(dimension_count, -INFINITY);
-    for (auto& item : items) {
-        for (int i=0; i<dimension_count; i++) {
-            min_value.at(i) = min(item.values[i], min_value.at(i));
-            max_value.at(i) = max(item.values[i], max_value.at(i));
-        }
-    }
-
-    // normalise nutrient values to [0, 1]
-    for (auto& item : items) {
-        for (int i=0; i<dimension_count; i++) {
-            item.values[i] = (item.values[i] - min_value.at(i)) / max(max_value.at(i) - min_value.at(i), 1.0);
-        }
-        // TODO we're not normalising the points!
-    }
-
-    CALLGRIND_START_INSTRUMENTATION;
+    load_data(db, items, points);
 
     clusterizerstate s;
     kmeansreport report;
@@ -97,10 +64,6 @@ void KMeansClustering::cluster(FoodDatabase& db) {
     clusterizersetkmeanslimits(s, 5, 0);
     clusterizerrunkmeans(s, 50, report);
 
-    CALLGRIND_STOP_INSTRUMENTATION;
-    CALLGRIND_DUMP_STATS;
-
-    cout << report.terminationtype << endl;
     assert(report.terminationtype == 1);
 
     double total_error = 0.0;

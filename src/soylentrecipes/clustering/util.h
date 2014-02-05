@@ -73,3 +73,38 @@ double get_total_error(ForwardIterator items_begin, ForwardIterator items_end) {
     auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);
     return accumulate(distances_begin, distances_end, 0.0);
 }
+
+void load_data(FoodDatabase& db, vector<Item>& items, real_2d_array& points) {
+    // load datapoints
+    points.setlength(db.food_count(),  db.nutrient_count());
+    int current_row = 0;
+
+    db.get_foods(boost::make_function_output_iterator([&items,&points,&current_row](FoodRecord r) {
+        copy(r.nutrient_values.begin(), r.nutrient_values.end(), &points[current_row++][0]);
+
+        valarray<double> values(r.nutrient_values.size());
+        copy(r.nutrient_values.begin(), r.nutrient_values.end(), begin(values));
+        items.emplace_back(r.id, values);
+    }));
+
+    // get minmax
+    auto feature_count = items.front().values.size();
+    vector<double> min_value(feature_count, INFINITY);
+    vector<double> max_value(feature_count, -INFINITY);
+    for (int i=0; i < points.rows(); i++) {
+        for (int j=0; j<feature_count; j++) {
+            min_value.at(j) = min(points[i][j], min_value.at(j));
+            max_value.at(j) = max(points[i][j], max_value.at(j));
+        }
+    }
+
+    // normalise nutrient values to [0, 1]
+    for (int i=0; i < points.rows(); i++) {
+        for (int j=0; j<feature_count; j++) {
+            points[i][j] = (points[i][j] - min_value.at(j)) / max(max_value.at(j) - min_value.at(j), 1.0);
+            items[i].values[j] = points[i][j];
+        }
+    }
+}
+
+
