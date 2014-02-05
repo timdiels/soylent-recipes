@@ -34,6 +34,8 @@ public:
     void get_foods(OutputIterator food_tuple_it);
 
     NutrientProfile get_profile(int id);
+    size_t nutrient_count();
+    size_t food_count();
 
 private:
     Database& db;

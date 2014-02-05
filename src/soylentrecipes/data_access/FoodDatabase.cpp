@@ -60,3 +60,21 @@ NutrientProfile FoodDatabase::get_profile(int id) {
     return NutrientProfile(nutrients, targets, maxima);
 }
 
+size_t FoodDatabase::nutrient_count() {
+    // nutrients
+    Query qry(db, "SELECT COUNT(*) FROM nutrient");
+    if (!qry.step()) {
+        throw runtime_error("Wtf can't count");
+    }
+    return qry.get_int(0);
+}
+
+size_t FoodDatabase::food_count() {
+    // nutrients
+    Query qry(db, "SELECT COUNT(*) FROM food");
+    if (!qry.step()) {
+        throw runtime_error("Wtf can't count");
+    }
+    return qry.get_int(0);
+}
+
