@@ -25,6 +25,9 @@
  * Cluster foods by their nutrients
  *
  * using a decision tree.
+ *
+ * It's somewhat similar to: ftp://ftp.cse.buffalo.edu/users/azhang/disc/disc01/cd1/out/papers/cikm/p20.pdf
+ * (or hopefully it will end up being that eventually...)
  */
 class ClusterByDecisionTree
 {
@@ -92,22 +95,33 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
     };
     db.get_foods(boost::make_function_output_iterator(emplace_food));
 
-    // get centroid
-    auto centroid = get_centroid(items.begin(), items.end());
+    // get minmax
+    auto dimension_count = items.front().values.size();
+    vector<double> min_value(dimension_count, INFINITY);
+    vector<double> max_value(dimension_count, -INFINITY);
+    for (auto& item : items) {
+        for (int i=0; i<dimension_count; i++) {
+            min_value.at(i) = min(item.values[i], min_value.at(i));
+            max_value.at(i) = max(item.values[i], max_value.at(i));
+        }
+    }
 
     // normalise nutrient values to [0, 1]
     for (auto& item : items) {
-        item.values /= centroid;
+        for (int i=0; i<dimension_count; i++) {
+            item.values[i] = (item.values[i] - min_value.at(i)) / max(max_value.at(i) - min_value.at(i), 1.0);
+        }
     }
 
     // start splitting
-    auto pointer_to = [](const Item& item){
+    auto pointer_to = std::function<Item*(Item&)>([](Item& item){
         return &item;
-    };
-    split(
-        boost::make_transform_iterator(items.begin(), pointer_to),
-        boost::make_transform_iterator(items.end(), pointer_to)
-    );
+    });
+    vector<Item*> ptrs;
+    auto ptrs_begin = boost::make_transform_iterator(items.begin(), pointer_to);
+    auto ptrs_end = boost::make_transform_iterator(items.end(), pointer_to);
+    split(ptrs_begin, ptrs_end);
+    cout << endl;
 }
 
 // TODO might also want to rerun later with L2 norm instead of L1 norm for distance
@@ -116,6 +130,7 @@ void ClusterByDecisionTree::cluster(FoodDatabase& db) {
  */
 template <class ForwardIterator>
 void ClusterByDecisionTree::split(ForwardIterator items_begin, ForwardIterator items_end) {
+    cout << "!";
     if (items_begin == items_end) return;
 
     auto deref_begin = boost::make_indirect_iterator(items_begin);
@@ -124,28 +139,47 @@ void ClusterByDecisionTree::split(ForwardIterator items_begin, ForwardIterator i
     // check split stop criterium
     double average_error = get_total_error(deref_begin, deref_end) / distance(deref_begin, deref_end); // note: = average distance to centroid
 
+    cout << distance(items_begin, items_end) << " ";
+    cout << average_error << " ";
     if (average_error <= max_average_error) {
+        //cout << average_error << endl;
+        // TODO cout cluster for debugging info
         return;  // stop splitting
     }
 
     // split on dimension with best information gain at its median's upper/lower limit
-    //valarray<double> centroid = get_centroid(deref_begin, deref_end);
-    //size_t dimension_count = centroid.size();
-    //double smallest_error = INFINITY;
-    //int best_dimension = -1;
-    /*for (int i=0; i < dimension_count; i++) {
-        auto ge_centroid = [&centroid, i](const Item& item) {
-            return centroid[i] <= item.values[i];
-        };
-        auto partition_begin = boost::make_filter_iterator(ge_centroid, deref_begin);
-        auto partition_end = boost::make_filter_iterator(ge_centroid, deref_end);
-        double total_error = get_total_error(partition_begin, partition_end);
-    }*/
-
-    /*vector<Item*> items1;
+    valarray<double> centroid = get_centroid(deref_begin, deref_end);
+    copy(begin(centroid), end(centroid), ostream_iterator<double>(cout, ","));
+    cout << endl;
+    size_t dimension_count = centroid.size();
+    double smallest_error = INFINITY;
+    vector<Item*> items1;
     vector<Item*> items2;
-    split(foods1);
-    split(foods2);*/
+    for (int i=0; i < dimension_count; i++) {
+        auto ge_centroid = std::function<bool(Item*)>([&centroid, i](Item* item) {
+            return centroid[i] <= item->values[i];
+        });
+        // TODO std partition OP
+        auto partition_begin = boost::make_filter_iterator(ge_centroid, items_begin, items_end);
+        auto partition_end = boost::make_filter_iterator(ge_centroid, items_end, items_end);
+        double total_error = get_total_error(make_indirect_iterator(partition_begin), make_indirect_iterator(partition_end));
+
+        auto partition_begin2 = boost::make_filter_iterator(not1(ge_centroid), items_begin, items_end);
+        auto partition_end2 = boost::make_filter_iterator(not1(ge_centroid), items_end, items_end);
+        total_error += get_total_error(make_indirect_iterator(partition_begin2), make_indirect_iterator(partition_end2));
+
+        if (total_error < smallest_error) {
+            smallest_error = total_error;
+            items1.clear();
+            items2.clear();
+            copy(partition_begin, partition_end, back_inserter(items1));
+            copy(partition_begin2, partition_end2, back_inserter(items2));
+        }
+    }
+    // Note: median might work better (but is probably more expensive to compute), or CLTree method
+
+    split(items1.begin(), items1.end());
+    split(items2.end(), items2.end());
 }
 
 template <class ForwardIterator>
@@ -159,13 +193,18 @@ template <class ForwardIterator>
 double ClusterByDecisionTree::get_total_error(ForwardIterator items_begin, ForwardIterator items_end) {
     auto centroid = get_centroid(items_begin, items_end);
 
-    auto manhattan_distance = [&centroid](const Item& item) {
+    auto l2_norm_squared = [&centroid](const Item& item) {
+        valarray<double> diff = centroid - item.values;
+        return inner_product(begin(diff), end(diff), begin(diff), 0.0);
+    };
+
+    /*auto l1_norm = [&centroid](const Item& item) {
         valarray<double> diff = centroid - item.values;
         diff = diff.apply(abs);
         return diff.sum();
-    };
+    };*/
 
-    auto distances_begin = boost::make_transform_iterator(items_begin, manhattan_distance);
-    auto distances_end = boost::make_transform_iterator(items_end, manhattan_distance);
+    auto distances_begin = boost::make_transform_iterator(items_begin, l2_norm_squared);
+    auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);
     return accumulate(distances_begin, distances_end, 0.0);
 }
