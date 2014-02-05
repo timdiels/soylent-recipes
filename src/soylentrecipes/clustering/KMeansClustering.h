@@ -19,13 +19,10 @@
 
 #pragma once
 
-#include <valarray>
 #include "util.h"
 
 /**
- * Cluster using k-means
- *
- * http://www.alglib.net/dataanalysis/clustering.php#header6
+ * Cluster using k-means, and ahc
  *
  * k=100
  *
@@ -41,45 +38,99 @@ public:
 // cpp TODO
 //////
 
+#include <map>
 #include <vector>
 #include <algorithm>
-#include <boost/function_output_iterator.hpp>
-#include <boost/iterator/indirect_iterator.hpp>
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/filter_iterator.hpp>
 #include <libalglib/dataanalysis.h>
 
 using namespace std;
 using namespace alglib;
 
+//typedef void clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids);
+
+void evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluster, const real_2d_array& centroids) {
+    vector<double> total_errors(centroids.rows(), 0.0);
+    vector<size_t> counts(centroids.rows(), 0);
+    real_1d_array tmp;
+    tmp.setlength(points.cols());
+    for (int i=0; i < row_to_cluster.length(); i++) {
+        int ci = row_to_cluster[i];
+
+        vmove(&tmp[0], &points[i][0], tmp.length());
+        vsub(&tmp[0], &centroids[ci][0], tmp.length());
+        total_errors.at(ci) += vdotproduct(&tmp[0], &tmp[0], tmp.length());
+
+        counts.at(ci)++;
+    }
+
+    cout << "Cluster average error: " << endl;
+    for (int i=0; i < centroids.rows(); i++) {
+        cout << total_errors.at(i) / counts.at(i) << endl;
+    }
+    cout << endl;
+
+    double total_error = accumulate(total_errors.begin(), total_errors.end(), 0.0);
+    cout << "Total error: " << total_error << endl;
+    cout << "Average error: " << total_error / accumulate(counts.begin(), counts.end(), 0) << endl;
+}
+
+/**
+ * Cluster using k-means
+ *
+ * http://www.alglib.net/dataanalysis/clustering.php#header6
+ */
+void kmeans_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
+    clusterizerstate s;
+    kmeansreport report;
+    clusterizercreate(s);
+    clusterizersetpoints(s, points, 2);
+    clusterizersetkmeanslimits(s, 5, 0);
+    clusterizerrunkmeans(s, k, report);
+
+    if (report.terminationtype != 1) {
+        throw runtime_error("Clustering failed");
+    }
+
+    row_to_cluster = report.cidx;
+    centroids = report.c;
+}
+
 void KMeansClustering::cluster(FoodDatabase& db) {
+    // load and prepare data
     real_2d_array points;
     map<int, int> row_to_id;
 
     load_data(db, points, row_to_id);
     Normalizer normalizer(points);
 
-    clusterizerstate s;
-    kmeansreport report;
-    clusterizercreate(s);
-    clusterizersetpoints(s, points, 2);
-    clusterizersetkmeanslimits(s, 5, 0);
-    clusterizerrunkmeans(s, 5, report); //TODO
+    // run algorithms
+    integer_1d_array cidx;
+    real_2d_array c;
+    const int k = 5;//TODO k=100 or 50 or so
+    kmeans_clustering(points, k, cidx, c);
+    evaluate(points, cidx, c);
 
-    if (report.terminationtype != 1) {
-        cout << "Clustering failed: " << report.terminationtype << endl;
-    }
+    //ahc_clustering(points, k, cidx, c);
+    //evaluate(cidx2, c2);
 
-    for (int i=0; i<report.k; i++) {
-        normalizer.abnormalize(&report.c[i][0]);
+    /*if (2 better than 1) {
+        swap
+    }*/
+
+    // pick best result
+    // TODO
+
+    // store in db
+    for (int i=0; i<k; i++) {
+        normalizer.abnormalize(&c[i][0]);
 
         vector<int> ids;
         for (int j=0; j<points.rows(); j++) {
-            if (report.cidx[j] == i) {
+            if (cidx[j] == i) {
                 ids.push_back(row_to_id[j]);
             }
         }
-        db.add_cluster(&report.c[i][0], &report.c[i][points.cols()], ids.begin(), ids.end());
+        db.add_cluster(&c[i][0], &c[i][points.cols()], ids.begin(), ids.end());
     }
 }
 

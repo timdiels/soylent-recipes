@@ -19,60 +19,15 @@
 
 #pragma once
 
-#include <valarray>
 #include <vector>
 #include <algorithm>
 #include <boost/function_output_iterator.hpp>
-#include <boost/iterator/indirect_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/filter_iterator.hpp>
-#include <valgrind/callgrind.h>
-#include <libalglib/dataanalysis.h>
+//#include <libalglib/dataanalysis.h>
+#include <libalglib/ap.h>
 
 using namespace std;
 using namespace alglib;
-
-class Item {
-public:
-    Item(int id, valarray<double> values);
-    static valarray<double> get_values(const Item& item);
-
-public:
-    int id;
-    valarray<double> values;
-};
-
-Item::Item(int id, valarray<double> values)
-:   id(id), values(values)
-{
-}
-
-valarray<double> Item::get_values(const Item& item) {
-    return item.values;
-}
-template <class ForwardIterator>
-valarray<double> get_centroid(ForwardIterator items_begin, ForwardIterator items_end) {
-    assert(items_begin != items_end);
-    auto values_begin = boost::make_transform_iterator(items_begin, Item::get_values);
-    auto values_end = boost::make_transform_iterator(items_end, Item::get_values);
-    return accumulate(values_begin, values_end, valarray<double>(values_begin->size())) / static_cast<double>(distance(values_begin, values_end));
-}
-
-template <class ForwardIterator>
-double get_total_error(ForwardIterator items_begin, ForwardIterator items_end) {
-    if (items_begin == items_end) return 0.0;
-
-    auto centroid = get_centroid(items_begin, items_end);
-
-    auto l2_norm_squared = [&centroid](const Item& item) {
-        valarray<double> diff = centroid - item.values;
-        return inner_product(begin(diff), end(diff), begin(diff), 0.0);
-    };
-
-    auto distances_begin = boost::make_transform_iterator(items_begin, l2_norm_squared);
-    auto distances_end = boost::make_transform_iterator(items_end, l2_norm_squared);
-    return accumulate(distances_begin, distances_end, 0.0);
-}
 
 void load_data(FoodDatabase& db, real_2d_array& points, map<int, int>& row_to_id) {
     // load datapoints
