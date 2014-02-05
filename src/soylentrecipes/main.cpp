@@ -20,13 +20,12 @@
 #include <iostream>
 #include <vector>
 #include <signal.h>
-#include <assert.h>
 #include <stdexcept>
 #include <memory>
-#include <libalglib/linalg.h>
+#include <boost/function_output_iterator.hpp>
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
-#include "clustering/KMeansClustering.h"
+#include "clustering/Clustering.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
@@ -41,7 +40,7 @@ static void signal_callback(int signum) {
 
 void cluster(FoodDatabase& db) {
     // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
-    KMeansClustering alg;
+    Clustering alg;
     alg.cluster(db);
 }
 

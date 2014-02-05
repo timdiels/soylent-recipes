@@ -17,36 +17,16 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "util.h"
-
-/**
- * Cluster using k-means, and ahc
- *
- * k=100
- *
- * Data is normalised before-hand (to prevent accidental weighting of features).
- */
-class KMeansClustering
-{
-public:
-    void cluster(FoodDatabase&);
-};
-
-//////
-// cpp TODO
-//////
-
-#include <map>
-#include <vector>
 #include <algorithm>
+#include <iostream>
 #include <libalglib/dataanalysis.h>
+#include <boost/function_output_iterator.hpp>
+#include "Clustering.h"
 
 using namespace std;
 using namespace alglib;
 
-void evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluster, const real_2d_array& centroids) {
+double Clustering::evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluster, const real_2d_array& centroids) {
     vector<double> total_errors(centroids.rows(), 0.0);
     vector<size_t> counts(centroids.rows(), 0);
     real_1d_array tmp;
@@ -70,20 +50,17 @@ void evaluate(const real_2d_array& points, const integer_1d_array& row_to_cluste
     }
     cout << endl;
 
-    cout << "Average cluster average error: " << cluster_average_error_sum / centroids.rows() << endl;
+    double average_cluster_average_error = cluster_average_error_sum / centroids.rows();
+    cout << "Average cluster average error: " << average_cluster_average_error << endl;
 
     double total_error = accumulate(total_errors.begin(), total_errors.end(), 0.0);
     cout << "Total error: " << total_error << endl;
     cout << "Average total error: " << total_error / accumulate(counts.begin(), counts.end(), 0) << endl;
+
+    return -average_cluster_average_error;
 }
 
-/**
- * Cluster using agglomerative hierarchical clustering
- *
- * http://www.alglib.net/dataanalysis/clustering.php#header0
- * Using L2 norm, unweighted average linkage. 
- */
-void ahc_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
+void Clustering::ahc_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
     // TODO does it use unweighted average linkage?
     clusterizerstate s;
     ahcreport report;
@@ -112,12 +89,7 @@ void ahc_clustering(const real_2d_array& points, int k, integer_1d_array& row_to
     }
 }
 
-/**
- * Cluster using k-means
- *
- * http://www.alglib.net/dataanalysis/clustering.php#header6
- */
-void kmeans_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
+void Clustering::kmeans_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
     clusterizerstate s;
     kmeansreport report;
     clusterizercreate(s);
@@ -133,7 +105,7 @@ void kmeans_clustering(const real_2d_array& points, int k, integer_1d_array& row
     centroids = report.c;
 }
 
-void KMeansClustering::cluster(FoodDatabase& db) {
+void Clustering::cluster(FoodDatabase& db) {
     // load and prepare data
     real_2d_array points;
     map<int, int> row_to_id;
@@ -148,21 +120,20 @@ void KMeansClustering::cluster(FoodDatabase& db) {
     integer_1d_array cidx2;
     real_2d_array c2;
     ahc_clustering(points, k, cidx2, c2);
-    evaluate(points, cidx2, c2);
+    double score2 = evaluate(points, cidx2, c2);
     cout << endl;
 
     cout << "k-means clustering" << endl;
     integer_1d_array cidx;
     real_2d_array c;
     kmeans_clustering(points, k, cidx, c);
-    evaluate(points, cidx, c);
+    double score1 = evaluate(points, cidx, c);
 
-    /*if (2 better than 1) {
-        swap
-    }*/
-
-    // pick best result
-    // TODO
+    // pick best clustering
+    if (score2 > score1) {
+        swap(cidx2, cidx);
+        swap(c2, c);
+    }
 
     // store in db
     for (int i=0; i<k; i++) {
@@ -175,6 +146,44 @@ void KMeansClustering::cluster(FoodDatabase& db) {
             }
         }
         db.add_cluster(&c[i][0], &c[i][points.cols()], ids.begin(), ids.end());
+    }
+}
+
+void Clustering::load_data(FoodDatabase& db, real_2d_array& points, map<int, int>& row_to_id) {
+    points.setlength(db.food_count(),  db.nutrient_count());
+    int current_row = 0;
+
+    db.get_foods(boost::make_function_output_iterator([&points,&current_row,&row_to_id](FoodRecord r) {
+        row_to_id[current_row] = r.id;
+        copy(r.nutrient_values.begin(), r.nutrient_values.end(), &points[current_row][0]);
+        current_row++;
+    }));
+}
+
+/////// Normalizer ////////
+
+Clustering::Normalizer::Normalizer(real_2d_array& points) {
+    // get minmax
+    min_value.resize(points.cols(), INFINITY);
+    max_value.resize(points.cols(), -INFINITY);
+    for (int i=0; i < points.rows(); i++) {
+        for (int j=0; j<points.cols(); j++) {
+            min_value.at(j) = min(points[i][j], min_value.at(j));
+            max_value.at(j) = max(points[i][j], max_value.at(j));
+        }
+    }
+
+    // normalise nutrient values to [0, 1]
+    for (int i=0; i < points.rows(); i++) {
+        for (int j=0; j<points.cols(); j++) {
+            points[i][j] = (points[i][j] - min_value.at(j)) / max(max_value.at(j) - min_value.at(j), 1.0);
+        }
+    }
+}
+
+void Clustering::Normalizer::abnormalize(double* values) {
+    for (int j=0; j<min_value.size(); j++) {
+        values[j] = values[j] * max(max_value.at(j) - min_value.at(j), 1.0) + min_value.at(j);
     }
 }
 
