@@ -81,3 +81,12 @@ void Query::bind_int(int index, int value) {
     db.ensure(sqlite3_bind_int(stmt, index, value), "Failed to bind");
 }
 
+void Query::bind_double(int index, double value) {
+    assert(index > 0);
+    db.ensure(sqlite3_bind_double(stmt, index, value), "Failed to bind");
+}
+
+void Query::reset() {
+    db.ensure(sqlite3_reset(stmt), "Failed to reset statement");
+}
+

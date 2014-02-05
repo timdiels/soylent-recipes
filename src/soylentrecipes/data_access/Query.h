@@ -30,6 +30,7 @@ public:
     ~Query();
 
     bool step();
+    void reset();
     int get_column_count();
     bool is_null(int column);
     int get_int(int column);
@@ -37,6 +38,7 @@ public:
     double get_double(int column);
     double get_double(int column, double default_);
     void bind_int(int index, int value);
+    void bind_double(int index, double value);
 
 private:
     Query(const Query&) = delete;
