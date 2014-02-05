@@ -29,9 +29,8 @@
 class NutrientProfile
 {
 public:
-    NutrientProfile(const std::vector<Nutrient>& nutrients, const alglib::real_1d_array& targets, const alglib::real_1d_array& maxima);
+    NutrientProfile(const alglib::real_1d_array& targets, const alglib::real_1d_array& maxima);
 
-    const std::vector<Nutrient>& get_nutrients() const;
     const alglib::real_1d_array& get_targets() const;
     const alglib::real_1d_array& get_maxima() const;
 

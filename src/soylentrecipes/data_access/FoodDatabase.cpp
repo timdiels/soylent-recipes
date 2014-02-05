@@ -26,51 +26,51 @@ using namespace alglib;
 FoodDatabase::FoodDatabase(Database& db)
 :   db(db)
 {
-}
-
-NutrientProfile FoodDatabase::get_profile(int id) {
-    // nutrients
-    vector<Nutrient> nutrients;
-    Query nutrient_qry(db, "SELECT * FROM nutrient ORDER BY id");
-    while (nutrient_qry.step()) {
-        int id = nutrient_qry.get_int(0);
-        Nutrient nutrient(id, 
-                nutrient_qry.get_string(1),
-                nutrient_qry.get_string(2)
-        );
-        nutrients.push_back(nutrient);
+    // Fill attr_to_index map
+    // Note: we assume attribute table doesn't change throughout the execution
+    int last_index = -1;
+    Query attr_stmt(db, "SELECT id FROM nutrient");
+    while (attr_stmt.step()) {
+        attr_to_index[attr_stmt.get_int(0)] = ++last_index;
     }
 
-    // targets, maxima
-    Query profile_qry(db, "SELECT * FROM profile WHERE id = ?");
-    profile_qry.bind_int(1, id);
-    if (!profile_qry.step()) {
-        throw runtime_error("Profile not found");
+    // Construct inverse
+    for (auto item : attr_to_index) {
+        index_to_attr[item.second] = item.first;
     }
 
-    real_1d_array targets;
-    real_1d_array maxima;
-    targets.setlength(nutrients.size());
-    maxima.setlength(nutrients.size());
-    for (int id=0; id < nutrients.size(); id++) {
-        targets[id] = profile_qry.get_double(2 + id * 2);
-        maxima[id] = profile_qry.get_double(2 + id * 2 + 1);
-    }
-
-    return NutrientProfile(nutrients, targets, maxima);
-}
-
-size_t FoodDatabase::nutrient_count() {
-    // nutrients
+    // Cache attribute_count
     Query qry(db, "SELECT COUNT(*) FROM nutrient");
     if (!qry.step()) {
         throw runtime_error("Wtf can't count");
     }
-    return qry.get_int(0);
+    attribute_count = qry.get_int(0);
+}
+
+NutrientProfile FoodDatabase::get_profile(int id) {
+    // targets, maxima
+    Query profile_qry(db, "SELECT pa.attribute_id, pa.target_value, pa.max_value FROM profile p INNER JOIN profile_attribute pa ON p.id = pa.profile_id WHERE id = ?");
+    profile_qry.bind_int(1, id);
+
+    real_1d_array targets;
+    real_1d_array maxima;
+    targets.setlength(nutrient_count());
+    maxima.setlength(nutrient_count());
+
+    while (profile_qry.step()) {
+        auto index = attr_to_index[profile_qry.get_int(0)];
+        targets[index] = profile_qry.get_double(1);
+        maxima[index] = profile_qry.get_double(2);
+    }
+
+    return NutrientProfile(targets, maxima);
+}
+
+size_t FoodDatabase::nutrient_count() {
+    return attribute_count;
 }
 
 size_t FoodDatabase::food_count() {
-    // nutrients
     Query qry(db, "SELECT COUNT(*) FROM food");
     if (!qry.step()) {
         throw runtime_error("Wtf can't count");

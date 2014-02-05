@@ -63,6 +63,7 @@ private:
     const ForwardIterator foods_begin;
     const ForwardIterator foods_end;
     Recipes& recipes;
+    const size_t dimension_count;
 
     const int max_combo_size = 12;
 
@@ -95,7 +96,7 @@ class TerminationException : public exception {
 
 template <class ForwardIterator>
 RecipeMiner<ForwardIterator>::RecipeMiner(const NutrientProfile& profile, ForwardIterator food_begin, ForwardIterator food_end, Recipes& recipes)
-:   profile(profile), foods_begin(food_begin), foods_end(food_end), recipes(recipes), m_stop(false)
+:   profile(profile), foods_begin(food_begin), foods_end(food_end), recipes(recipes), dimension_count(profile.get_targets().length()), m_stop(false)
 {
 }
 
@@ -192,10 +193,10 @@ template <class ForwardIterator>
 void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
     examine_total++;
 
-    // calculate max completeness
+    // calculate max completeness TODO does this offer any benefit? Is it meaningful?
     {
     double max_completeness = 0.0;
-    for (int i=0; i<profile.get_nutrients().size(); i++) {
+    for (int i=0; i<dimension_count; i++) {
         for (auto& food : foods) {
             if (food->as_matrix()[i] > 0.0) {
                 max_completeness += 1.0;
@@ -203,7 +204,7 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
             }
         }
     }
-    max_completeness /= profile.get_nutrients().size();
+    max_completeness /= dimension_count;
     if (!recipes.is_useful(max_completeness)) {
         examine_rejected++;
         return; // this recipe won't be useful, so don't bother with calculations

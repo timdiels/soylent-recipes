@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <map>
 #include <soylentrecipes/data_access/Database.h>
 #include <soylentrecipes/domain/NutrientProfile.h>
 
@@ -42,6 +43,11 @@ public:
 
 private:
     Database& db;
+
+    // cached values
+    std::map<int, int> attr_to_index; // attribute ids might not be consecutive, so we need a map to map them to consecutive indices when representing them as an ordered sequence
+    std::map<int, int> index_to_attr;
+    size_t attribute_count;
 };
 
 
@@ -51,6 +57,7 @@ private:
 
 #include <soylentrecipes/data_access/Query.h>
 #include <vector>
+#include <iostream>
 
 class FoodRecord {
 public:
@@ -61,21 +68,28 @@ public:
 
 template <class OutputIterator>
 void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
+    // Require: food table contains at least 1 record
     using namespace std;
     FoodRecord record;
 
-    Query stmt(db, "SELECT * FROM food");
-    record.nutrient_values.resize(stmt.get_column_count() - 5);
+    Query stmt(db, "SELECT f.id, f.name, fa.attribute_id, fa.value FROM food f INNER JOIN food_attribute fa ON f.id = fa.food_id ORDER BY f.id");
+    record.id = -1;
+    record.nutrient_values.resize(nutrient_count());
 
     while (stmt.step()) {
-        for (int i=0; i < record.nutrient_values.size(); i++) {
-            record.nutrient_values.at(i) = stmt.get_double(5 + i, 0.0);
+        auto id = stmt.get_int(0);
+        if (id != record.id) {
+            if (record.id != -1) {
+                *food_tuple_it++ = record;
+            }
+            record.id = stmt.get_int(0);
+            record.description = stmt.get_string(1);
+            fill(record.nutrient_values.begin(), record.nutrient_values.end(), 0.0);
         }
 
-        record.id = stmt.get_int(0);
-        record.description = stmt.get_string(1);
-        *food_tuple_it++ = record;
+        record.nutrient_values.at(attr_to_index[stmt.get_int(2)]) = stmt.get_double(3);
     }
+    *food_tuple_it++ = record;
 }
 
 template <class ForwardIterator, class InputIterator>
@@ -83,17 +97,18 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
     using namespace std;
 
     // insert cluster
-    string qstr = "INSERT INTO cluster_ VALUES(NULL";
+    Query insert_stmt(db, "INSERT INTO cluster_ VALUES(NULL)");
+    auto cluster_id = insert_stmt.last_insert_id();
+
+    // insert cluster attributes
+    Query attr_stmt(db, "INSERT INTO cluster_attribute VALUES(?, ?, ?)");
+    
+    attr_stmt.bind_int(1, cluster_id);
     for (auto it = centroid_begin; it!=centroid_end; it++) {
-        qstr += ", ?";
-    }
-    qstr += ")";
-    Query insert_stmt(db, qstr);
-    for (auto it = centroid_begin; it!=centroid_end; it++) {
-        insert_stmt.bind_double(distance(centroid_begin, it) + 1, *it);
+        attr_stmt.bind_int(2, index_to_attr[distance(centroid_begin, it)]);
+        attr_stmt.bind_double(3, *it);
     }
     insert_stmt.step();
-    auto cluster_id = insert_stmt.last_insert_id();
 
     // update foods to use cluster
     Query update_stmt(db, "UPDATE food SET cluster_id = ? WHERE id = ?"); // TODO use id IN (...) to improve performance a plenty
@@ -104,3 +119,4 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
         update_stmt.reset();
     }
 }
+

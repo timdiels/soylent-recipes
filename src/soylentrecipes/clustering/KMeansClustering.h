@@ -79,6 +79,7 @@ void KMeansClustering::cluster(FoodDatabase& db) {
                 ids.push_back(items.at(j).id);
             }
         }
+        // TODO store centroid that isn't normalised (i.e. undo the normalising)
         db.add_cluster(&report.c[i][0], &report.c[i][points.cols()], ids.begin(), ids.end());
         total_error += get_total_error(cluster.begin(), cluster.end());
         cout << total_error / distance(cluster.begin(), cluster.end()) << endl;

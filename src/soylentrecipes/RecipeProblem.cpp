@@ -30,7 +30,7 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, const vector<FoodIt
 :   y(profile.get_targets())
 {
     // generate A
-    a.setlength(profile.get_nutrients().size(), foods.size());
+    a.setlength(profile.get_targets().length(), foods.size());
     for (int j=0; j < a.cols(); ++j) {
         // This acted as if the source stride was 2, for some reason: vmove(&a[0][j], a.getstride(), &foods.at(j)->as_matrix()[0], 1, a.rows());
         for (int i=0; i < a.rows(); ++i) {
