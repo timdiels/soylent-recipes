@@ -23,24 +23,18 @@
 #include "util.h"
 
 /**
- * Cluster using a decision tree.
+ * Cluster using k-means
+ *
+ * http://www.alglib.net/dataanalysis/clustering.php#header6
+ *
+ * k=100
+ *
+ * Data is normalised before-hand (to prevent accidental weighting of features).
  */
-class ClusterByDecisionTree
+class KMeansClustering
 {
 public:
     void cluster(FoodDatabase&);
-
-private:
-    void sort(std::vector<Food*>&, int dimension); // sort foods by dimension'th nutrition value
-
-    template <class ForwardIterator>
-    void split(ForwardIterator items_begin, ForwardIterator items_end);
-
-private:
-    const double max_average_error = 0.1; // the max average member distance to a leaf cluster's centroid (a stop criterium for splitting) (L1 norm distance)
-
-    // stats
-    double total_error = 0.0;
 };
 
 //////
@@ -59,7 +53,7 @@ private:
 using namespace std;
 using namespace alglib;
 
-void ClusterByDecisionTree::cluster(FoodDatabase& db) {
+void KMeansClustering::cluster(FoodDatabase& db) {
     vector<Item> items;
 
     // load datapoints

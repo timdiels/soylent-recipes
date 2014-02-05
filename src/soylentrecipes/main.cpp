@@ -26,7 +26,7 @@
 #include <libalglib/linalg.h>
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
-#include "clustering/ClusterByDecisionTree.h"
+#include "clustering/KMeansClustering.h"
 #include "RecipeMiner.h"
 
 //using namespace SOYLENT;
@@ -41,7 +41,7 @@ static void signal_callback(int signum) {
 
 void cluster(FoodDatabase& db) {
     // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
-    ClusterByDecisionTree alg;
+    KMeansClustering alg;
     alg.cluster(db);
 }
 
