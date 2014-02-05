@@ -78,3 +78,15 @@ size_t FoodDatabase::food_count() {
     return qry.get_int(0);
 }
 
+void FoodDatabase::begin_transaction() {
+    static Query stmt(db, "BEGIN");
+    stmt.step();
+    stmt.reset();
+}
+
+void FoodDatabase::end_transaction() {
+    static Query stmt(db, "END");
+    stmt.step();
+    stmt.reset();
+}
+

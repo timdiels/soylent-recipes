@@ -42,6 +42,10 @@ public:
     void add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end);
 
 private:
+    void begin_transaction();
+    void end_transaction();
+
+private:
     Database& db;
 
     // cached values
@@ -99,6 +103,8 @@ template <class ForwardIterator, class InputIterator>
 void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end) {
     using namespace std;
 
+    begin_transaction();
+
     // insert cluster
     Query insert_stmt(db, "INSERT INTO cluster_ VALUES(NULL)");
     insert_stmt.step();
@@ -126,5 +132,7 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
     Query update_stmt(db, qstr.str());
     update_stmt.bind_int(1, cluster_id);
     update_stmt.step();
+
+    end_transaction();
 }
 
