@@ -43,6 +43,16 @@ void cluster(FoodDatabase& db) {
     // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
     KMeansClustering alg;
     alg.cluster(db);
+
+    // TODO print stats
+    //double total_error = 0.0;
+    //cout << "Cluster average error: " << endl;
+        //total_error += get_total_error(cluster.begin(), cluster.end());
+        //cout << total_error / distance(cluster.begin(), cluster.end()) << endl;
+    //cout << endl;
+    //
+    //cout << "Total error: " << total_error << endl;
+    //cout << "Average error: " << total_error / distance(items.begin(), items.end()) << endl;
 }
 
 void mine(FoodDatabase& db) {

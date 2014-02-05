@@ -53,9 +53,11 @@ using namespace std;
 using namespace alglib;
 
 void KMeansClustering::cluster(FoodDatabase& db) {
-    vector<Item> items;
     real_2d_array points;
-    load_data(db, items, points);
+    map<int, int> row_to_id;
+
+    load_data(db, points, row_to_id);
+    Normalizer normalizer(points);
 
     clusterizerstate s;
     kmeansreport report;
@@ -68,25 +70,16 @@ void KMeansClustering::cluster(FoodDatabase& db) {
         cout << "Clustering failed: " << report.terminationtype << endl;
     }
 
-    double total_error = 0.0;
-    cout << "Cluster average error: " << endl;
     for (int i=0; i<report.k; i++) {
-        vector<Item> cluster;
+        normalizer.abnormalize(&report.c[i][0]);
+
         vector<int> ids;
-        for (int j=0; j<items.size(); j++) {
+        for (int j=0; j<points.rows(); j++) {
             if (report.cidx[j] == i) {
-                cluster.push_back(items.at(j));
-                ids.push_back(items.at(j).id);
+                ids.push_back(row_to_id[j]);
             }
         }
-        // TODO store centroid that isn't normalised (i.e. undo the normalising)
         db.add_cluster(&report.c[i][0], &report.c[i][points.cols()], ids.begin(), ids.end());
-        total_error += get_total_error(cluster.begin(), cluster.end());
-        cout << total_error / distance(cluster.begin(), cluster.end()) << endl;
     }
-    cout << endl;
-
-    cout << "Total error: " << total_error << endl;
-    cout << "Average error: " << total_error / distance(items.begin(), items.end()) << endl;
 }
 
