@@ -49,14 +49,19 @@ void mine(FoodDatabase& db) {
 
     NutrientProfile profile = db.get_profile(1);
 
+    // load clusters into 'pseudo' foods
     std::vector<Food> foods;
-    auto emplace_food = [&foods](FoodRecord r) {
+    auto emplace_food = [&foods](const ClusterRecord& r) {
+        stringstream str;
+        str << "Cluster " << r.id;
+
         real_1d_array values;
-        values.setlength(r.nutrient_values.size());
-        for (int i=0; i<values.length(); i++) values[i] = r.nutrient_values.at(i);
-        foods.emplace_back(r.id, r.description, values);
+        values.setlength(r.values.size());
+        copy(r.values.begin(), r.values.end(), &values[0]);
+
+        foods.emplace_back(r.id, str.str(), values);
     };
-    db.get_foods(boost::make_function_output_iterator(emplace_food));
+    db.get_clusters(boost::make_function_output_iterator(emplace_food));
 
     unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
     miner = miner_.get();

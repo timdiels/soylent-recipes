@@ -32,7 +32,10 @@ public:
     FoodDatabase(Database& db);
 
     template <class OutputIterator>
-    void get_foods(OutputIterator food_tuple_it);
+    void get_foods(OutputIterator food_record_it);
+
+    template <class OutputIterator>
+    void get_clusters(OutputIterator cluster_record_it);
 
     NutrientProfile get_profile(int id);
     size_t nutrient_count();
@@ -74,6 +77,12 @@ public:
     std::vector<double> nutrient_values;
 };
 
+class ClusterRecord {
+public:
+    int id;
+    std::vector<double> values;
+};
+
 template <class OutputIterator>
 void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
     // Require: food table contains at least 1 record
@@ -99,6 +108,31 @@ void FoodDatabase::get_foods(OutputIterator food_tuple_it) {
         record.nutrient_values.at(attr_to_index[stmt.get_int(2)]) = stmt.get_double(3);
     }
     *food_tuple_it++ = record;
+}
+
+template <class OutputIterator>
+void FoodDatabase::get_clusters(OutputIterator cluster_it) {
+    // Require: cluster table contains at least 1 record
+    using namespace std;
+    ClusterRecord record;
+
+    Query stmt(db, "SELECT c.id, ca.attribute_id, ca.value FROM cluster_ c INNER JOIN cluster_attribute ca ON c.id = ca.cluster_id ORDER BY c.id");
+    record.id = -1;
+    record.values.resize(nutrient_count());
+
+    while (stmt.step()) {
+        auto id = stmt.get_int(0);
+        if (id != record.id) {
+            if (record.id != -1) {
+                *cluster_it++ = record;
+            }
+            record.id = stmt.get_int(0);
+            fill(record.values.begin(), record.values.end(), 0.0);
+        }
+
+        record.values.at(attr_to_index[stmt.get_int(1)]) = stmt.get_double(2);
+    }
+    *cluster_it++ = record;
 }
 
 template <class ForwardIterator, class InputIterator>
