@@ -215,7 +215,6 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
             ids.push_back(food->get_id());
         }
         recipes.add_recipe(ids.begin(), ids.end(), completeness);
-        cout << completeness << endl << endl;
     }
 }
 
