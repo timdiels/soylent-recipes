@@ -26,7 +26,7 @@
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
 #include "clustering/Clustering.h"
-#include "RecipeMiner.h"
+#include "mining/RecipeMiner.h"
 
 //using namespace SOYLENT;
 using namespace std;
