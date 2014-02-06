@@ -134,7 +134,6 @@ void RecipeMiner<ForwardIterator>::mine() {
     long food_count = distance(foods_begin, foods_end);
 
     cout << endl;
-    cout << "Total recipe problems calculated: " << total_calculated << endl;
     cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
     cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
