@@ -82,10 +82,10 @@ int main(int argc, char** argv) {
 
         if (db.recipe_count() > 0) {
             cout << "Resuming previous mine operation not supported (though it may already have finished)" << endl;
-            cout << "Press enter to wipe recipe table and commence mining" << endl;
-            cout << "Press C-c to exit without wiping" << endl;
+            cout << "Wipe recipe table and commence mining? (y/n)" << endl;
             char c;
             cin >> c;
+            if (c != 'y' && c != 'Y') return 0;
             db.delete_recipes();
         }
         mine(db);
