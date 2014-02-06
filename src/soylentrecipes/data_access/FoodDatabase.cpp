@@ -109,6 +109,8 @@ size_t FoodDatabase::recipe_count() {
 
 void FoodDatabase::delete_recipes() {
     execute("DELETE FROM recipe");
+    execute("DELETE FROM recipe_cluster");
+    execute("DELETE FROM recipe_food");
 }
 
 void FoodDatabase::execute(std::string sql) {
