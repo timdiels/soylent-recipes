@@ -34,6 +34,7 @@ Recipes::Recipes(FoodDatabase& db)
         throw runtime_error("Unexpected query result");
     }
     best_completeness = stmt.get_double(0, 0.0);*/ // TODO
+    best_completeness = 0.0;
 }
 
 bool Recipes::is_useful(double completeness) {

@@ -70,7 +70,6 @@ private:
     bool m_stop;
 
     // stats
-    long examine_rejected = 0;  // how many food combos were rejected due to 'too incomplete'
     long examine_total = 0;  // how many food combos were offered for solving
     long problem_size_sum = 0;  // sum of len(foods) of recipe problems that were solved
 };
@@ -130,7 +129,7 @@ void RecipeMiner<ForwardIterator>::mine() {
     // print stats
     //long max_combo_size = 5; // TODO debug
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
-    long total_calculated = examine_total - examine_rejected;
+    long total_calculated = examine_total;
     double time_per_problem = elapsed_time * 1000.0 / total_calculated; // in ms
     long food_count = distance(foods_begin, foods_end);
 
@@ -148,8 +147,6 @@ void RecipeMiner<ForwardIterator>::mine() {
     double accepted_recipes = acceptance_rate * total_recipes;
 
     cout << endl;
-    cout << examine_rejected << endl;
-    cout << "Rejection percentage (too incomplete): " << examine_rejected / static_cast<double>(examine_total) << endl;
     cout << "Total recipe problems calculated: " << total_calculated << endl;
     cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
@@ -193,24 +190,6 @@ template <class ForwardIterator>
 void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
     examine_total++;
 
-    // calculate max completeness TODO does this offer any benefit? Is it meaningful?
-    {
-    double max_completeness = 0.0;
-    for (int i=0; i<dimension_count; i++) {
-        for (auto& food : foods) {
-            if (food->as_matrix()[i] > 0.0) {
-                max_completeness += 1.0;
-                break;
-            }
-        }
-    }
-    max_completeness /= dimension_count;
-    if (!recipes.is_useful(max_completeness)) {
-        examine_rejected++;
-        return; // this recipe won't be useful, so don't bother with calculations
-    }
-    }
-
     // solve recipe
     problem_size_sum += foods.size();
     RecipeProblem problem(profile, foods);
@@ -227,7 +206,7 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
     // add recipe
     if (recipes.is_useful(completeness)) {
         recipes.add_recipe(foods, completeness);
-        //cout << completeness << endl << endl;
+        cout << completeness << endl << endl;
     }
 }
 
