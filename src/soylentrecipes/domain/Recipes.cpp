@@ -17,32 +17,17 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <vector>
-#include <stdexcept>
-#include <soylentrecipes/data_access/Database.h>
-#include <soylentrecipes/data_access/Query.h>
-#include <soylentrecipes/domain/Food.h>
 #include "Recipes.h"
 
 using namespace std;
 
-Recipes::Recipes(FoodDatabase& db) 
-:   db(db)//, insert_recipe_stmt(db, "INSERT INTO recipe (foods, food_count, completeness) VALUES (?, ?, ?);")
+Recipes::Recipes(FoodDatabase& db, std::string recipe_type)
+:   best_completeness(0.0), db(db), recipe_type(recipe_type)
 {
-    /*Query stmt(db, "SELECT max(completeness) FROM recipe;");
-    if (!stmt.step()) {
-        throw runtime_error("Unexpected query result");
-    }
-    best_completeness = stmt.get_double(0, 0.0);*/ // TODO
-    best_completeness = 0.0;
 }
 
 bool Recipes::is_useful(double completeness) {
     double error_margin = 0.95;
     return completeness >= best_completeness * error_margin;
-}
-void Recipes::add_recipe(const vector<FoodIt>& foods, double completeness) {
-    best_completeness = max(completeness, best_completeness);
-    // TODO put in db
 }
 

@@ -22,6 +22,7 @@
 #include <vector>
 #include <ctime>
 #include <soylentrecipes/domain/Recipes.h>
+#include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/domain/NutrientProfile.h>
 
 /**
@@ -209,7 +210,11 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
 
     // add recipe
     if (recipes.is_useful(completeness)) {
-        recipes.add_recipe(foods, completeness);
+        vector<int> ids;
+        for (auto& food : foods) {
+            ids.push_back(food->get_id());
+        }
+        recipes.add_recipe(ids.begin(), ids.end(), completeness);
         cout << completeness << endl << endl;
     }
 }

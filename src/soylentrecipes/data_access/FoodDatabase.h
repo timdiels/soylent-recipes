@@ -49,6 +49,11 @@ public:
     template <class ForwardIterator, class InputIterator>
     void add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end);
 
+    template <class InputIterator>
+    void add_recipe(std::string type, InputIterator ids_begin, InputIterator ids_end, double completeness);
+
+    FoodDatabase(const FoodDatabase&) = delete;
+
 private:
     size_t count(std::string table);
     void begin_transaction();
@@ -172,6 +177,27 @@ void FoodDatabase::add_cluster(ForwardIterator centroid_begin, ForwardIterator c
     Query update_stmt(db, qstr.str());
     update_stmt.bind_int(1, cluster_id);
     update_stmt.step();
+
+    end_transaction();
+}
+
+template <class InputIterator>
+void FoodDatabase::add_recipe(std::string type, InputIterator ids_begin, InputIterator ids_end, double completeness) {
+    begin_transaction();
+
+    // insert recipe
+    Query insert_stmt(db, "INSERT INTO recipe (completeness) VALUES (?)");
+    insert_stmt.bind_double(1, completeness);
+    insert_stmt.step();
+
+    auto recipe_id = insert_stmt.last_insert_id();
+
+    // insert items/lines of recipe
+    Query stmt(db, "INSERT INTO recipe_" + type + " VALUES (?, ?)");
+    stmt.bind_int(1, recipe_id);
+    for (auto it = ids_begin; it != ids_end; it++) {
+        stmt.bind_int(2, *it);
+    }
 
     end_transaction();
 }

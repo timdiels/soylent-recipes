@@ -45,7 +45,7 @@ void cluster(FoodDatabase& db) {
 }
 
 void mine(FoodDatabase& db) {
-    Recipes recipes(db);
+    Recipes recipes(db, "cluster");
 
     NutrientProfile profile = db.get_profile(1);
 

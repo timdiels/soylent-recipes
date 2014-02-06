@@ -19,27 +19,34 @@
 
 #pragma once
 
-#include <vector>
 #include <soylentrecipes/data_access/FoodDatabase.h>
-#include <soylentrecipes/data_access/Query.h>
-#include <soylentrecipes/domain/Food.h>
 
 class Recipes
 {
 public:
-    Recipes(FoodDatabase& db);
+    Recipes(FoodDatabase&, std::string recipe_type);
 
     /**
      * Returns true if it's useful to add a recipe with these properties
      */
     bool is_useful(double completeness);
 
-    void add_recipe(const std::vector<FoodIt>& foods, double completeness);
+    template <class InputIterator>
+    void add_recipe(InputIterator ids_begin, InputIterator ids_end, double completeness);
 
 private:
-    FoodDatabase& db;
-    //Query insert_recipe_stmt;
-
     double best_completeness; // best completeness found in recipes
+    FoodDatabase& db;
+    std::string recipe_type;
 };
 
+
+///////////////////////////
+// hpp
+///////////////////////////
+
+template <class InputIterator>
+void Recipes::add_recipe(InputIterator ids_begin, InputIterator ids_end, double completeness) {
+    best_completeness = std::max(completeness, best_completeness);
+    db.add_recipe(recipe_type, ids_begin, ids_end, completeness);
+}
