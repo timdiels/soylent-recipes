@@ -79,6 +79,15 @@ int main(int argc, char** argv) {
         if (db.cluster_count() == 0) {
             cluster(db);
         }
+
+        if (db.recipe_count() > 0) {
+            cout << "Resuming previous mine operation not supported (though it may already have finished)" << endl;
+            cout << "Press enter to wipe recipe table and commence mining" << endl;
+            cout << "Press C-c to exit without wiping" << endl;
+            char c;
+            cin >> c;
+            db.delete_recipes();
+        }
         mine(db);
     }
     catch (const alglib::ap_error& e) {

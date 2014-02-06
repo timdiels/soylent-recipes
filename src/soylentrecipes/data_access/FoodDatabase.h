@@ -38,9 +38,13 @@ public:
     void get_clusters(OutputIterator cluster_record_it);
 
     NutrientProfile get_profile(int id);
+
+    void delete_recipes();
+
     size_t nutrient_count();
     size_t food_count();
     size_t cluster_count();
+    size_t recipe_count();
 
     template <class ForwardIterator, class InputIterator>
     void add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end);

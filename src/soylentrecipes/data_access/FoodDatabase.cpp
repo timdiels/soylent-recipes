@@ -98,3 +98,12 @@ void FoodDatabase::end_transaction() {
     stmt.reset();
 }
 
+size_t FoodDatabase::recipe_count() {
+    return count("recipe");
+}
+
+void FoodDatabase::delete_recipes() {
+    Query q(db, "DELETE FROM recipe");
+    q.step();
+}
+
