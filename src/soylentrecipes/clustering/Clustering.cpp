@@ -55,7 +55,7 @@ double Clustering::evaluate(const real_2d_array& points, const integer_1d_array&
 
     double total_error = accumulate(total_errors.begin(), total_errors.end(), 0.0);
     cout << "Total error: " << total_error << endl;
-    double average_total_error = total_error / accumulate(counts.begin(), counts.end(), 0)
+    double average_total_error = total_error / accumulate(counts.begin(), counts.end(), 0);
     cout << "Average total error: " << average_total_error << endl;
 
     return -(average_cluster_average_error + 2 * average_total_error);

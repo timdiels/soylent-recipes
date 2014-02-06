@@ -37,11 +37,13 @@ public:
     NutrientProfile get_profile(int id);
     size_t nutrient_count();
     size_t food_count();
+    size_t cluster_count();
 
     template <class ForwardIterator, class InputIterator>
     void add_cluster(ForwardIterator centroid_begin, ForwardIterator centroid_end, InputIterator food_ids_begin, InputIterator food_ids_end);
 
 private:
+    size_t count(std::string table);
     void begin_transaction();
     void end_transaction();
 

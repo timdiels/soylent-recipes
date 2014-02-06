@@ -71,8 +71,9 @@ int main(int argc, char** argv) {
         Database db_;
         FoodDatabase db(db_);
 
-        cluster(db);
-        exit(1); // TODO debug
+        if (db.cluster_count() == 0) {
+            cluster(db);
+        }
         mine(db);
     }
     catch (const alglib::ap_error& e) {

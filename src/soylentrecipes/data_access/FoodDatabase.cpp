@@ -70,8 +70,16 @@ size_t FoodDatabase::nutrient_count() {
     return attribute_count;
 }
 
+size_t FoodDatabase::cluster_count() {
+    return count("cluster_");
+}
+
 size_t FoodDatabase::food_count() {
-    Query qry(db, "SELECT COUNT(*) FROM food");
+    return count("food");
+}
+
+size_t FoodDatabase::count(string table) {
+    Query qry(db, "SELECT COUNT(*) FROM " + table);
     if (!qry.step()) {
         throw runtime_error("Wtf can't count");
     }
