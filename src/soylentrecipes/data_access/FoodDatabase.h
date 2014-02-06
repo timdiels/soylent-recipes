@@ -55,6 +55,7 @@ public:
     FoodDatabase(const FoodDatabase&) = delete;
 
 private:
+    void execute(std::string sql);
     size_t count(std::string table);
     void begin_transaction();
     void end_transaction();

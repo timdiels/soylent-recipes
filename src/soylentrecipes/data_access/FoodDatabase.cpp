@@ -26,6 +26,11 @@ using namespace alglib;
 FoodDatabase::FoodDatabase(Database& db)
 :   db(db)
 {
+    // Some pragmas for performance
+    execute("PRAGMA locking_mode = EXCLUSIVE"); // lock entire database for this connection (we don't support concurrent db access)
+    execute("PRAGMA synchronous=OFF"); // improve write performance, only OS crash could lead to db corruption
+    //execute("PRAGMA journal_mode=OFF"); // very extreme, probably don't want this
+
     // Fill attr_to_index map
     // Note: we assume attribute table doesn't change throughout the execution
     int last_index = -1;
@@ -103,7 +108,11 @@ size_t FoodDatabase::recipe_count() {
 }
 
 void FoodDatabase::delete_recipes() {
-    Query q(db, "DELETE FROM recipe");
-    q.step();
+    execute("DELETE FROM recipe");
+}
+
+void FoodDatabase::execute(std::string sql) {
+    Query stmt(db, sql);
+    stmt.step();
 }
 
