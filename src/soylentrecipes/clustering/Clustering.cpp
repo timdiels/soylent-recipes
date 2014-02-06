@@ -55,9 +55,10 @@ double Clustering::evaluate(const real_2d_array& points, const integer_1d_array&
 
     double total_error = accumulate(total_errors.begin(), total_errors.end(), 0.0);
     cout << "Total error: " << total_error << endl;
-    cout << "Average total error: " << total_error / accumulate(counts.begin(), counts.end(), 0) << endl;
+    double average_total_error = total_error / accumulate(counts.begin(), counts.end(), 0)
+    cout << "Average total error: " << average_total_error << endl;
 
-    return -average_cluster_average_error;
+    return -(average_cluster_average_error + 2 * average_total_error);
 }
 
 void Clustering::ahc_clustering(const real_2d_array& points, int k, integer_1d_array& row_to_cluster, real_2d_array& centroids) {
@@ -114,7 +115,7 @@ void Clustering::cluster(FoodDatabase& db) {
     Normalizer normalizer(points);
 
     // run algorithms
-    const int k = 5;//TODO k=100 or 50 or so
+    const int k = 50; // note: lower values seem to do alright as well, strangely
 
     cout << "ahc clustering" << endl;
     integer_1d_array cidx2;
