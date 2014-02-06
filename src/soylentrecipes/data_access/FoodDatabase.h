@@ -198,6 +198,8 @@ void FoodDatabase::add_recipe(std::string type, InputIterator ids_begin, InputIt
     stmt.bind_int(1, recipe_id);
     for (auto it = ids_begin; it != ids_end; it++) {
         stmt.bind_int(2, *it);
+        stmt.step();
+        stmt.reset();
     }
 
     end_transaction();
