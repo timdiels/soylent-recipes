@@ -57,6 +57,7 @@ private:
      */
     void mine(const std::vector<FoodIt>& foods);
     void examine_recipe(const std::vector<FoodIt>& foods);
+    double get_total_recipes(size_t food_count, int combo_size);
 
 private:
     const NutrientProfile& profile;
@@ -127,24 +128,10 @@ void RecipeMiner<ForwardIterator>::mine() {
     CALLGRIND_DUMP_STATS;
 
     // print stats
-    //long max_combo_size = 5; // TODO debug
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
     long total_calculated = examine_total;
     double time_per_problem = elapsed_time * 1000.0 / total_calculated; // in ms
     long food_count = distance(foods_begin, foods_end);
-
-    double total_recipes = 1; // max combinations that can be made with given foods
-    int k=1;
-    for (int i=0; i < max_combo_size; i++) {
-        total_recipes *= food_count - i;
-        if (i>0) {
-            k *= i;
-        }
-    }
-    total_recipes /= k;
-
-    double acceptance_rate = total_calculated / static_cast<double>(examine_total);
-    double accepted_recipes = acceptance_rate * total_recipes;
 
     cout << endl;
     cout << "Total recipe problems calculated: " << total_calculated << endl;
@@ -152,9 +139,27 @@ void RecipeMiner<ForwardIterator>::mine() {
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
     cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
     cout << "Food count: " << food_count << endl;
-    cout << "Recipe count before rejection: " << total_recipes << endl;
-    cout << "Accepted recipes: " << accepted_recipes << endl;
-    cout << "Time needed to calculate accepted recipes: " << accepted_recipes * time_per_problem / 1000.0 / 60.0 / 60.0 / 24.0 << " days" << endl;
+    cout << "Max combo size: " << max_combo_size << endl;
+    double total = 0.0;
+    for (int i=1; i<14; i++) {
+        total += get_total_recipes(food_count, i);
+        cout << "Time needed to calculate recipes up to combo size " << i << ": " << total * time_per_problem / 1000.0 / 60.0 / 60.0 / 24.0 << " days" << endl;
+    }
+}
+
+// max combinations that can be made with exactly combo_size amount of foods
+template <class ForwardIterator>
+double RecipeMiner<ForwardIterator>::get_total_recipes(size_t food_count, int combo_size) {
+    double total_recipes = 1;
+    int k=1;
+    for (int i=0; i < combo_size; i++) {
+        total_recipes *= food_count - i;
+        if (i>0) {
+            k *= i;
+        }
+    }
+    total_recipes /= k;
+    return total_recipes;
 }
 
 template <class ForwardIterator>
