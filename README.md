@@ -1,15 +1,90 @@
-soylent-recipes
-===============
+# soylent-recipes
 
-Mines the USDA food database for food combinations that match the nutrient
-profile in the database. Prints found combinations to stdout.
+Mines a food database for food combinations that match the nutrient
+profile in the database. Current implementation leads to results that match the
+target profile by 5% (pretty bad, needs work).
 
-If you already know which foods you want to use but simply want to know the
-amounts to take of each, use this:
-http://www.neos-guide.org/content/diet-problem-demo.
+Currently it uses the USDA database, but you could fill it up with other food
+data as well.
 
-Compilation
------------
+If you already know which foods you want to use for your soylent recipe but
+simply want to know the amounts to take of each, use this
+[diet problem applet] [http://www.neos-guide.org/content/dietproblem-demo].
+
+
+## Table of Contents
+
+* [Approach to solving the problem](#approach-to-solving-the-problem)
+* [Results](#results)
+* [System requirements](#system-requirements)
+* [Compilation](#compilation)
+
+
+## Approach to solving the problem
+
+The problem is: finding combos of foods that make for good (soylent) recipes,
+regardless of taste.
+
+Solving a single combo of foods is simple enough as explained in [Recipe/Diet
+Problem](#recipe-diet-problem).
+
+The mining phase entails choosing combinations of foods. Simply enumerating all
+possible combinations would take years. In order to solve this we first cluster
+the data and then use the average of each cluster as if they were food in our
+naive miner which does enumerate all possibilities of up to a given size (e.g.
+up to 5 foods in a single combo).
+
+The clustering happens with either of [these
+methods](http://www.alglib.net/dataanalysis/clustering.php). Both are ran and
+the best result is used.
+
+
+###  Recipe/Diet Problem
+
+First some more detailed definitions of this subproblem.
+
+Let a recipe problem be: given a set of foods, and a nutrition profile, find
+the amounts to optimally satisfy the nutrition profile. (This is more commonly known as a
+[Diet Problem](http://www.neos-guide.org/content/diet-problem))
+
+Each food has m properties/nutrients of an ingredient (the contained amount of magnesium, carbs, ...).
+
+Construct a matrix A with: A_{i,j} = the amount of the i-th property of the j-th food.
+
+With n foods, there are amounts X_1, ..., X_n to find.
+
+The nutrient profile provides us with Y_i and M_i for each nutrient. Y_i is the desired amount of nutrient i, M_i is the max allowed amount of nutrient i.
+
+This leads to
+- m equations, j=1,2,...m: X_1 A_{1,j} + ... + X_n A_{n,j} = Y_i. 
+- m inequalities, j=1,2,...m: X_1 A_{1,j} + ... + X_n A_{n,j} <= M_i. 
+
+Which is a constrained least squares problem.
+
+The algorithm used to solve this is an [active-set algorithm](http://www.alglib.net/optimization/boundandlinearlyconstrained.php#header1).
+
+The function f to mimimize is: \lnorm A\*x - y \rnorm_2
+
+The gradient of f(x) is: the vector D, j=1,2,...,n, D[j] =  2 \sum_{i=1}^m ((A\*x-y)_i a_{i,j})
+
+Last noted performance of solving a recipe in this project of on average 8.5 foods was 9834889 instructions (= callgrind instruction fetch cost)
+
+
+## Results
+
+With a clustering of 100 clusters, and a max combo size of 4, the best recipe is only 8% complete.
+
+Even random sampling would manage to outperform this.
+
+A different approach is needed.
+
+
+## System requirements
+
+Linux
+
+
+## Compilation
 
 Dependencies (install them):
 
@@ -28,65 +103,4 @@ Steps:
 
 Now in order to run it type: ./soylentrecipes
 
-Problem description: Recipe/Diet Problem
-----------------------------------------
 
-Let a recipe problem be: given a set of foods, and a nutrition profile, find
-the amounts to optimally satisfy the nutrition profile. (This is more commonly known as a
-Diet Problem (http://www.neos-guide.org/content/diet-problem))
-
-Each food has m properties/nutrients of an ingredient (the contained amount of magnesium, carbs, ...).
-
-Construct a matrix A with: A_{i,j} = the amount of the i-th property of the j-th food.
-
-With n foods, there are amounts X_1, ..., X_n to find.
-
-The nutrient profile provides us with Y_i and M_i for each nutrient. Y_i is the desired amount of nutrient i, M_i is the max allowed amount of nutrient i.
-
-This leads to
-- m equations, j=1,2,...m: X_1 A_{1,j} + ... + X_n A_{n,j} = Y_i. 
-- m inequalities, j=1,2,...m: X_1 A_{1,j} + ... + X_n A_{n,j} <= M_i. 
-
-Which is a constrained least squares problem.
-
-Algorithm
----------
-
-The algorithm used is an active-set algorithm. Namely: http://www.alglib.net/optimization/boundandlinearlyconstrained.php#header1.
-
-The function f to mimimize is: \lnorm A\*x - y \rnorm_2
-
-The gradient of f(x) is: the vector D, j=1,2,...,n, D[j] =  2 \sum_{i=1}^m ((A\*x-y)_i a_{i,j})
-
-Performance
------------
-
-Last noted performance:
-
-- solving a recipe probleem of on average 8.5 foods takes 9834889 instructions (= callgrind instruction fetch cost)
-
-Miner heuristics and tricks (recipe selection)
-----------------------------------------------
-
-This section is a rough draft.
-
-The miner doesn't check all combinations of foods as that would be too expensive.
-
-Current elimination heuristics:
-
-- Reject too similar recipes (TODO vague)
-- Reject too incomplete recipes (TODO vague)
-- Put a max on number of foods in a recipe (12 as of writing)
-
-The following is yet to be implemented:
-
-1. Cluster all foods in N clusters
-2. Calculate the average nutritient vector of each cluster
-3. Form recipes with the averages of the clusters
-4. Pick the M best recipes
-5. For each chosen recipe: recurse within each cluster, in some way... (i.e. it's a bit like building a decision tree with RecipeProblem as heuristic)
-
-Other idea:
-
-1. Build a decision tree
-2. Do something with it

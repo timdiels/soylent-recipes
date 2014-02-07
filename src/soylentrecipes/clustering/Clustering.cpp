@@ -115,7 +115,7 @@ void Clustering::cluster(FoodDatabase& db) {
     Normalizer normalizer(points);
 
     // run algorithms
-    const int k = 50; // note: lower values seem to do alright as well, strangely
+    const int k = 100; // note: lower values seem to do alright as well, strangely
 
     cout << "ahc clustering" << endl;
     integer_1d_array cidx2;

@@ -67,7 +67,7 @@ private:
     Recipes& recipes;
     const size_t dimension_count;
 
-    const int max_combo_size = 12;
+    const int max_combo_size = 4;
 
     bool m_stop;
 
@@ -215,6 +215,7 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
             ids.push_back(food->get_id());
         }
         recipes.add_recipe(ids.begin(), ids.end(), completeness);
+        cout << completeness << endl;
     }
 }
 
