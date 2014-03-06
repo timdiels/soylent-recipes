@@ -158,3 +158,46 @@ VALUES
 (1, 35, 2.4, 2.4),
 (1, 36, 2, 9e999),
 (1, 37, 15, 40);
+
+select load_extension('./libsqlitefunctions.so');
+
+create view max_values as
+SELECT attribute_id, max(value) as max_value
+FROM food_attribute fa
+GROUP BY attribute_id;
+
+CREATE VIEW food_attribute_normalised AS
+SELECT food_id, fa.attribute_id, value / m.max_value AS value
+FROM food_attribute fa
+INNER JOIN max_values m
+ON m.attribute_id = fa.attribute_id;
+ 
+CREATE VIEW food_vector_length AS
+SELECT fa.food_id, SQRT(SUM(value * value)) AS length
+FROM food_attribute_normalised fa
+GROUP BY fa.food_id;
+ 
+CREATE VIEW food_attribute_normalised_by_food AS
+SELECT fa.food_id, fa.attribute_id, fa.value / m.length AS value
+FROM food_attribute_normalised fa
+INNER JOIN food_vector_length m
+ON m.food_id = fa.food_id;
+
+CREATE VIEW food_attribute_filtered AS
+SELECT *
+FROM food_attribute_normalised_by_food
+WHERE value > 0.4;
+
+create view errors as 
+select food_id, 1 - SQRT(SUM(value*value)) as error 
+from food_attribute_filtered
+group by food_id;
+-- select count(*) from errors where error > 0.2 is only 420
+
+CREATE VIEW food_attribute_filtered2 AS
+SELECT *
+FROM food_attribute_filtered f
+INNER JOIN errors e
+ON e.food_id = f.food_id
+WHERE e.error < 0.2;
+
