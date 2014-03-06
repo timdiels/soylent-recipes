@@ -75,10 +75,6 @@ size_t FoodDatabase::nutrient_count() {
     return attribute_count;
 }
 
-size_t FoodDatabase::cluster_count() {
-    return count("cluster_");
-}
-
 size_t FoodDatabase::food_count() {
     return count("food");
 }
@@ -109,7 +105,6 @@ size_t FoodDatabase::recipe_count() {
 
 void FoodDatabase::delete_recipes() {
     execute("DELETE FROM recipe");
-    execute("DELETE FROM recipe_cluster");
     execute("DELETE FROM recipe_food");
 }
 

@@ -25,10 +25,8 @@
 #include <boost/function_output_iterator.hpp>
 #include "data_access/FoodDatabase.h"
 #include "domain/Recipes.h"
-#include "clustering/Clustering.h"
 #include "mining/RecipeMiner.h"
 
-//using namespace SOYLENT;
 using namespace std;
 using namespace alglib;
 
@@ -38,30 +36,20 @@ static void signal_callback(int signum) {
     miner->stop();
 }
 
-void cluster(FoodDatabase& db) {
-    // The idea is to reduce the amount of foods to something manageable in this step TODO note in readme
-    Clustering alg;
-    alg.cluster(db);
-}
-
 void mine(FoodDatabase& db) {
-    Recipes recipes(db, "cluster");
+    Recipes recipes(db, "food");
 
     NutrientProfile profile = db.get_profile(1);
 
-    // load clusters into 'pseudo' foods
     std::vector<Food> foods;
-    auto emplace_food = [&foods](const ClusterRecord& r) {
-        stringstream str;
-        str << "Cluster " << r.id;
-
+    auto emplace_food = [&foods](const FoodRecord& r) {
         real_1d_array values;
         values.setlength(r.values.size());
         copy(r.values.begin(), r.values.end(), &values[0]);
 
-        foods.emplace_back(r.id, str.str(), values);
+        foods.emplace_back(r.id, r.description, values);
     };
-    db.get_clusters(boost::make_function_output_iterator(emplace_food));
+    db.get_foods(boost::make_function_output_iterator(emplace_food));
 
     unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
     miner = miner_.get();
@@ -75,10 +63,6 @@ int main(int argc, char** argv) {
     try {
         Database db_;
         FoodDatabase db(db_);
-
-        if (db.cluster_count() == 0) {
-            cluster(db);
-        }
 
         if (db.recipe_count() > 0) {
             cout << "Resuming previous mine operation not supported (though it may already have finished)" << endl;

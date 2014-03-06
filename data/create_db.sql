@@ -24,19 +24,11 @@ create table recipe_food (
   PRIMARY KEY(recipe_id, food_id)
 );
 
-create table recipe_cluster (
--- Food is part of recipe
-  recipe_id integer not null,
-  cluster_id integer not null,
-  PRIMARY KEY(recipe_id, cluster_id)
-);
-
 create table food (
 -- Food and the nutrients it contains
   id integer primary key autoincrement not null,
   name varchar(255) not null,
-  source_id int not null references source(id),
-  cluster_id int references cluster_(id)
+  source_id int not null references source(id)
 );
 
 create table food_attribute (
@@ -60,19 +52,6 @@ create table profile_attribute (
   target_value double not null,  -- target amount of nutrient.unit per day
   max_value double not null,  -- max amount of nutrient.unit per day
   PRIMARY KEY(profile_id, attribute_id)
-);
-
-create table cluster_ (
--- A cluster of foods
-  id integer primary key autoincrement not null
-);
-
-create table cluster_attribute (
--- Maps cluster to attributes
-  cluster_id integer not null references cluster_(id), 
-  attribute_id integer not null,
-  value double not null,  -- average nutrient value of cluster
-  PRIMARY KEY(cluster_id, attribute_id)
 );
 
 INSERT INTO nutrient

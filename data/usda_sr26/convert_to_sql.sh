@@ -94,7 +94,7 @@ ALTER TABLE main.food
 ADD COLUMN ndb_no varchar(5);
 
 INSERT INTO main.food
-SELECT NULL, shrt_desc, 1, NULL, ndb_no
+SELECT NULL, shrt_desc, 1, ndb_no
 FROM temp.abbrev;
 
 EOF
