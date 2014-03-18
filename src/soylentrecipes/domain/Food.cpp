@@ -62,3 +62,7 @@ double Food::get_similarity(const Food& other) const {
 size_t Food::nutrient_count() const {
     return nutrient_values.length();
 }
+
+bool Food::operator==(const Food& other) const {
+    return other.get_id() == get_id();
+}

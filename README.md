@@ -91,6 +91,7 @@ Dependencies (install them):
 - http://www.alglib.net/download.php
 - sqlite3
 - Boost headers
+- OpenBEAGLE
 
 Steps:
 

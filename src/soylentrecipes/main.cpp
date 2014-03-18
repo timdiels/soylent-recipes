@@ -18,40 +18,23 @@
  */
 
 #include <iostream>
-#include <vector>
 #include <signal.h>
 #include <stdexcept>
 #include <memory>
-#include <boost/function_output_iterator.hpp>
 #include "data_access/FoodDatabase.h"
-#include "domain/Recipes.h"
 #include "mining/RecipeMiner.h"
 
 using namespace std;
-using namespace alglib;
 
-static RecipeMiner<FoodIt>* miner = nullptr;
+static RecipeMiner* miner = nullptr;
 
 static void signal_callback(int signum) {
     miner->stop();
 }
 
-void mine(FoodDatabase& db) {
-    Recipes recipes(db, "food");
-
+void mine(FoodDatabase& db, int argc, char** argv) {
     NutrientProfile profile = db.get_profile(1);
-
-    std::vector<Food> foods;
-    auto emplace_food = [&foods](const FoodRecord& r) {
-        real_1d_array values;
-        values.setlength(r.values.size());
-        copy(r.values.begin(), r.values.end(), &values[0]);
-
-        foods.emplace_back(r.id, r.description, values);
-    };
-    db.get_foods(boost::make_function_output_iterator(emplace_food));
-
-    unique_ptr<RecipeMiner<FoodIt>> miner_(new RecipeMiner<FoodIt>(profile, foods.begin(), foods.end(), recipes));
+    unique_ptr<RecipeMiner> miner_(new RecipeMiner(profile, db, argc, argv));
     miner = miner_.get();
     miner->mine();
 }
@@ -72,7 +55,7 @@ int main(int argc, char** argv) {
             if (c != 'y' && c != 'Y') return 0;
             db.delete_recipes();
         }
-        mine(db);
+        mine(db, argc, argv);
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;

@@ -37,6 +37,8 @@ public:
     const alglib::real_1d_array& as_matrix() const;
     size_t nutrient_count() const;
 
+    bool operator==(const Food& other) const;
+
     /**
      * Return how non-orthogonal this and the other vector are to each other
      *

@@ -24,15 +24,15 @@
 #include <soylentrecipes/domain/Recipes.h>
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/domain/NutrientProfile.h>
+#include <soylentrecipes/genetic/Foods.h>
 
 /**
  * Mines a food database for good recipes
  */
-template <class ForwardIterator>
 class RecipeMiner
 {
 public:
-    RecipeMiner(const NutrientProfile& profile, ForwardIterator food_begin, ForwardIterator food_end, Recipes&);
+    RecipeMiner(const NutrientProfile& profile, FoodDatabase& db, int argc, char** argv);
     ~RecipeMiner();
 
     /**
@@ -51,25 +51,18 @@ public:
     void stop();
 
 private:
-    /**
-     * Examines combinations of 'foods' with other foods
-     *
-     * foods: ordered by id
-     */
     void mine(const std::vector<FoodIt>& foods);
     void examine_recipe(const std::vector<FoodIt>& foods);
     double get_total_recipes(size_t food_count, int combo_size);
 
 private:
     const NutrientProfile& profile;
-    const ForwardIterator foods_begin;
-    const ForwardIterator foods_end;
-    Recipes& recipes;
-    const size_t dimension_count;
-
-    const int max_combo_size = 4;
+    Foods _foods;
 
     bool m_stop;
+
+    int _argc; // Note: with naming conventions consistency is key, good thing this project is small
+    char** _argv;
 
     // stats
     long examine_total = 0;  // how many food combos were offered for solving
@@ -84,7 +77,10 @@ private:
 #include <iostream>
 #include <exception>
 #include <valgrind/callgrind.h>
-#include "RecipeMiner.h"
+#include <soylentrecipes/genetic/Foods.h>
+#include <soylentrecipes/genetic/RecipeInitializationOp.h>
+#include <soylentrecipes/genetic/FoodGenotype.h>
+#include <beagle/GA.hpp>
 #include "RecipeProblem.h"
 
 using namespace std; // TODO shouldn't do this
@@ -95,26 +91,20 @@ using namespace std; // TODO shouldn't do this
 class TerminationException : public exception {
 };
 
-template <class ForwardIterator>
-RecipeMiner<ForwardIterator>::RecipeMiner(const NutrientProfile& profile, ForwardIterator food_begin, ForwardIterator food_end, Recipes& recipes)
-:   profile(profile), foods_begin(food_begin), foods_end(food_end), recipes(recipes), dimension_count(profile.get_targets().length()), m_stop(false)
+RecipeMiner::RecipeMiner(const NutrientProfile& profile, FoodDatabase& db, int argc, char** argv)
+:   profile(profile), _foods(db), m_stop(false), _argc(argc), _argv(argv)
 {
 }
 
-template <class ForwardIterator>
-RecipeMiner<ForwardIterator>::~RecipeMiner() {
+RecipeMiner::~RecipeMiner() {
 }
 
-template <class ForwardIterator>
-void RecipeMiner<ForwardIterator>::stop() {
+void RecipeMiner::stop() {
     m_stop = true;
 }
 
-template <class ForwardIterator>
-void RecipeMiner<ForwardIterator>::mine() {
-    // TODO resume where we last left off
+void RecipeMiner::mine() {
     vector<FoodIt> foods;
-    foods.reserve(max_combo_size);
 
     // mine
     CALLGRIND_START_INSTRUMENTATION;
@@ -132,67 +122,48 @@ void RecipeMiner<ForwardIterator>::mine() {
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
     long total_calculated = examine_total;
     double time_per_problem = elapsed_time * 1000.0 / total_calculated; // in ms
-    long food_count = distance(foods_begin, foods_end);
+    long food_count = -1; // TODO distance(foods_begin, foods_end);
 
     cout << endl;
     cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
     cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
     cout << "Food count: " << food_count << endl;
-    cout << "Max combo size: " << max_combo_size << endl;
-    double total = 0.0;
-    for (int i=1; i<14; i++) {
-        total += get_total_recipes(food_count, i);
-        cout << "Time needed to calculate recipes up to combo size " << i << ": " << total * time_per_problem / 1000.0 / 60.0 / 60.0 / 24.0 << " days" << endl;
-    }
 }
 
-// max combinations that can be made with exactly combo_size amount of foods
-template <class ForwardIterator>
-double RecipeMiner<ForwardIterator>::get_total_recipes(size_t food_count, int combo_size) {
-    double total_recipes = 1;
-    int k=1;
-    for (int i=0; i < combo_size; i++) {
-        total_recipes *= food_count - i;
-        if (i>0) {
-            k *= i;
-        }
-    }
-    total_recipes /= k;
-    return total_recipes;
-}
+void RecipeMiner::mine(const vector<FoodIt>& foods) {
+    using namespace Beagle;
 
-template <class ForwardIterator>
-void RecipeMiner<ForwardIterator>::mine(const vector<FoodIt>& foods) {
     if (m_stop) {
-        throw TerminationException();
+        throw TerminationException(); // TODO this no longer gets a chance, probably the system class has a func to stop
     }
 
-    if (foods.size() < max_combo_size) {
-        auto next_foods = foods;
-        FoodIt next_food;
-        if (foods.empty()) {
-            next_food = foods_begin;
-        }
-        else {
-            next_food = foods.back();
-            next_food++;
-        }
+    // Run genetic algorithm
+    System system;
 
-        for (; next_food != foods_end; next_food++) {
-            next_foods.push_back(next_food);
-            mine(next_foods);
-            next_foods.pop_back();
-        }
-    }
+    FoodGenotype::Alloc geno_allocator;
+    FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
+    Individual::Alloc individual_allocator(&geno_allocator, &fitness_allocator);
 
-    if (!foods.empty()) {
-        examine_recipe(foods);
-    }
+    GA::EvolverES evolver;
+    Stats::Alloc stats_alloc;
+    HallOfFame::Alloc hall_of_fame_alloc;
+    Deme::Alloc deme_alloc(&individual_allocator, &stats_alloc, &hall_of_fame_alloc);
+    Vivarium vivarium(&deme_alloc, &stats_alloc, &hall_of_fame_alloc);
+
+    RecipeInitializationOp initRecipeOp(_foods);
+    evolver.addOperator(&initRecipeOp);
+
+    evolver.initialize(&system, _argc, _argv);
+    evolver.readEvolverFile("beagle.conf");
+    evolver.evolve(&vivarium);
+
+
+    // TODO do you see any mem leaks in this func? I sure do
 }
 
-template <class ForwardIterator>
-void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
+// TODO use this in fitness stuff
+void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     examine_total++;
 
     // solve recipe
@@ -207,15 +178,5 @@ void RecipeMiner<ForwardIterator>::examine_recipe(const vector<FoodIt>& foods) {
         completeness += min(1.0, result[i] / profile.get_targets()[i]);
     }
     completeness /= result.length();
-
-    // add recipe
-    if (recipes.is_useful(completeness)) {
-        vector<int> ids;
-        for (auto& food : foods) {
-            ids.push_back(food->get_id());
-        }
-        recipes.add_recipe(ids.begin(), ids.end(), completeness);
-        cout << completeness << endl;
-    }
 }
 
