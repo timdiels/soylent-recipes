@@ -17,24 +17,35 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "RecipeCrossoverOp.h"
+#include "RecipeMutationOp.h"
 #include <assert.h>
 #include <iostream>
+#include <soylentrecipes/genetic/RecipeIndividual.h>
 
 using namespace std;
 using namespace Beagle;
 
-RecipeCrossoverOp::RecipeCrossoverOp()
-:   CrossoverOp("ec.cx.prob", "RecipeCrossoverOp")
+RecipeMutationOp::RecipeMutationOp(Foods& foods)
+:   MutationOp("ec.mut.prob", "RecipeMutationOp"), _foods(foods)
 {
 }
 
-bool RecipeCrossoverOp::mate(Individual& indiv1, Context& context1, Individual& indiv2, Context& context2) {
-    cout << "cross" << endl;
-    assert(indiv1.size() >= 1);
-    assert(indiv2.size() >= 1);
-    unsigned long index1 = context1.getSystem().getRandomizer().rollInteger(0, indiv1.size()-1);
-    unsigned long index2 = context2.getSystem().getRandomizer().rollInteger(0, indiv2.size()-1);
-    swap(indiv1.at(index1), indiv2.at(index2));
+bool RecipeMutationOp::mutate(Individual& individual, Context& context) {
+    cout << "mut" << endl;
+
+    RecipeIndividual& indiv = reinterpret_cast<RecipeIndividual&>(individual);
+
+    // Note: adding food is slightly favored
+    if (indiv.size() == 1 || context.getSystem().getRandomizer().rollUniform() <= 0.5) {
+        // add a food
+        cout << "add" << endl;
+        indiv.addFood(_foods, context);
+    }
+    else {
+        // remove a food
+        cout << "remove" << endl;
+        indiv.removeFood(context);
+    }
+
     return true;
 }

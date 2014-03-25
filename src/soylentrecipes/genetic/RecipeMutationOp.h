@@ -17,29 +17,27 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include <beagle/GA.hpp>
+#include <soylentrecipes/genetic/Foods.h>
 
 /**
- * Initializes individuals consisting of food
- *
- * Individuals need to be of FoodGenotype
+ * Cross over of 2 individuals by swapping 2 of their genotypes
  */
-class RecipeInitializationOp : public Beagle::InitializationOp
+class RecipeMutationOp : public Beagle::MutationOp 
 {
 public:
-    typedef Beagle::AllocatorT<RecipeInitializationOp, Beagle::InitializationOp::Alloc> Alloc;
-    typedef Beagle::PointerT<RecipeInitializationOp, Beagle::InitializationOp::Handle> Handle;
-    typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::InitializationOp::Bag> Bag;
+    typedef Beagle::AllocatorT<RecipeMutationOp, Beagle::MutationOp::Alloc> Alloc;
+    typedef Beagle::PointerT<RecipeMutationOp, Beagle::MutationOp::Handle> Handle;
+    typedef Beagle::ContainerT<RecipeMutationOp, Beagle::MutationOp::Bag> Bag;
 
 public:
-    RecipeInitializationOp(Foods& foods, Beagle::string name = "InitRecipeOp");
+    RecipeMutationOp(Foods& foods);
 
-    void initIndividual(Beagle::Individual& individual, Beagle::Context& context);
+    /**
+     * @returns bool True if mutated succesfully, false otherwise
+     */
+    bool mutate(Beagle::Individual& ioIndividual, Beagle::Context& ioContext);
 
 private:
     Foods& _foods;
-    int _recipe_size; // TODO register settable 
 };
-

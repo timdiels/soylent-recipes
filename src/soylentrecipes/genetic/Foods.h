@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <soylentrecipes/domain/Food.h>
+#include <soylentrecipes/data_access/FoodDatabase.h>
 #include <boost/function_output_iterator.hpp>
 #include <beagle/GA.hpp>
 

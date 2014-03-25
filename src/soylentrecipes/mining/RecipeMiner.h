@@ -78,8 +78,9 @@ private:
 #include <soylentrecipes/genetic/Foods.h>
 #include <soylentrecipes/genetic/RecipeInitializationOp.h>
 #include <soylentrecipes/genetic/RecipeCrossoverOp.h>
+#include <soylentrecipes/genetic/RecipeMutationOp.h>
 #include <soylentrecipes/genetic/RecipeEvalOp.h>
-#include <soylentrecipes/genetic/FoodGenotype.h>
+#include <soylentrecipes/genetic/RecipeIndividual.h>
 #include <beagle/GA.hpp>
 
 using namespace std; // TODO shouldn't do this
@@ -137,13 +138,9 @@ void RecipeMiner::mine(const vector<FoodIt>& foods) {
         throw TerminationException(); // TODO this no longer gets a chance, probably the system class has a func to stop
     }*/
 
-    // Run genetic algorithm
     System::Handle system = new System;
 
-    FoodGenotype::Alloc::Handle geno_allocator = new FoodGenotype::Alloc;
-    FitnessSimple::Alloc::Handle fitness_allocator = new FitnessSimple::Alloc;
-    //FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
-    Individual::Alloc::Handle individual_allocator = new Individual::Alloc(geno_allocator, fitness_allocator);
+    RecipeIndividual::Alloc::Handle individual_allocator = new RecipeIndividual::Alloc;
 
     GA::EvolverES::Handle evolver = new GA::EvolverES;
     Deme::Alloc::Handle deme_alloc = new Deme::Alloc(individual_allocator);
@@ -159,13 +156,10 @@ void RecipeMiner::mine(const vector<FoodIt>& foods) {
     RecipeCrossoverOp::Handle cross_over_op = new RecipeCrossoverOp;
     evolver->addOperator(cross_over_op);
 
+    RecipeMutationOp::Handle mutation_op = new RecipeMutationOp(_foods);
+    evolver->addOperator(mutation_op);
+
     evolver->initialize(system, _argc, _argv);
-
-    /*ofstream fout("evolver.conf");
-    fout << evolver.getOperatorMap().serialize(true, 2) << endl;
-    fout << evolver.serialize(true, 2) << endl;
-    fout.close();*/
-
     evolver->evolve(vivarium);
 
     //vivarium.getHallOfFame();

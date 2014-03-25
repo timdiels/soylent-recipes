@@ -17,29 +17,21 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include <beagle/GA.hpp>
+#include <soylentrecipes/genetic/RecipeIndividual.h>
+#include "RecipeInitializationOp.h"
 
-/**
- * Initializes individuals consisting of food
- *
- * Individuals need to be of FoodGenotype
- */
-class RecipeInitializationOp : public Beagle::InitializationOp
+using namespace std;
+using namespace Beagle;
+
+RecipeInitializationOp::RecipeInitializationOp(Foods& foods, Beagle::string name)
+:   InitializationOp("ec.repro.prob", name), _foods(foods), _recipe_size(4)
 {
-public:
-    typedef Beagle::AllocatorT<RecipeInitializationOp, Beagle::InitializationOp::Alloc> Alloc;
-    typedef Beagle::PointerT<RecipeInitializationOp, Beagle::InitializationOp::Handle> Handle;
-    typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::InitializationOp::Bag> Bag;
+}
 
-public:
-    RecipeInitializationOp(Foods& foods, Beagle::string name = "InitRecipeOp");
-
-    void initIndividual(Beagle::Individual& individual, Beagle::Context& context);
-
-private:
-    Foods& _foods;
-    int _recipe_size; // TODO register settable 
-};
+void RecipeInitializationOp::initIndividual(Beagle::Individual& individual, Beagle::Context& context) {
+    while (individual.size() < _recipe_size) {
+        reinterpret_cast<RecipeIndividual&>(individual).addFood(_foods, context);
+    }
+}
 

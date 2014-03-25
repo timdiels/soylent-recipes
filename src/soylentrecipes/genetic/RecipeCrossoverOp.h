@@ -30,13 +30,11 @@ public:
     typedef Beagle::PointerT<RecipeCrossoverOp, Beagle::CrossoverOp::Handle> Handle;
     typedef Beagle::ContainerT<RecipeCrossoverOp, Beagle::CrossoverOp::Bag> Bag;
 
+public:
+    RecipeCrossoverOp();
+
     /**
      * @returns bool True if mated succesfully, false otherwise
      */
     bool mate(Beagle::Individual& indiv1, Beagle::Context& context1, Beagle::Individual& indiv2, Beagle::Context& context2);
-
-public:
-    RecipeCrossoverOp();
-
-private:
 };

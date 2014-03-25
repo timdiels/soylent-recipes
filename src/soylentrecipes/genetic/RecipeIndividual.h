@@ -21,25 +21,31 @@
 
 #include <beagle/GA.hpp>
 
+class Foods;
+
 /**
- * Initializes individuals consisting of food
- *
- * Individuals need to be of FoodGenotype
+ * An individual who is a Recipe
  */
-class RecipeInitializationOp : public Beagle::InitializationOp
+class RecipeIndividual : public Beagle::Individual
 {
 public:
-    typedef Beagle::AllocatorT<RecipeInitializationOp, Beagle::InitializationOp::Alloc> Alloc;
-    typedef Beagle::PointerT<RecipeInitializationOp, Beagle::InitializationOp::Handle> Handle;
-    typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::InitializationOp::Bag> Bag;
+    typedef Beagle::AllocatorT<RecipeIndividual, Beagle::Individual::Alloc> Alloc;
+    typedef Beagle::PointerT<RecipeIndividual, Beagle::Individual::Handle> Handle;
+    typedef Beagle::ContainerT<RecipeIndividual, Beagle::Individual::Bag> Bag;
 
 public:
-    RecipeInitializationOp(Foods& foods, Beagle::string name = "InitRecipeOp");
+    RecipeIndividual();
 
-    void initIndividual(Beagle::Individual& individual, Beagle::Context& context);
+    /**
+     * Add a random food to an individual (that isn't already present in that individual)
+     */
+    void addFood(Foods&, Beagle::Context& context);
+
+    /**
+     * Remove a random food
+     */
+    void removeFood(Beagle::Context& context);
 
 private:
-    Foods& _foods;
-    int _recipe_size; // TODO register settable 
+    //FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
 };
-
