@@ -2,7 +2,7 @@
 
 Mines a food database for food combinations that match the nutrient
 profile in the database. Current implementation leads to results that match the
-target profile by 5% (pretty bad, needs work).
+target profile by 51%.
 
 Currently it uses the USDA database, but you could fill it up with other food
 data as well.
@@ -18,6 +18,7 @@ simply want to know the amounts to take of each, use this
 * [Results](#results)
 * [System requirements](#system-requirements)
 * [Compilation](#compilation)
+* [Project history](#project-history)
 
 
 ## Approach to solving the problem
@@ -29,14 +30,8 @@ Solving a single combo of foods is simple enough as explained in [Recipe/Diet
 Problem](#recipe-diet-problem).
 
 The mining phase entails choosing combinations of foods. Simply enumerating all
-possible combinations would take years. In order to solve this we first cluster
-the data and then use the average of each cluster as if they were food in our
-naive miner which does enumerate all possibilities of up to a given size (e.g.
-up to 5 foods in a single combo).
-
-The clustering happens with either of [these
-methods](http://www.alglib.net/dataanalysis/clustering.php). Both are ran and
-the best result is used.
+possible combinations would take years. After other attempts we've settled with
+a genetic algorithm.
 
 
 ###  Recipe/Diet Problem
@@ -72,11 +67,7 @@ Last noted performance of solving a recipe in this project of on average 8.5 foo
 
 ## Results
 
-With a clustering of 100 clusters, and a max combo size of 4, the best recipe is only 8% complete.
-
-Even random sampling would manage to outperform this.
-
-A different approach is needed.
+TODO
 
 
 ## System requirements
@@ -104,4 +95,15 @@ Steps:
 
 Now in order to run it type: ./soylentrecipes
 
+
+## Project history
+
+Our previous attempts of combining foods used (ordered from newest to older):
+
+- Cluster the data and then use the average of each cluster as if they were
+  food in our naive miner which does enumerate all possibilities of up to a
+  given size (e.g.  up to 5 foods in a single combo).
+
+  Clustering algorithms used were: [these](http://www.alglib.net/dataanalysis/clustering.php),
+  and an ad-hoc method which turned out to be pretty bad.
 
