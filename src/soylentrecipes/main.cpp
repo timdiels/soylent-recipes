@@ -18,7 +18,6 @@
  */
 
 #include <iostream>
-#include <signal.h>
 #include <stdexcept>
 #include <memory>
 #include "data_access/FoodDatabase.h"
@@ -28,10 +27,6 @@ using namespace std;
 
 static RecipeMiner* miner = nullptr;
 
-static void signal_callback(int signum) {
-    miner->stop();
-}
-
 void mine(FoodDatabase& db, int argc, char** argv) {
     unique_ptr<RecipeMiner> miner_(new RecipeMiner(db, argc, argv));
     miner = miner_.get();
@@ -39,9 +34,6 @@ void mine(FoodDatabase& db, int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    signal(SIGTERM, signal_callback);
-    signal(SIGINT, signal_callback);
-
     try {
         Database db_;
         FoodDatabase db(db_);

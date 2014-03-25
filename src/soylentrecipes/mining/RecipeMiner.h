@@ -31,7 +31,6 @@ class RecipeMiner
 {
 public:
     RecipeMiner(FoodDatabase& db, int argc, char** argv);
-    ~RecipeMiner();
 
     /**
      * Depth-first search on all seemingly-useful combinations of foods
@@ -41,23 +40,14 @@ public:
      */
     void mine();
 
-    /**
-     * Stop mining
-     *
-     * May be called asynchronously
-     */
-    void stop();
-
 private:
-    void mine(const std::vector<FoodIt>& foods);
+    void mine(const std::vector<FoodIt>& foods); // TODO old leftover stuff is quite left over
     void examine_recipe(const std::vector<FoodIt>& foods);
     double get_total_recipes(size_t food_count, int combo_size);
 
 private:
     FoodDatabase& _db;
     Foods _foods;
-
-    bool m_stop;
 
     int _argc; // Note: with naming conventions consistency is key, good thing this project is small
     char** _argv;
@@ -85,22 +75,9 @@ private:
 
 using namespace std; // TODO shouldn't do this
 
-/**
- * Thrown when mining needs to stop
- */
-class TerminationException : public exception {
-};
-
 RecipeMiner::RecipeMiner(FoodDatabase& db, int argc, char** argv)
-:   _db(db), _foods(db), m_stop(false), _argc(argc), _argv(argv)
+:   _db(db), _foods(db), _argc(argc), _argv(argv)
 {
-}
-
-RecipeMiner::~RecipeMiner() {
-}
-
-void RecipeMiner::stop() {
-    m_stop = true;
 }
 
 void RecipeMiner::mine() {
@@ -109,11 +86,7 @@ void RecipeMiner::mine() {
     // mine
     CALLGRIND_START_INSTRUMENTATION;
     clock_t start_time = clock();
-    try {
-        mine(foods);
-    }
-    catch (const TerminationException&) {
-    }
+    mine(foods);
     clock_t end_time = clock();
     CALLGRIND_STOP_INSTRUMENTATION;
     CALLGRIND_DUMP_STATS;
@@ -133,10 +106,6 @@ void RecipeMiner::mine() {
 
 void RecipeMiner::mine(const vector<FoodIt>& foods) {
     using namespace Beagle;
-
-    /*if (m_stop) {
-        throw TerminationException(); // TODO this no longer gets a chance, probably the system class has a func to stop
-    }*/
 
     System::Handle system = new System;
 
