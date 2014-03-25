@@ -17,38 +17,23 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <soylentrecipes/domain/Food.h>
 #include <beagle/GA.hpp>
+#include <vector>
 
-class FoodGenotype : public Beagle::Genotype
+class NutrientProfile;
+
+class RecipeEvalOp : public Beagle::EvaluationOp 
 {
 public:
-    typedef Beagle::AllocatorT<FoodGenotype, Beagle::Genotype::Alloc> Alloc;
-    typedef Beagle::PointerT<FoodGenotype, Beagle::Genotype::Handle> Handle;
-    typedef Beagle::ContainerT<FoodGenotype, Beagle::Genotype::Bag> Bag;
+  typedef Beagle::AllocatorT<RecipeEvalOp, Beagle::EvaluationOp::Alloc> Alloc;
+  typedef Beagle::PointerT<RecipeEvalOp, Beagle::EvaluationOp::Handle> Handle;
+  typedef Beagle::ContainerT<RecipeEvalOp, Beagle::EvaluationOp::Bag> Bag;
 
 public:
-    FoodGenotype() {
-    }
+  RecipeEvalOp(const NutrientProfile& profile);
 
-    bool isEqual(const Object& obj) const {
-        auto& other = Beagle::castObjectT<const FoodGenotype&>(obj);
-        return *other._food == *_food;
-    }
-
-    const Food* getFood() const {
-        return _food;
-    }
-
-    void setFood(const Food* food) {
-        _food = food;
-    }
-
-    // TODO read/write food id for persistence
+  Beagle::Fitness::Handle evaluate(Beagle::Individual&, Beagle::Context&);
 
 private:
-    const Food* _food;
+  const NutrientProfile& _profile;
 };
-

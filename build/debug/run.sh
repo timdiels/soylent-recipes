@@ -1,6 +1,6 @@
 #!/bin/sh
 
-./soylentrecipes -OBec.conf.file=beagle.conf &
+./soylentrecipes -OBec.conf.file=../../src/beagle.conf &
 pid=$!
 sleep 2
 kill -9 $pid &&

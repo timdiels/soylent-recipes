@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 # find libs
 find_package(ALGLIB REQUIRED)
 find_package(Sqlite3 REQUIRED)
-find_package(OpenBeagle COMPONENTS openbeagle openbeagle-GA REQUIRED)
+find_package(OpenBeagle COMPONENTS openbeagle openbeagle-GA pacc-xml REQUIRED)
 
 ############################################
 

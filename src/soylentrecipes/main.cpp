@@ -33,8 +33,7 @@ static void signal_callback(int signum) {
 }
 
 void mine(FoodDatabase& db, int argc, char** argv) {
-    NutrientProfile profile = db.get_profile(1);
-    unique_ptr<RecipeMiner> miner_(new RecipeMiner(profile, db, argc, argv));
+    unique_ptr<RecipeMiner> miner_(new RecipeMiner(db, argc, argv));
     miner = miner_.get();
     miner->mine();
 }

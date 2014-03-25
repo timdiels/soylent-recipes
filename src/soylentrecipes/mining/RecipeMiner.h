@@ -21,9 +21,7 @@
 
 #include <vector>
 #include <ctime>
-#include <soylentrecipes/domain/Recipes.h>
 #include <soylentrecipes/domain/Food.h>
-#include <soylentrecipes/domain/NutrientProfile.h>
 #include <soylentrecipes/genetic/Foods.h>
 
 /**
@@ -32,7 +30,7 @@
 class RecipeMiner
 {
 public:
-    RecipeMiner(const NutrientProfile& profile, FoodDatabase& db, int argc, char** argv);
+    RecipeMiner(FoodDatabase& db, int argc, char** argv);
     ~RecipeMiner();
 
     /**
@@ -56,7 +54,7 @@ private:
     double get_total_recipes(size_t food_count, int combo_size);
 
 private:
-    const NutrientProfile& profile;
+    FoodDatabase& _db;
     Foods _foods;
 
     bool m_stop;
@@ -79,9 +77,10 @@ private:
 #include <valgrind/callgrind.h>
 #include <soylentrecipes/genetic/Foods.h>
 #include <soylentrecipes/genetic/RecipeInitializationOp.h>
+#include <soylentrecipes/genetic/RecipeCrossoverOp.h>
+#include <soylentrecipes/genetic/RecipeEvalOp.h>
 #include <soylentrecipes/genetic/FoodGenotype.h>
 #include <beagle/GA.hpp>
-#include "RecipeProblem.h"
 
 using namespace std; // TODO shouldn't do this
 
@@ -91,8 +90,8 @@ using namespace std; // TODO shouldn't do this
 class TerminationException : public exception {
 };
 
-RecipeMiner::RecipeMiner(const NutrientProfile& profile, FoodDatabase& db, int argc, char** argv)
-:   profile(profile), _foods(db), m_stop(false), _argc(argc), _argv(argv)
+RecipeMiner::RecipeMiner(FoodDatabase& db, int argc, char** argv)
+:   _db(db), _foods(db), m_stop(false), _argc(argc), _argv(argv)
 {
 }
 
@@ -134,49 +133,50 @@ void RecipeMiner::mine() {
 void RecipeMiner::mine(const vector<FoodIt>& foods) {
     using namespace Beagle;
 
-    if (m_stop) {
+    /*if (m_stop) {
         throw TerminationException(); // TODO this no longer gets a chance, probably the system class has a func to stop
-    }
+    }*/
 
     // Run genetic algorithm
-    System system;
+    System::Handle system = new System;
 
-    FoodGenotype::Alloc geno_allocator;
-    FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
-    Individual::Alloc individual_allocator(&geno_allocator, &fitness_allocator);
+    FoodGenotype::Alloc::Handle geno_allocator = new FoodGenotype::Alloc;
+    FitnessSimple::Alloc::Handle fitness_allocator = new FitnessSimple::Alloc;
+    //FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
+    Individual::Alloc::Handle individual_allocator = new Individual::Alloc(geno_allocator, fitness_allocator);
 
-    GA::EvolverES evolver;
-    Stats::Alloc stats_alloc;
-    HallOfFame::Alloc hall_of_fame_alloc;
-    Deme::Alloc deme_alloc(&individual_allocator, &stats_alloc, &hall_of_fame_alloc);
-    Vivarium vivarium(&deme_alloc, &stats_alloc, &hall_of_fame_alloc);
+    GA::EvolverES::Handle evolver = new GA::EvolverES;
+    Deme::Alloc::Handle deme_alloc = new Deme::Alloc(individual_allocator);
+    Vivarium::Handle vivarium = new Vivarium(deme_alloc);
 
-    RecipeInitializationOp initRecipeOp(_foods);
-    evolver.addOperator(&initRecipeOp);
+    RecipeInitializationOp::Handle init_recipe_op = new RecipeInitializationOp(_foods);
+    evolver->addOperator(init_recipe_op);
 
-    evolver.initialize(&system, _argc, _argv);
-    evolver.readEvolverFile("beagle.conf");
-    evolver.evolve(&vivarium);
+    NutrientProfile profile = _db.get_profile(1);
+    RecipeEvalOp::Handle recipe_eval_op = new RecipeEvalOp(profile);
+    evolver->addOperator(recipe_eval_op);
 
+    RecipeCrossoverOp::Handle cross_over_op = new RecipeCrossoverOp;
+    evolver->addOperator(cross_over_op);
 
-    // TODO do you see any mem leaks in this func? I sure do
+    evolver->initialize(system, _argc, _argv);
+
+    /*ofstream fout("evolver.conf");
+    fout << evolver.getOperatorMap().serialize(true, 2) << endl;
+    fout << evolver.serialize(true, 2) << endl;
+    fout.close();*/
+
+    evolver->evolve(vivarium);
+
+    //vivarium.getHallOfFame();
+    //writePopulation
 }
 
 // TODO use this in fitness stuff
 void RecipeMiner::examine_recipe(const vector<FoodIt>& foods) {
     examine_total++;
-
-    // solve recipe
     problem_size_sum += foods.size();
-    RecipeProblem problem(profile, foods);
-    auto result = problem.solve();
 
-    // calculate completeness number (ranges from 0.0 to 1.0)
-    // note: nutrients aren't weighted in the completeness number
-    double completeness = 0.0;
-    for (int i=0; i < result.length(); ++i) {
-        completeness += min(1.0, result[i] / profile.get_targets()[i]);
-    }
-    completeness /= result.length();
+    
 }
 

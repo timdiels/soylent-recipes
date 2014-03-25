@@ -21,8 +21,8 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 #include <beagle/GA.hpp>
-#include <beagle/castObjectT.hpp>
 #include <soylentrecipes/genetic/FoodGenotype.h>
 
 /**
@@ -33,9 +33,9 @@
 class RecipeInitializationOp : public Beagle::InitializationOp
 {
 public:
-    typedef Beagle::AllocatorT<RecipeInitializationOp, Beagle::Genotype::Alloc> Alloc;
-    typedef Beagle::PointerT<RecipeInitializationOp, Beagle::Genotype::Handle> Handle;
-    typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::Genotype::Bag> Bag;
+    typedef Beagle::AllocatorT<RecipeInitializationOp, Beagle::InitializationOp::Alloc> Alloc;
+    typedef Beagle::PointerT<RecipeInitializationOp, Beagle::InitializationOp::Handle> Handle;
+    typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::InitializationOp::Bag> Bag;
 
 public:
     RecipeInitializationOp(Foods& foods, Beagle::string name = "InitRecipeOp")
