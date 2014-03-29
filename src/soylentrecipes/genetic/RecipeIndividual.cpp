@@ -18,12 +18,11 @@
  */
 
 #include <beagle/GA.hpp>
-#include <soylentrecipes/genetic/FoodGenotype.h>
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/genetic/Foods.h>
-#include <soylentrecipes/genetic/FoodGenotype.h>
 #include <assert.h>
 #include "RecipeIndividual.h"
+#include <soylentrecipes/genetic/RecipeContext.h>
 
 using namespace std;
 using namespace Beagle;
@@ -33,7 +32,8 @@ RecipeIndividual::RecipeIndividual()
 {
 }
 
-void RecipeIndividual::addFood(Foods& foods, Context& context) {
+void RecipeIndividual::addFood(Context& context) {
+    auto& foods = reinterpret_cast<RecipeContext&>(context).getFoods();
     const Food* next;
     bool alreadyHasFood;
     do {
@@ -59,3 +59,4 @@ void RecipeIndividual::removeFood(Context& context) {
 
     erase(begin()+index);
 }
+

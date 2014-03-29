@@ -34,12 +34,11 @@ public:
     typedef Beagle::ContainerT<RecipeInitializationOp, Beagle::InitializationOp::Bag> Bag;
 
 public:
-    RecipeInitializationOp(Foods& foods, Beagle::string name = "InitRecipeOp");
+    RecipeInitializationOp(Beagle::string name = "InitRecipeOp");
 
     void initIndividual(Beagle::Individual& individual, Beagle::Context& context);
 
 private:
-    Foods& _foods;
     int _recipe_size; // TODO register settable 
 };
 

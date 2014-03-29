@@ -20,9 +20,6 @@
 #pragma once
 
 #include <vector>
-#include <ctime>
-#include <soylentrecipes/domain/Food.h>
-#include <soylentrecipes/genetic/Foods.h>
 
 /**
  * Mines a food database for good recipes
@@ -30,7 +27,7 @@
 class RecipeMiner
 {
 public:
-    RecipeMiner(FoodDatabase& db, int argc, char** argv);
+    RecipeMiner(int argc, char** argv);
 
     /**
      * Depth-first search on all seemingly-useful combinations of foods
@@ -44,10 +41,7 @@ private:
     void mine_();
 
 private:
-    FoodDatabase& _db;
-    Foods _foods;
-
-    int _argc; // Note: with naming conventions consistency is key, good thing this project is small
+    int _argc;
     char** _argv;
 };
 

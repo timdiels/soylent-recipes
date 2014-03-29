@@ -64,5 +64,10 @@ size_t Food::nutrient_count() const {
 }
 
 bool Food::operator==(const Food& other) const {
-    return other.get_id() == get_id();
+    return get_id() == other.get_id();
 }
+
+bool Food::operator==(const int id) const {
+    return get_id() == id;
+}
+

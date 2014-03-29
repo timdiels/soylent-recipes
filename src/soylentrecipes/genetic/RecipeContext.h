@@ -18,19 +18,32 @@
  */
 
 #include <beagle/GA.hpp>
-#include <vector>
+#include <memory>
+#include <soylentrecipes/data_access/FoodDatabase.h>
+#include <soylentrecipes/genetic/Foods.h>
 
-class NutrientProfile;
-
-class RecipeEvalOp : public Beagle::EvaluationOp 
+/**
+ * Cross over of 2 individuals by swapping 2 of their genotypes
+ */
+class RecipeContext : public Beagle::Context
 {
 public:
-  typedef Beagle::AllocatorT<RecipeEvalOp, Beagle::EvaluationOp::Alloc> Alloc;
-  typedef Beagle::PointerT<RecipeEvalOp, Beagle::EvaluationOp::Handle> Handle;
-  typedef Beagle::ContainerT<RecipeEvalOp, Beagle::EvaluationOp::Bag> Bag;
+    typedef Beagle::AllocatorT<RecipeContext, Beagle::Context::Alloc> Alloc;
+    typedef Beagle::PointerT<RecipeContext, Beagle::Context::Handle> Handle;
+    typedef Beagle::ContainerT<RecipeContext, Beagle::Context::Bag> Bag;
 
 public:
-  RecipeEvalOp();
+    RecipeContext();
+    ~RecipeContext();
 
-  Beagle::Fitness::Handle evaluate(Beagle::Individual&, Beagle::Context&);
+    Foods& getFoods();
+    NutrientProfile& getProfile();
+
+    RecipeContext& operator=(const RecipeContext&);
+
+private:
+    std::shared_ptr<Database> _basic_db;
+    std::shared_ptr<FoodDatabase> _db;
+    std::shared_ptr<Foods> _foods;
+    std::shared_ptr<NutrientProfile> _profile;
 };

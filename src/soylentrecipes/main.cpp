@@ -20,33 +20,22 @@
 #include <iostream>
 #include <stdexcept>
 #include <memory>
-#include "data_access/FoodDatabase.h"
+#include <libalglib/optimization.h>
 #include "mining/RecipeMiner.h"
 
 using namespace std;
 
 static RecipeMiner* miner = nullptr;
 
-void mine(FoodDatabase& db, int argc, char** argv) {
-    unique_ptr<RecipeMiner> miner_(new RecipeMiner(db, argc, argv));
+void mine(int argc, char** argv) {
+    unique_ptr<RecipeMiner> miner_(new RecipeMiner(argc, argv));
     miner = miner_.get();
     miner->mine();
 }
 
 int main(int argc, char** argv) {
     try {
-        Database db_;
-        FoodDatabase db(db_);
-
-        if (db.recipe_count() > 0) {
-            cout << "Resuming previous mine operation not supported (though it may already have finished)" << endl;
-            cout << "Wipe recipe table and commence mining? (y/n)" << endl;
-            char c;
-            cin >> c;
-            if (c != 'y' && c != 'Y') return 0;
-            db.delete_recipes();
-        }
-        mine(db, argc, argv);
+        mine(argc, argv);
     }
     catch (const alglib::ap_error& e) {
         cerr << e.msg << endl;

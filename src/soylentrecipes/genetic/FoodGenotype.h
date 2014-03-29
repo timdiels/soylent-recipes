@@ -30,23 +30,11 @@ public:
     typedef Beagle::ContainerT<FoodGenotype, Beagle::Genotype::Bag> Bag;
 
 public:
-    FoodGenotype() {
-    }
-
-    bool isEqual(const Object& obj) const {
-        auto& other = Beagle::castObjectT<const FoodGenotype&>(obj);
-        return *other._food == *_food;
-    }
-
-    const Food* getFood() const {
-        return _food;
-    }
-
-    void setFood(const Food* food) {
-        _food = food;
-    }
-
-    // TODO read/write food id for persistence
+    bool isEqual(const Object& obj) const;
+    const Food* getFood() const;
+    void setFood(const Food* food);
+    void write(PACC::XML::Streamer& ioStreamer, bool inIndent) const;
+    void readWithContext(PACC::XML::ConstIterator inIter, Beagle::Context& context);
 
 private:
     const Food* _food;

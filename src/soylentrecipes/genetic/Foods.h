@@ -20,6 +20,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/data_access/FoodDatabase.h>
 #include <boost/function_output_iterator.hpp>
@@ -43,6 +44,14 @@ public:
             _foods.emplace_back(r.id, r.description, values);
         };
         db.get_foods(boost::make_function_output_iterator(emplace_food));
+    }
+
+    ~Foods() {
+        std::cerr << "dies" << std::endl;
+    }
+
+    const Food* get(int id) const {
+        return &*find(_foods.begin(), _foods.end(), id);
     }
 
     /**

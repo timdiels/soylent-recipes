@@ -21,20 +21,21 @@
 #include <iostream>
 #include <exception>
 #include <valgrind/callgrind.h>
-#include <soylentrecipes/genetic/Foods.h>
+#include <ctime>
 #include <soylentrecipes/genetic/RecipeInitializationOp.h>
 #include <soylentrecipes/genetic/RecipeCrossoverOp.h>
 #include <soylentrecipes/genetic/RecipeMutationOp.h>
 #include <soylentrecipes/genetic/RecipeEvalOp.h>
 #include <soylentrecipes/genetic/RecipeIndividual.h>
+#include <soylentrecipes/genetic/RecipeContext.h>
 #include <soylentrecipes/mining/RecipeProblem.h>
 #include <beagle/GA.hpp>
 
 using namespace std;
 using namespace Beagle;
 
-RecipeMiner::RecipeMiner(FoodDatabase& db, int argc, char** argv)
-:   _db(db), _foods(db), _argc(argc), _argv(argv)
+RecipeMiner::RecipeMiner(int argc, char** argv)
+:   _argc(argc), _argv(argv)
 {
 }
 
@@ -49,12 +50,13 @@ void RecipeMiner::mine() {
 
     // print stats
     double elapsed_time = (end_time - start_time) / static_cast<double>(CLOCKS_PER_SEC);
-    long food_count = _db.food_count();
+    long food_count = 8000; // TODO don't hardcode
     RecipeProblem::print_stats(elapsed_time, food_count);
 }
 
 void RecipeMiner::mine_() {
-    System::Handle system = new System;
+    RecipeContext::Alloc::Handle context_alloc = new RecipeContext::Alloc;
+    System::Handle system = new System(context_alloc);
 
     RecipeIndividual::Alloc::Handle individual_allocator = new RecipeIndividual::Alloc;
 
@@ -62,23 +64,19 @@ void RecipeMiner::mine_() {
     Deme::Alloc::Handle deme_alloc = new Deme::Alloc(individual_allocator);
     Vivarium::Handle vivarium = new Vivarium(deme_alloc);
 
-    RecipeInitializationOp::Handle init_recipe_op = new RecipeInitializationOp(_foods);
+    RecipeInitializationOp::Handle init_recipe_op = new RecipeInitializationOp();
     evolver->addOperator(init_recipe_op);
 
-    NutrientProfile profile = _db.get_profile(1);
-    RecipeEvalOp::Handle recipe_eval_op = new RecipeEvalOp(profile);
+    RecipeEvalOp::Handle recipe_eval_op = new RecipeEvalOp;
     evolver->addOperator(recipe_eval_op);
 
     RecipeCrossoverOp::Handle cross_over_op = new RecipeCrossoverOp;
     evolver->addOperator(cross_over_op);
 
-    RecipeMutationOp::Handle mutation_op = new RecipeMutationOp(_foods);
+    RecipeMutationOp::Handle mutation_op = new RecipeMutationOp();
     evolver->addOperator(mutation_op);
 
     evolver->initialize(system, _argc, _argv);
     evolver->evolve(vivarium);
-
-    //vivarium.getHallOfFame();
-    //writePopulation
 }
 

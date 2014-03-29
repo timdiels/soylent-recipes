@@ -21,6 +21,7 @@
 #include <soylentrecipes/domain/NutrientProfile.h>
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/mining/RecipeProblem.h>
+#include <soylentrecipes/genetic/RecipeContext.h>
 #include <assert.h>
 #include <iostream>
 #include "FoodGenotype.h"
@@ -29,13 +30,15 @@
 using namespace std;
 using namespace Beagle;
 
-RecipeEvalOp::RecipeEvalOp(const NutrientProfile& profile) 
-:   EvaluationOp("RecipeEvalOp"), _profile(profile) 
+RecipeEvalOp::RecipeEvalOp() 
+:   EvaluationOp("RecipeEvalOp")
 {
 }
 
 Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
 {
+    auto& profile = reinterpret_cast<RecipeContext&>(context).getProfile();
+
     cout << "eval" << endl;
     assert(individual.size() > 0);
 
@@ -50,14 +53,14 @@ Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
     }
 
     // solve recipe
-    RecipeProblem problem(_profile, foods.begin(), foods.end());
+    RecipeProblem problem(profile, foods.begin(), foods.end());
     auto result = problem.solve();
 
     // calculate completeness number (ranges from 0.0 to 1.0)
     // note: nutrients aren't weighted in the completeness number
     double completeness = 0.0;
     for (int i=0; i < result.length(); ++i) {
-        completeness += min(1.0, result[i] / _profile.get_targets()[i]);
+        completeness += min(1.0, result[i] / profile.get_targets()[i]);
     }
     completeness /= result.length();
 

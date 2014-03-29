@@ -20,8 +20,8 @@
 #pragma once
 
 #include <beagle/GA.hpp>
-
-class Foods;
+#include <soylentrecipes/genetic/FoodGenotype.h>
+#include <iostream>
 
 /**
  * An individual who is a Recipe
@@ -39,7 +39,7 @@ public:
     /**
      * Add a random food to an individual (that isn't already present in that individual)
      */
-    void addFood(Foods&, Beagle::Context& context);
+    void addFood(Beagle::Context& context);
 
     /**
      * Remove a random food
@@ -49,3 +49,4 @@ public:
 private:
     //FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
 };
+

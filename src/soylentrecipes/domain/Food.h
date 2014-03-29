@@ -38,6 +38,7 @@ public:
     size_t nutrient_count() const;
 
     bool operator==(const Food& other) const;
+    bool operator==(const int id) const;
 
     /**
      * Return how non-orthogonal this and the other vector are to each other

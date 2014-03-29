@@ -17,21 +17,32 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <beagle/GA.hpp>
-#include <soylentrecipes/genetic/RecipeIndividual.h>
-#include "RecipeInitializationOp.h"
+#include "RecipeContext.h"
 
 using namespace std;
 using namespace Beagle;
 
-RecipeInitializationOp::RecipeInitializationOp(Beagle::string name)
-:   InitializationOp("ec.repro.prob", name), _recipe_size(4)
+RecipeContext::RecipeContext()
+:   _basic_db(new Database()), _db(new FoodDatabase(*_basic_db)), _foods(new Foods(*_db)), _profile(new NutrientProfile(_db->get_profile(1)))
 {
 }
 
-void RecipeInitializationOp::initIndividual(Beagle::Individual& individual, Beagle::Context& context) {
-    while (individual.size() < _recipe_size) {
-        reinterpret_cast<RecipeIndividual&>(individual).addFood(context);
-    }
+RecipeContext::~RecipeContext() {
+}
+
+Foods& RecipeContext::getFoods() {
+    return *_foods;
+}
+
+NutrientProfile& RecipeContext::getProfile() {
+    return *_profile;
+}
+
+RecipeContext& RecipeContext::operator=(const RecipeContext& o) {
+    _basic_db = o._basic_db;
+    _db = o._db;
+    _foods = o._foods;
+    _profile  = o._profile;
+    return *this;
 }
 

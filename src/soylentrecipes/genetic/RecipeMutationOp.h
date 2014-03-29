@@ -18,7 +18,6 @@
  */
 
 #include <beagle/GA.hpp>
-#include <soylentrecipes/genetic/Foods.h>
 
 /**
  * Cross over of 2 individuals by swapping 2 of their genotypes
@@ -31,13 +30,10 @@ public:
     typedef Beagle::ContainerT<RecipeMutationOp, Beagle::MutationOp::Bag> Bag;
 
 public:
-    RecipeMutationOp(Foods& foods);
+    RecipeMutationOp();
 
     /**
      * @returns bool True if mutated succesfully, false otherwise
      */
     bool mutate(Beagle::Individual& ioIndividual, Beagle::Context& ioContext);
-
-private:
-    Foods& _foods;
 };

@@ -18,15 +18,14 @@
  */
 
 #include "RecipeMutationOp.h"
-#include <assert.h>
 #include <iostream>
 #include <soylentrecipes/genetic/RecipeIndividual.h>
 
 using namespace std;
 using namespace Beagle;
 
-RecipeMutationOp::RecipeMutationOp(Foods& foods)
-:   MutationOp("ec.mut.prob", "RecipeMutationOp"), _foods(foods)
+RecipeMutationOp::RecipeMutationOp()
+:   MutationOp("ec.mut.prob", "RecipeMutationOp")
 {
 }
 
@@ -39,7 +38,7 @@ bool RecipeMutationOp::mutate(Individual& individual, Context& context) {
     if (indiv.size() == 1 || context.getSystem().getRandomizer().rollUniform() <= 0.5) {
         // add a food
         cout << "add" << endl;
-        indiv.addFood(_foods, context);
+        indiv.addFood(context);
     }
     else {
         // remove a food
