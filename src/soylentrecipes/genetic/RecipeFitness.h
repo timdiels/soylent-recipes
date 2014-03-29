@@ -36,7 +36,7 @@ public:
     RecipeFitness(double completeness, double simplicity) 
     :   FitnessSimple(
             1.0 * completeness + 
-            0.7 * simplicity),
+            0.1 * simplicity),
         _completeness(completeness)
     {
     }

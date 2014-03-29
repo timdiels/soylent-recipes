@@ -37,7 +37,6 @@ void RecipeProblem::solve() {
     minbleicoptimize(solver, RecipeProblem::f, nullptr, this);
 
     minbleicreport report;
-    real_1d_array x;
     x.setlength(a.cols());
     minbleicresults(solver, x, report);
 

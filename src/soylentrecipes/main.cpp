@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <memory>
 #include <libalglib/optimization.h>
+#include "tests.h"
 #include "mining/RecipeMiner.h"
 
 using namespace std;
@@ -34,19 +35,24 @@ void mine(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    try {
-        mine(argc, argv);
+    if (argc==2 && string(argv[1]) == "--test") {
+        testRecipeProblem();
     }
-    catch (const alglib::ap_error& e) {
-        cerr << e.msg << endl;
-        return 1;
+    else {
+        try {
+            mine(argc, argv);
+        }
+        catch (const alglib::ap_error& e) {
+            cerr << e.msg << endl;
+            return 1;
+        }
+        catch (const exception& e) {
+            cerr << e.what() << endl;
+            return 1;
+        }
+        /*catch (...) {
+            http://en.cppreference.com/w/cpp/error/current_exception  exit(1)
+        }*/
     }
-    catch (const exception& e) {
-        cerr << e.what() << endl;
-        return 1;
-    }
-    /*catch (...) {
-        http://en.cppreference.com/w/cpp/error/current_exception  exit(1)
-    }*/
     return 0;
 }

@@ -100,7 +100,6 @@ RecipeProblem::RecipeProblem(const NutrientProfile& profile, ForwardIterator foo
     // create solver
     {
     vector<double> zeros(a.cols(), 0.0);
-    real_1d_array x;
     x.setcontent(zeros.size(), zeros.data());
     minbleiccreate(x, solver);
     }

@@ -18,10 +18,18 @@ set(CMAKE_CXX_FLAGS "-Wall -Wno-sign-compare -std=c++11 ${SDL_CFLAGS}")
 file(GLOB_RECURSE Sources soylentrecipes/*.cpp)
 add_executable(soylentrecipes ${Sources})
 
-target_link_libraries(soylentrecipes 
-    ${OPENBEAGLE_LIBRARIES} 
+set(libraries ${OPENBEAGLE_LIBRARIES} 
     ${LIBALG_LIBRARIES} 
     ${SQLITE3_LIBRARIES} 
-    ${LIBS} 
-)
+    ${LIBS})
+
+target_link_libraries(soylentrecipes ${libraries})
+
+
+################
+# tests
+
+enable_testing()
+
+add_test( testAll soylentrecipes --test )
 
