@@ -45,8 +45,5 @@ public:
      * Remove a random food
      */
     void removeFood(Beagle::Context& context);
-
-private:
-    //FitnessMultiObj::Alloc fitness_allocator;// for now we could use FitnessSimple //TODO FitnessMultiObj // TODO need inherit? TODO place multiple objectives in it
 };
 

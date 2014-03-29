@@ -62,5 +62,16 @@ Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
     }
     completeness /= result.length();
 
-    return new FitnessSimple(completeness);
+    // how simple to make is it: value in [0.0, 1.0]
+    // (TODO could take into account some attributes added by people on the foods)
+    double simplicity = 1.0/individual.size();
+
+    // TODO take into account price
+
+    // combine subscores
+    double fitness = 
+        + 1.0 * completeness
+        + 0.7 * simplicity
+        ;
+    return new FitnessSimple(fitness);
 }
