@@ -22,6 +22,7 @@
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/mining/RecipeProblem.h>
 #include <soylentrecipes/genetic/RecipeContext.h>
+#include <soylentrecipes/genetic/RecipeFitness.h>
 #include <assert.h>
 #include "FoodGenotype.h"
 #include "RecipeEvalOp.h"
@@ -69,9 +70,5 @@ Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
     // TODO take into account price
 
     // combine subscores
-    double fitness = 
-        + 1.0 * completeness
-        + 0.7 * simplicity
-        ;
-    return new FitnessSimple(fitness);
+    return new RecipeFitness(completeness, simplicity);
 }

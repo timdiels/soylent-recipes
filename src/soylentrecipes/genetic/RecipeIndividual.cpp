@@ -17,18 +17,19 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "RecipeIndividual.h"
 #include <beagle/GA.hpp>
 #include <soylentrecipes/domain/Food.h>
 #include <soylentrecipes/genetic/Foods.h>
-#include <assert.h>
-#include "RecipeIndividual.h"
 #include <soylentrecipes/genetic/RecipeContext.h>
+#include <soylentrecipes/genetic/RecipeFitness.h>
+#include <assert.h>
 
 using namespace std;
 using namespace Beagle;
 
 RecipeIndividual::RecipeIndividual()
-:   Individual(new FoodGenotype::Alloc, new FitnessSimple::Alloc)
+:   Individual(new FoodGenotype::Alloc, new RecipeFitness::Alloc)
 {
 }
 
