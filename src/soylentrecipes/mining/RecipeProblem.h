@@ -16,8 +16,6 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// TODO add test of completeness score
-
 #pragma once
 
 #include <libalglib/optimization.h>
