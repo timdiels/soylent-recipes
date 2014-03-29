@@ -39,6 +39,8 @@ public:
      */
     static void f(const alglib::real_1d_array& x, double& func_value, alglib::real_1d_array& gradient, void* data);
 
+    static void print_stats(double elapsed_time, long food_count);
+
 private:
     void _f(const alglib::real_1d_array& x, double& func_value, alglib::real_1d_array& gradient);
 
@@ -47,8 +49,12 @@ private:
     const alglib::real_1d_array& y;
 
     alglib::minbleicstate solver;
+
+    // stats
+    static long total_calculated;
+    static long problem_size_sum;  // sum of len(foods) of recipe problems that were solved
 };
-// TODO could lower accuracy in solver to speed up
+
 
 //////////////////////////////
 // hpp

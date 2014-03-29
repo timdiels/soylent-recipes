@@ -56,5 +56,3 @@ private:
     alglib::real_1d_array normalised_nutrient_values;
 };
 
-typedef std::vector<Food>::const_iterator FoodIt;
-

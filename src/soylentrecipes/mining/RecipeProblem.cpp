@@ -24,7 +24,13 @@
 using namespace std;
 using namespace alglib;
 
+long RecipeProblem::total_calculated = 0;
+long RecipeProblem::problem_size_sum = 0;
+
 real_1d_array RecipeProblem::solve() {
+    total_calculated++;
+    problem_size_sum += a.cols();
+
     //const int max_iterations = 10000;
     //minbleicsetcond(solver, 0, 0, 0, max_iterations);
 
@@ -63,5 +69,15 @@ void RecipeProblem::_f(const real_1d_array& x, double& func_value, real_1d_array
         gradient[i] = 2.0 * vdotproduct(&v[0], 1, &a[0][i], a.getstride(), v.length());
         // TODO check gradient is correct
     }
+}
+
+void RecipeProblem::print_stats(double elapsed_time, long food_count) {
+    double time_per_problem = elapsed_time * 1000.0 / total_calculated; // in ms
+
+    cout << endl;
+    cout << "Time spent per problem: " << time_per_problem << " ms" << endl;
+    cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
+    cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
+    cout << "Food count: " << food_count << endl;
 }
 
