@@ -27,7 +27,7 @@ using namespace alglib;
 long RecipeProblem::total_calculated = 0;
 long RecipeProblem::problem_size_sum = 0;
 
-real_1d_array RecipeProblem::solve() {
+void RecipeProblem::solve() {
     total_calculated++;
     problem_size_sum += a.cols();
 
@@ -48,8 +48,6 @@ real_1d_array RecipeProblem::solve() {
         str << "Failed to solve problem: term type " << report.terminationtype;
         throw runtime_error(str.str());
     }
-
-    return x;
 }
 
 void RecipeProblem::f(const real_1d_array& x, double& func_value, real_1d_array& gradient, void* data) {
@@ -79,5 +77,28 @@ void RecipeProblem::print_stats(double elapsed_time, long food_count) {
     cout << "Processor time used since program start: " << elapsed_time / 60.0 << " minutes" << endl;
     cout << "Average problem size: " << problem_size_sum / static_cast<double>(total_calculated) << " foods" << endl;
     cout << "Food count: " << food_count << endl;
+}
+
+real_1d_array RecipeProblem::get_result() {
+    return x;
+}
+
+double RecipeProblem::get_completeness() {
+    // nutrients = A*x
+    real_1d_array nutrients;
+    nutrients.setlength(a.rows());
+    for (int i=0; i < nutrients.length(); i++) {
+        nutrients[i] = vdotproduct(&a[i][0], &x[0], x.length());
+    }
+    //rmatrixgemm(a.cols(), 1, a.rows(), 1.0, a, 0, 0, 0, x, 0, 0, 0, 0.0, nutrients, 0, 0)
+
+    // calc completeness
+    double completeness = 0.0;
+    for (int i=0; i < nutrients.length(); ++i) {
+        completeness += min(1.0, nutrients[i] / _profile.get_targets()[i]);
+    }
+    completeness /= nutrients.length();
+
+    return completeness;
 }
 

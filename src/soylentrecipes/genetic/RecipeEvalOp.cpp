@@ -26,6 +26,7 @@
 #include <assert.h>
 #include "FoodGenotype.h"
 #include "RecipeEvalOp.h"
+#include <iostream>
 
 using namespace std;
 using namespace Beagle;
@@ -53,15 +54,8 @@ Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
 
     // solve recipe
     RecipeProblem problem(profile, foods.begin(), foods.end());
-    auto result = problem.solve();
-
-    // calculate completeness number (ranges from 0.0 to 1.0)
-    // note: nutrients aren't weighted in the completeness number
-    double completeness = 0.0;
-    for (int i=0; i < result.length(); ++i) {
-        completeness += min(1.0, result[i] / profile.get_targets()[i]);
-    }
-    completeness /= result.length();
+    problem.solve();
+    double completeness = problem.get_completeness();
 
     // how simple to make is it: value in [0.0, 1.0]
     // (TODO could take into account some attributes added by people on the foods)

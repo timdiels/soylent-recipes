@@ -16,6 +16,8 @@
  * along with soylent-recipes.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// TODO add test of completeness score
+
 #pragma once
 
 #include <libalglib/optimization.h>
@@ -32,7 +34,20 @@ public:
     template <class ForwardIterator>
     RecipeProblem(const NutrientProfile& profile, ForwardIterator foods_begin, ForwardIterator foods_end);
 
-    alglib::real_1d_array solve();
+    void solve();
+
+    /**
+     * The amounts one should take of each food
+     */
+    alglib::real_1d_array get_result();
+
+    /**
+     * Completeness number ranges from 0.0 to 1.0,
+     *
+     * Indicates how completely the profile was reached
+     * without exceeding bounds
+     */
+    double get_completeness();
 
     /**
      * Function for optimizer, func_value = l2_norm(a*x-y)^2
@@ -47,8 +62,9 @@ private:
 private:
     alglib::real_2d_array a;
     const alglib::real_1d_array& y;
-
+    alglib::real_1d_array x;
     alglib::minbleicstate solver;
+    const NutrientProfile& _profile;
 
     // stats
     static long total_calculated;
@@ -64,7 +80,7 @@ private:
 
 template <class ForwardIterator>
 RecipeProblem::RecipeProblem(const NutrientProfile& profile, ForwardIterator foods_begin, ForwardIterator foods_end) 
-:   y(profile.get_targets())
+:   y(profile.get_targets()), _profile(profile)
 {
     using namespace std;
     using namespace alglib;
