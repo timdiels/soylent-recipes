@@ -18,7 +18,6 @@
  */
 
 #include "RecipeMutationOp.h"
-#include <iostream>
 #include <soylentrecipes/genetic/RecipeIndividual.h>
 
 using namespace std;
@@ -30,19 +29,15 @@ RecipeMutationOp::RecipeMutationOp()
 }
 
 bool RecipeMutationOp::mutate(Individual& individual, Context& context) {
-    cout << "mut" << endl;
-
     RecipeIndividual& indiv = reinterpret_cast<RecipeIndividual&>(individual);
 
     // Note: adding food is slightly favored
     if (indiv.size() == 1 || context.getSystem().getRandomizer().rollUniform() <= 0.5) {
         // add a food
-        cout << "add" << endl;
         indiv.addFood(context);
     }
     else {
         // remove a food
-        cout << "remove" << endl;
         indiv.removeFood(context);
     }
 

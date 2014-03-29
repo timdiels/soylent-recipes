@@ -37,8 +37,9 @@ public:
     RecipeInitializationOp(Beagle::string name = "InitRecipeOp");
 
     void initIndividual(Beagle::Individual& individual, Beagle::Context& context);
+    void initialize(Beagle::System& ioSystem);
 
 private:
-    int _recipe_size; // TODO register settable 
+    int _recipe_size;
 };
 

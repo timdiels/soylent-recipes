@@ -19,7 +19,6 @@
 
 #include "RecipeCrossoverOp.h"
 #include <assert.h>
-#include <iostream>
 #include <algorithm>
 #include <soylentrecipes/genetic/FoodGenotype.h>
 
@@ -32,7 +31,6 @@ RecipeCrossoverOp::RecipeCrossoverOp()
 }
 
 bool RecipeCrossoverOp::mate(Individual& indiv1, Context& context1, Individual& indiv2, Context& context2) {
-    cout << "cross" << endl;
     assert(indiv1.size() >= 1);
     assert(indiv2.size() >= 1);
 

@@ -23,7 +23,6 @@
 #include <soylentrecipes/mining/RecipeProblem.h>
 #include <soylentrecipes/genetic/RecipeContext.h>
 #include <assert.h>
-#include <iostream>
 #include "FoodGenotype.h"
 #include "RecipeEvalOp.h"
 
@@ -39,7 +38,6 @@ Fitness::Handle RecipeEvalOp::evaluate(Individual& individual, Context& context)
 {
     auto& profile = reinterpret_cast<RecipeContext&>(context).getProfile();
 
-    cout << "eval" << endl;
     assert(individual.size() > 0);
 
     vector<const Food*> foods;

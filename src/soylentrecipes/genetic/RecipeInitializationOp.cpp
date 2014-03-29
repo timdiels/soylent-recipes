@@ -25,13 +25,32 @@ using namespace std;
 using namespace Beagle;
 
 RecipeInitializationOp::RecipeInitializationOp(Beagle::string name)
-:   InitializationOp("ec.repro.prob", name), _recipe_size(4)
+:   InitializationOp("ec.repro.prob", name)
 {
 }
 
 void RecipeInitializationOp::initIndividual(Beagle::Individual& individual, Beagle::Context& context) {
     while (individual.size() < _recipe_size) {
         reinterpret_cast<RecipeIndividual&>(individual).addFood(context);
+    }
+}
+
+void RecipeInitializationOp::initialize(System& ioSystem) {
+    InitializationOp::initialize(ioSystem);
+
+    string name = "recipe_init.size";
+    if(ioSystem.getRegister().isRegistered(name)) {
+        _recipe_size = castHandleT<Int>(ioSystem.getRegister().getEntry(name))->getWrappedValue();
+    } else {
+        _recipe_size = 2;
+        Int::Handle size = new Int(_recipe_size);
+        Register::Description lDescription(
+          "Recipe size of initialized individuals",
+          "Int",
+          "2",
+          "Recipe size of initialized individuals"
+        );
+        ioSystem.getRegister().addEntry(name, size, lDescription);
     }
 }
 
