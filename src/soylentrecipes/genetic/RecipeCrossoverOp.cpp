@@ -20,6 +20,8 @@
 #include "RecipeCrossoverOp.h"
 #include <assert.h>
 #include <iostream>
+#include <algorithm>
+#include <soylentrecipes/genetic/FoodGenotype.h>
 
 using namespace std;
 using namespace Beagle;
@@ -33,8 +35,30 @@ bool RecipeCrossoverOp::mate(Individual& indiv1, Context& context1, Individual& 
     cout << "cross" << endl;
     assert(indiv1.size() >= 1);
     assert(indiv2.size() >= 1);
-    unsigned long index1 = context1.getSystem().getRandomizer().rollInteger(0, indiv1.size()-1);
-    unsigned long index2 = context2.getSystem().getRandomizer().rollInteger(0, indiv2.size()-1);
-    swap(indiv1.at(index1), indiv2.at(index2));
+
+    auto compare = [](Object::Handle h1, Object::Handle h2) {
+        return castHandleT<FoodGenotype>(h1)->getFood()->get_id() < castHandleT<FoodGenotype>(h2)->getFood()->get_id();
+    };
+
+    sort(indiv1.begin(), indiv1.end(), compare);
+    sort(indiv2.begin(), indiv2.end(), compare);
+
+    vector<Object::Handle> diff1; // present in first, not in second
+    vector<Object::Handle> diff2; // present in second, not in first
+    
+    set_difference(indiv1.begin(), indiv1.end(), indiv2.begin(), indiv2.end(), back_inserter(diff1), compare);
+    set_difference(indiv2.begin(), indiv2.end(), indiv1.begin(), indiv1.end(), back_inserter(diff2), compare);
+
+    if (diff1.size() == 0 || diff2.size() == 0)
+        return false;
+
+    unsigned long index1 = context1.getSystem().getRandomizer().rollInteger(0, diff1.size()-1);
+    unsigned long index2 = context2.getSystem().getRandomizer().rollInteger(0, diff2.size()-1);
+
+    auto it1 = find(indiv1.begin(), indiv1.end(), diff1.at(index1));
+    auto it2 = find(indiv2.begin(), indiv2.end(), diff2.at(index2));
+
+    swap(*it1, *it2);
+
     return true;
 }
