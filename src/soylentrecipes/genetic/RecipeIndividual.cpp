@@ -33,25 +33,21 @@ RecipeIndividual::RecipeIndividual()
 {
 }
 
+bool RecipeIndividual::compare(Object::Handle h1, Object::Handle h2) {
+    return castHandleT<FoodGenotype>(h1)->getFood()->get_id() < castHandleT<FoodGenotype>(h2)->getFood()->get_id();
+};
+
 void RecipeIndividual::addFood(Context& context) {
     auto& foods = reinterpret_cast<RecipeContext&>(context).getFoods();
-    const Food* next;
-    bool alreadyHasFood;
+    Object::Handle geno;
+    std::vector<Object::Handle, std::allocator<Object::Handle> >::iterator it;
     do {
-        next = foods.get_random(context.getSystem().getRandomizer());
+        geno = new FoodGenotype(foods.get_random(context.getSystem().getRandomizer()));
+        it = lower_bound(begin(), end(), geno, compare);
 
-        alreadyHasFood = false;
-        for (int i=0; i < size(); i++) {
-            if (castHandleT<FoodGenotype>(at(i))->getFood() == next) {
-                alreadyHasFood = true;
-                break;
-            }
-        }
-    } while (alreadyHasFood);
+    } while (it != end() && **it == *geno);
 
-    resize(size()+1);
-    FoodGenotype::Handle& genotype = castHandleT<FoodGenotype>(at(size()-1));
-    genotype->setFood(next);
+    insert(it, geno);
 }
 
 void RecipeIndividual::removeFood(Context& context) {
@@ -59,5 +55,21 @@ void RecipeIndividual::removeFood(Context& context) {
     unsigned long index = context.getSystem().getRandomizer().rollInteger(0, size()-1);
 
     erase(begin()+index);
+}
+
+void RecipeIndividual::swapFood(Object::Handle geno1, Individual& indiv2, Object::Handle geno2) {
+    iterator it1 = lower_bound(begin(), end(), geno1, compare);
+    iterator it2 = lower_bound(indiv2.begin(), indiv2.end(), geno2, compare);
+    assert(**it1 == *geno1);
+    assert(**it2 == *geno2);
+
+    erase(it1);
+    indiv2.erase(it2);
+
+    iterator it = lower_bound(begin(), end(), geno2, compare);
+    insert(it, geno2);
+
+    it = lower_bound(indiv2.begin(), indiv2.end(), geno1, compare);
+    indiv2.insert(it, geno1);
 }
 

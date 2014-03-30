@@ -30,6 +30,9 @@ public:
     typedef Beagle::ContainerT<FoodGenotype, Beagle::Genotype::Bag> Bag;
 
 public:
+    FoodGenotype();
+    FoodGenotype(const Food* food);
+
     bool isEqual(const Object& obj) const;
     const Food* getFood() const;
     void setFood(const Food* food);

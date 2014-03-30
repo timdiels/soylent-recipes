@@ -25,6 +25,8 @@
 
 /**
  * An individual who is a Recipe
+ *
+ * Invariant: genotypes are sorted
  */
 class RecipeIndividual : public Beagle::Individual
 {
@@ -42,8 +44,25 @@ public:
     void addFood(Beagle::Context& context);
 
     /**
+     * Add given food
+     */
+    void addFood(FoodGenotype::Handle genotype);
+
+    /**
      * Remove a random food
      */
     void removeFood(Beagle::Context& context);
+
+    /**
+     * Swap geno1 of this individual with geno2 of indiv2
+     */
+    void swapFood(Object::Handle geno1, Individual& indiv2, Object::Handle geno2);
+
+    /**
+     * Compare 2 food genotypes
+     *
+     * geno1 < geno2
+     */
+    static bool compare(Object::Handle h1, Object::Handle h2);
 };
 

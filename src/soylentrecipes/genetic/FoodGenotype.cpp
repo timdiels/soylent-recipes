@@ -26,6 +26,14 @@
 using namespace std;
 using namespace Beagle;
 
+FoodGenotype::FoodGenotype() {
+}
+
+FoodGenotype::FoodGenotype(const Food* food)
+:   _food(food)
+{
+}
+
 bool FoodGenotype::isEqual(const Object& obj) const {
     auto& other = castObjectT<const FoodGenotype&>(obj);
     return *other._food == *_food;
