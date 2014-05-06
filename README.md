@@ -33,6 +33,9 @@ The mining phase entails choosing combinations of foods. Simply enumerating all
 possible combinations would take years. After other attempts we've settled with
 a genetic algorithm.
 
+Note: we could use subspace clustering, after which we may be
+able to use this clustering to aid in making good food combinations.
+
 
 ###  Recipe/Diet Problem
 
@@ -97,6 +100,9 @@ Now in order to run it type: ./soylentrecipes
 
 
 ## Project history
+
+Note: k-means and hierarchical clustering performed poorly on this data because
+this data is highly dimensional (about 36 dimensions). 
 
 Our previous attempts of combining foods used (ordered from newest to older):
 
