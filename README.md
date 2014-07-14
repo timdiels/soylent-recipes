@@ -2,7 +2,7 @@
 
 Mines a food database for food combinations that match the nutrient
 profile in the database. Current implementation leads to results that match the
-target profile by 51%.
+target profile by 75%.
 
 Currently it uses the USDA database, but you could fill it up with other food
 data as well.
@@ -70,7 +70,16 @@ Last noted performance of solving a recipe in this project of on average 8.5 foo
 
 ## Results
 
-TODO
+Current results are mostly hilarious due to its total disregard for taste.
+
+Obtaining the results isn't a very user friendly experience, but if you're up to it:
+
+1. Run the miner with ./run.sh. It may take 45 minutes to compute.
+2. The results are written to population.obm. Search that file for HallOfFame
+   entries, as those are the best combinations the algorithm found.
+
+Note: These combinations don't yet list the amount you need of each food in the
+combo to satisfy the diet problem.
 
 
 ## System requirements
