@@ -20,6 +20,7 @@
 #include "RecipeProblem.h"
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 using namespace alglib;

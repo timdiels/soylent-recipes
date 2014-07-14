@@ -20,7 +20,7 @@
 #include <beagle/GA.hpp>
 
 /**
- * Cross over of 2 individuals by swapping 2 of their genotypes
+ * Add/remove a random food (slightly favoring addition)
  */
 class RecipeMutationOp : public Beagle::MutationOp 
 {

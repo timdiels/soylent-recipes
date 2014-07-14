@@ -30,6 +30,7 @@ RecipeInitializationOp::RecipeInitializationOp(Beagle::string name)
 }
 
 void RecipeInitializationOp::initIndividual(Beagle::Individual& individual, Beagle::Context& context) {
+    individual.clear();
     while (individual.size() < _recipe_size) {
         reinterpret_cast<RecipeIndividual&>(individual).addFood(context);
     }
