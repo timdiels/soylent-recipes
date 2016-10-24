@@ -11,6 +11,16 @@ If you already know which foods you want to use for your soylent recipe but
 simply want to know the amounts to take of each, use this
 [diet problem applet] [http://www.neos-guide.org/content/dietproblem-demo].
 
+## Usage
+
+- Download food data from https://www.ars.usda.gov/northeast-area/beltsville-md/beltsville-human-nutrition-research-center/nutrient-data-laboratory/docs/usda-national-nutrient-database-for-standard-reference/
+- TODO
+
+## Status
+
+Having another go, this time using Python for faster development. The C++ implementation contained a bug in its recipe scoring function (due to lack of testing), as such previous results should be ignored (e.g. it considered a diet of pure water to match the nutritional profile quite well).
+
+# Old
 
 ## Table of Contents
 
@@ -19,7 +29,6 @@ simply want to know the amounts to take of each, use this
 * [System requirements](#system-requirements)
 * [Compilation](#compilation)
 * [Project history](#project-history)
-
 
 ## Approach to solving the problem
 
@@ -80,32 +89,6 @@ Obtaining the results isn't a very user friendly experience, but if you're up to
 
 Note: These combinations don't yet list the amount you need of each food in the
 combo to satisfy the diet problem.
-
-
-## System requirements
-
-Linux
-
-
-## Compilation
-
-Dependencies (install them):
-
-- http://www.alglib.net/download.php
-- sqlite3
-- Boost headers
-- OpenBEAGLE
-
-Steps:
-
-1. cd data
-2. ./create.sh  # press C-d at every sqlite prompt, and q at the end to exit 'less'
-3. cd build/release
-4. ./cmake\_
-5. make
-6. cp ../../data/soylentrecipes.sqlite .
-
-Now in order to run it type: ./soylentrecipes
 
 
 ## Project history

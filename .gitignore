@@ -1,3 +1,22 @@
+__pycache__
+.cache
+dist
+*.pyc
+docs/build
+*.egg-info
+.project
+.pydevproject
+.coverage
+.settings
+venv
+.cproject
+*.swp
+.tmontmp
+last_test_runs
+.testmondata
+*.orig
+data/
+
 # Compiled Object files
 *.slo
 *.lo
