@@ -37,7 +37,11 @@ setup(
     'entry_points': {'console_scripts': ['soylent = soylent_recipes.main:main']},
     'extras_require': {   'dev': ['numpydoc', 'sphinx', 'sphinx-rtd-theme'],
                           'test': ['coverage-pth', 'pytest', 'pytest-cov', 'pytest-env', 'pytest-xdist']},
-    'install_requires': [],
+    'install_requires': [   'attrs',
+                            'chicken-turtle-util[click,test,data_frame,path,logging]',
+                            'cvxopt',
+                            'numpy',
+                            'pandas'],
     'keywords': 'soylent diet-problem',
     'license': 'GPL3',
     'long_description': 'soylent-recipes\n'
@@ -57,10 +61,14 @@ setup(
                         'Usage\n'
                         '-----\n'
                         '\n'
+                        '-  git clone https://github.com/timdiels/soylent-recipes.git\n'
+                        '-  pip install .\n'
                         '-  Download food data from\n'
                         '   '
                         'https://www.ars.usda.gov/northeast-area/beltsville-md/beltsville-human-nutrition-research-center/nutrient-data-laboratory/docs/usda-national-nutrient-database-for-standard-reference/\n'
-                        '-  TODO\n'
+                        '-  Put it in data/usda\\_nutrient\\_db\\_sr28 (i.e. that directory contains\n'
+                        '   files like NUTR\\_DEF.txt)\n'
+                        '-  Run ``soylent``\n'
                         '\n'
                         'Status\n'
                         '------\n'

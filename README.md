@@ -13,8 +13,11 @@ simply want to know the amounts to take of each, use this
 
 ## Usage
 
+- git clone https://github.com/timdiels/soylent-recipes.git
+- pip install .
 - Download food data from https://www.ars.usda.gov/northeast-area/beltsville-md/beltsville-human-nutrition-research-center/nutrient-data-laboratory/docs/usda-national-nutrient-database-for-standard-reference/
-- TODO
+- Put it in data/usda_nutrient_db_sr28 (i.e. that directory contains files like NUTR_DEF.txt)
+- Run `soylent`
 
 ## Status
 

@@ -16,6 +16,7 @@ last_test_runs
 .testmondata
 *.orig
 data/
+*.log
 
 # Compiled Object files
 *.slo

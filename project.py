@@ -83,6 +83,6 @@ project = dict(
     # For supported glob syntax, see Python `glob.glob(recursive=False)`. Note
     # there is no need for ``**`` as no- ignores are recursive.
     pre_commit_no_ignore = [
-        'data/*',
+        'data',
     ]
 )

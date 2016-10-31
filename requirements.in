@@ -1,1 +1,6 @@
 # List of required dependencies
+-e /home/limyreth/doc/eclipse_workspace/chicken_turtle_util[click,test,data_frame,path,logging]
+numpy
+pandas
+attrs
+cvxopt
