@@ -23,6 +23,7 @@ import logging
 import pprint
 
 _logger = logging.getLogger(__name__)
+solvers.options['show_progress'] = False
 
 def solve(nutrition_target, foods):
     '''
@@ -40,6 +41,10 @@ def solve(nutrition_target, foods):
         
     Returns
     -------
+    objective : float or None
+        The value of the linear combination corresponding to
+        `nutrition_target.minimize`. Lower is better. If no
+        (optimal) solution found, returns ``None``.
     amounts : np.array(float) or None
         The amounts of each food to use to optimally achieve the nutrition
         target. ``amounts[i]`` is the amount of the i-th food to use. If no
@@ -60,7 +65,7 @@ def solve(nutrition_target, foods):
     h = []
     A = []
     b = []
-    c = [np.zeros(len(foods))]
+    c = []
     
     # minima
     for nutrient, minimum in nutrition_target.minima.items():
@@ -79,7 +84,7 @@ def solve(nutrition_target, foods):
         
     # minimize
     for nutrient, weight in nutrition_target.minimize.items():
-        c.append(weight * foods[nutrient])
+        c.append(weight * foods[nutrient].values)
         
     # convert to matrices and run
     if not G:
@@ -98,16 +103,19 @@ def solve(nutrition_target, foods):
         A = None
         b = None
         
-    c = matrix(np.array(c).sum(axis=0))
-    print('g', G)
-    print('h', h)
-    print('A', A)
-    print('b',b)
-    print('c', c)
+    if not c:
+        c = matrix(np.zeros(len(foods)))
+    else:
+        c = matrix(np.array(c).sum(axis=0))
+#     print('g', G)
+#     print('h', h)
+#     print('A', A)
+#     print('b',b)
+#     print('c', c)
     
     solution = solvers.lp(c, G, h, A, b)
     _logger.debug('Diet problem solution:\n' + pprint.pformat(solution))
     if solution['status'] == 'optimal': #TODO status == 'unknown' is interesting as well, simply means it terminated before converging (max iterations reached)
-        return np.reshape(solution['x'], len(foods))
+        return solution['objective'], np.reshape(solution['x'], len(foods))
     else:
-        return None
+        return None, None

@@ -15,14 +15,12 @@
 
 import logging
 from pathlib import Path
-
 from chicken_turtle_util import click as click_, logging as logging_
 import click
-
-import pandas as pd
 from soylent_recipes import __version__
-from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, solver
-
+from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner
+import asyncio
+import signal
 
 _logger = logging.getLogger(__name__)
 
@@ -38,12 +36,7 @@ def main(usda_directory):
     foods = handle_nans(foods, nutrition_target, 10)
     foods = add_energy_components(foods)
     foods = as_floats(foods)
-    
-    #
-    print(foods.iloc[:4])
-    solver.solve(nutrition_target, foods.iloc[:4])
-    _logger.info('Now doing something else')
-    assert False
+    mine(foods, nutrition_target)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
 # Conversion factors (cal/g) to default to when NaN on a food
@@ -141,3 +134,19 @@ def as_floats(foods):
     mask = foods.columns != 'description'
     foods.loc[:,mask] = foods.loc[:,mask].astype(float)
     return foods
+
+def mine(foods, nutrition_target):
+    loop = asyncio.get_event_loop()
+    top_recipes = miner.TopK(100)
+    def cancel():
+        # Note: cancelling an executor does not cancel the thread running inside
+        _logger.info('Cancelling')
+        miner.cancel = True
+    loop.add_signal_handler(signal.SIGHUP, cancel)
+    loop.add_signal_handler(signal.SIGINT, cancel)
+    loop.add_signal_handler(signal.SIGTERM, cancel)
+    
+    loop.run_until_complete(loop.run_in_executor(None, miner.mine, foods, nutrition_target, top_recipes))
+    loop.close()
+    _logger.info(list(top_recipes))
+    
