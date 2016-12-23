@@ -41,10 +41,8 @@ def solve(nutrition_target, foods):
         
     Returns
     -------
-    objective : float or None
-        The value of the linear combination corresponding to
-        `nutrition_target.minimize`. Lower is better. If no
-        (optimal) solution found, returns ``None``.
+    score : float
+        Score of recipe. ``NaN`` iff nutrition target could not be met/reached.
     amounts : np.array(float) or None
         The amounts of each food to use to optimally achieve the nutrition
         target. ``amounts[i]`` is the amount of the i-th food to use. If no
@@ -61,6 +59,7 @@ def solve(nutrition_target, foods):
     #
     # Our x_i: the amount of the i-th food to use in recipe
     
+#     print('?', end='', flush=True)
     G = []
     h = []
     A = []
@@ -115,7 +114,14 @@ def solve(nutrition_target, foods):
     
     solution = solvers.lp(c, G, h, A, b)
     _logger.debug('Diet problem solution:\n' + pprint.pformat(solution))
+    
+    # objective:
+    # The value of the linear combination corresponding to
+    # `nutrition_target.minimize`. Lower is better.
     if solution['status'] == 'optimal': #TODO status == 'unknown' is interesting as well, simply means it terminated before converging (max iterations reached)
-        return solution['objective'], np.reshape(solution['x'], len(foods))
+        print('.', end='', flush=True)
+        return -solution['objective'], np.reshape(solution['x'], len(foods))
     else:
-        return None, None
+#         print('!', end='', flush=True)
+        # no optimal solution
+        return np.nan, None

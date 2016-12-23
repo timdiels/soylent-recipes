@@ -17,6 +17,7 @@ last_test_runs
 *.orig
 data/
 *.log
+clustering.pdf
 
 # Compiled Object files
 *.slo

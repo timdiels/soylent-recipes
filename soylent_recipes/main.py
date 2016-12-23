@@ -18,7 +18,7 @@ from pathlib import Path
 from chicken_turtle_util import click as click_, logging as logging_
 import click
 from soylent_recipes import __version__
-from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner
+from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner, cluster as cluster_, tree
 import asyncio
 import signal
 
@@ -36,7 +36,10 @@ def main(usda_directory):
     foods = handle_nans(foods, nutrition_target, 10)
     foods = add_energy_components(foods)
     foods = as_floats(foods)
-    mine(foods, nutrition_target)
+    foods = foods.set_index('description')
+    root_node = cluster_.agglomerative_euclidean(foods)
+    tree.draw(root_node)
+    mine(root_node, nutrition_target)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
 # Conversion factors (cal/g) to default to when NaN on a food
@@ -135,7 +138,7 @@ def as_floats(foods):
     foods.loc[:,mask] = foods.loc[:,mask].astype(float)
     return foods
 
-def mine(foods, nutrition_target):
+def mine(root_node, nutrition_target):
     loop = asyncio.get_event_loop()
     top_recipes = miner.TopK(100)
     def cancel():
@@ -146,7 +149,22 @@ def mine(foods, nutrition_target):
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
-    loop.run_until_complete(loop.run_in_executor(None, miner.mine, foods, nutrition_target, top_recipes))
+    loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes))
     loop.close()
-    _logger.info(list(top_recipes))
+    
+    # Print top k long format
+    def format_recipe(recipe):
+        food_names = (cluster.representative.name for cluster in recipe.clusters)
+        if recipe.solved:
+            lines = ('{} - {}'.format(amount, food_name) for amount, food_name in zip(recipe.amounts, food_names))
+        else:
+            lines = food_names
+        return '{}\n{}'.format(recipe.score, '\n'.join(lines))
+    _logger.info(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
+    
+    # Print top k short format
+    _logger.info('\n'.join(map(str, top_recipes)))
+    
+    # Print top k stats
+    _logger.info(top_recipes.format_stats())
     
