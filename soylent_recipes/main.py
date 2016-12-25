@@ -28,6 +28,9 @@ _logger = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
 def main(usda_directory):
+    '''
+    To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
+    '''
     logging_.configure('soylent.log')
     _logger.setLevel(logging.DEBUG)
     _logger.info('Hi!!! This is version none!')
