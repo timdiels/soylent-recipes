@@ -143,7 +143,8 @@ def as_floats(foods):
 
 def mine(root_node, nutrition_target):
     loop = asyncio.get_event_loop()
-    top_recipes = miner.TopK(100)
+    k = 100
+    top_recipes = miner.TopK(k)
     def cancel():
         # Note: cancelling an executor does not cancel the thread running inside
         _logger.info('Cancelling')
@@ -163,7 +164,8 @@ def mine(root_node, nutrition_target):
         else:
             lines = food_names
         return '{}\n{}'.format(recipe.score, '\n'.join(lines))
-    _logger.info(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
+    with open('recipes_top_{}.txt'.format(k), 'w') as f:
+        f.write(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
     
     # Print top k short format
     _logger.info('\n'.join(map(str, top_recipes)))
