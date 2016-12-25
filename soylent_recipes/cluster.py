@@ -26,15 +26,33 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+# Note: might squeeze out some performance by only using lower/upper triangle of `distances`.
+
 def agglomerative_euclidean(foods):
     _logger.info('Clustering foods using agglomerative_euclidean')
     
     # Note: there is no squared euclidean
     # Note: n_clusters has no effect on clustering.children_, so we don't use it
     distances = pairwise_distances(foods.values, metric='euclidean')
+    foods, distances = _remove_duplicate_foods(foods, distances)
     clustering = AgglomerativeClustering(linkage='complete', affinity='precomputed', compute_full_tree=True)
     clustering.fit(distances)
     return _convert_clustering(foods, clustering.children_, distances)  # we assume children_ are such that row i only references node ids < i+len(foods)
+
+def _remove_duplicate_foods(foods, distances):
+    '''
+    Remove duplicate foods (keeping one of each group of duplicates)
+    '''
+    mask = distances == 0.0
+    mask[np.tril_indices_from(mask)] = False  # only consider upper triangle
+    mask = mask.any(axis=0)  # collapse rows, now we have a row vector, a mask of foods to remove
+    mask = ~mask  # mask of foods to keep
+    foods = foods[mask]
+    distances = distances[np.ix_(mask, mask)]
+    assert len(foods) == len(distances)  # sanity check
+    assert distances.shape[0] == distances.shape[1]  # sanity check
+    return foods, distances
+    
     
 def _convert_clustering(foods, children, distances):
     '''
@@ -150,6 +168,10 @@ class Node(object):
     representative = attr.ib(validator=_validate_not_none, cmp=False, hash=False)
     max_distance = attr.ib(validator=_validate_float_positive, convert=float, cmp=False, hash=False)
     children = attr.ib(validator=_validate_children, convert=tuple, cmp=False, hash=False)
+    
+    def __attrs_post_init__(self):
+        if self.is_leaf != (self.max_distance == 0.0):
+            raise ValueError('is_leaf != (max_distance == 0) for {}'.format(self))
     
     @property
     def is_leaf(self):
