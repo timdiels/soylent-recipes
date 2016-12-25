@@ -316,10 +316,32 @@ class Recipe(object):
             ''.join(('f' if cluster.is_leaf else 'C') for cluster in self.clusters),
             ' '.join(str(cluster.id_) for cluster in self.clusters)
         )
-        
+
+#TODO add to CTU        
+import cProfile
+import pyprof2calltree
+import functools
+class profile(object):
+    
+    def __call__(self, f):
+        @functools.wraps(f)
+        def profiled(*args, **kwargs):
+            profile = cProfile.Profile()
+            profile.enable()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                profile.disable()
+                profile.dump_stats('profile.cprofile')
+                pyprof2calltree.convert(profile.getstats(), 'profile.kgrind')
+                pyprof2calltree.visualize(profile.getstats())
+        return profiled
+            
+
 # TODO ideas:
 # - instead of >, require to be at least x% better
 # - instead of NaN score, solve a diet problem without min-max, or try to get the solver to solve it as close as possible and then add errors for it. Scores of relaxed problem should always be < score of real problem
+@profile()
 def mine(root_node, nutrition_target, top_recipes):
     '''
     Mine recipes

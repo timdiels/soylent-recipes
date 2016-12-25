@@ -6,6 +6,9 @@ attrs
 cvxopt
 scikit-learn
 
+# profiling
+pyprof2calltree
+
 #TODO these are deps from ete3, file an issue requesting them to add them to install_requires or extras_require
 # see also `http://etetoolkit.org/download/`_ native tab
 lxml
