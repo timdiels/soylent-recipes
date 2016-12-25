@@ -32,7 +32,7 @@ def main(usda_directory):
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
     logging_.configure('soylent.log')
-    _logger.setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
     _logger.info('Hi!!! This is version none!')
     nutrition_target = nutrition_target_.from_config()
     foods = foods_.import_usda(Path(usda_directory))
