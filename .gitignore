@@ -18,6 +18,9 @@ last_test_runs
 data/
 *.log
 clustering.pdf
+recipes*.txt
+profile.cprofile
+profile.kgrind
 
 # Compiled Object files
 *.slo
