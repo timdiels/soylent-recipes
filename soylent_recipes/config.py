@@ -123,7 +123,7 @@ extrema = {
     'carotenoids': (0, np.nan),
     
     # Water and macronutrients
-    'water': (3.7, np.nan), # l. also includes water contained in food
+    'water': (3.7, np.nan), # l. also includes water contained in food #TODO probably want to remove, trivial to achieve manually.
     'carbohydrate': (130, np.nan),
     'fiber': (38, np.nan),
     'linoleic acid': (17, np.nan),
