@@ -104,7 +104,11 @@ def test_from_config():
         },
         targets={
         },
-        minimize={'fatty acids': 1.0, 'cholesterol': 1.0, 'carotenoids': 1.0},
+        minimize={  # weights sum to 1
+            'fatty acids': 0.00045228403437358667,
+            'cholesterol': 0.019598974822855421,
+            'carotenoids': 0.97994874114277097,
+        },
     )
     assert nutrition_target.minima == expected.minima
     assert nutrition_target.maxima == expected.maxima

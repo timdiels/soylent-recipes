@@ -37,6 +37,10 @@ class TestRecipe(object):
     def nutrition_target(self):
         return NutritionTarget({}, {}, {}, {})
     
+    @pytest.fixture
+    def score(self):
+        return (False, 0.0)
+    
     def test_branch(self, mocker, nutrition_target):
         '''
         Test everything on a branch recipe
@@ -56,7 +60,7 @@ class TestRecipe(object):
         )
         
         # Mock `solve`
-        score = 2.5
+        score = (True, 2.5)
         amounts = np.array([2.0, 1.1, 3.0])
         def solve(nutrition_target_, foods):
             # Correct args passed in
@@ -68,14 +72,16 @@ class TestRecipe(object):
         mocker.patch.object(solver, 'solve', solve)
         
         #
+        def leaf(id_):
+            return Node(id_, max_distance=0.0, representative=pd.Series([]), children=())
         clusters = [
             Node(id_=0, max_distance=3.0, representative=food0, children=(
-                Node(id_=3, max_distance=0.5, representative=pd.Series([]), children=()),
-                Node(id_=4, max_distance=0.2, representative=pd.Series([]), children=()),
+                leaf(3),
+                leaf(4)
             )),
             Node(id_=1, max_distance=4.5, representative=food1, children=(
-                Node(id_=5, max_distance=2.0, representative=pd.Series([]), children=()),
-                Node(id_=6, max_distance=1.0, representative=pd.Series([]), children=()),
+                leaf(5),
+                leaf(6)
             )),
             Node(id_=2, max_distance=0.0, representative=food2, children=()),
         ]
@@ -84,58 +90,40 @@ class TestRecipe(object):
         recipe = Recipe(clusters, nutrition_target)
         assert recipe.score == score  # matches return of `solve`
         assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
-        assert recipe.solved  # score not NaN => solved
+        assert recipe.solved  # score[0] == recipe.solved
         assert not recipe.is_leaf  # some clusters are branches => not is_leaf
         assert recipe.clusters == tuple(clusters)
         assert len(recipe) == len(clusters)
         assert recipe.next_cluster == clusters[1]  # cluster with max max_distance
         assert recipe.max_distance == 4.5  # next_cluster.max_distance
         
-        # next_max_distance: worst recipe.max_distance after next cluster split
-        # First case: split clusters less max distance than a cluster in recipe.clusters
-        assert recipe.next_max_distance == 3.0
-        
-        # Now the other case: split clusters larger max distance than all clusters in recipe.clusters
-        clusters[2] = (
-            Node(id_=2, max_distance=7.0, representative=food2, children=(
-                Node(id_=7, max_distance=6.0, representative=pd.Series([]), children=()),
-                Node(id_=8, max_distance=5.0, representative=pd.Series([]), children=()),
-            ))
-        )
-        recipe = Recipe(clusters, nutrition_target)
-        assert recipe.next_max_distance == 6.0
-        
     def test_not_solved(self, mocker, nutrition_target):
         '''
         Test things specific to the `not recipe.solved` case
         '''
-        score = np.nan
+        score = (False, 2.0)
         mocker.patch.object(solver, 'solve', lambda *args: (score, None))
         node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
         recipe = Recipe([node], nutrition_target)
-        assert not recipe.solved  # score is nan => not solved
-        with pytest.raises(InvalidOperationError):
-            recipe.amounts
+        assert not recipe.solved  # score[0] == recipe.solved
         
-    def test_leaf(self, mocker, nutrition_target):
+    def test_leaf(self, mocker, nutrition_target, score):
         '''
         Test things specific to the `recipe.is_leaf` case
         '''
-        mocker.patch.object(solver, 'solve', lambda *args: (np.nan, None))
+        mocker.patch.object(solver, 'solve', lambda *args: (score, None))
         node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
         recipe = Recipe([node], nutrition_target)
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
         assert recipe.max_distance == 0.0
         with pytest.raises(InvalidOperationError):
             recipe.next_cluster
-        with pytest.raises(InvalidOperationError):
-            recipe.next_max_distance
 
-    def test_replace(self, mocker, nutrition_target):
+    def test_replace(self, mocker, nutrition_target, score):
         '''
         Test recipe.replace() entirely
         '''
-        solve = mocker.Mock(return_value=(np.nan, None))
+        solve = mocker.Mock(return_value=(score, None))
         mocker.patch.object(solver, 'solve', solve)
         node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
         node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
@@ -188,29 +176,38 @@ class TestRecipe(object):
         
         assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
 
-    def test_le(self, mocker, nutrition_target):
+    def test_lt(self, mocker, nutrition_target):
         '''
-        Test <= operator
+        Test < operator
+        
+        Basically self.score < other.score
         '''
-        def _Recipe(max_distance, score):
+        def _Recipe(score):
             food = pd.Series([])
-            node = Node(id_=1, representative=food, max_distance=max_distance, children=())
+            node = Node(id_=1, representative=food, max_distance=0.0, children=())
             mocker.patch.object(solver, 'solve', lambda *args: (score, np.array([])))
             return Recipe([node], nutrition_target)
             
-        recipe5_10 = _Recipe(max_distance=5.0, score=10.0)
-        recipe5_9 = _Recipe(max_distance=5.0, score=9.0)
-        recipe5_8 = _Recipe(max_distance=5.0, score=8.0)
-        recipe4_9 = _Recipe(max_distance=4.0, score=9.0)
-        assert recipe5_10 <= recipe5_10  # compared to self
-        assert not (recipe5_10 <= recipe5_9)  # compared to lower score, same max_distance
-        assert recipe5_9 <= recipe5_10  # compared to higher score, same max_distance
-        assert recipe4_9 <= recipe5_9  # compared to same score, higher max_distance
-        assert not (recipe5_9 <= recipe4_9)  # compared to same score, lower max_distance
-        assert recipe4_9 <= recipe5_10  # compared to higher score, higher max_distance
-        assert not (recipe5_10 <= recipe4_9)  # compared to lower score, lower max_distance
-        assert not (recipe4_9 <= recipe5_8)  # compared to lower score, higher max_distance
-        assert not (recipe5_8 <= recipe4_9)  # compared to higher score, lower max_distance
+        recipe_f8 = _Recipe(score=(False, 8.0))
+        recipe_f9 = _Recipe(score=(False, 9.0))
+        recipe_t8 = _Recipe(score=(True, 8.0))
+        recipe_t9 = _Recipe(score=(True, 9.0))
+        
+        assert recipe_f8 < recipe_f9
+        assert recipe_f8 < recipe_t8
+        assert recipe_f8 < recipe_t9
+        
+        assert not recipe_f9 < recipe_f8
+        assert recipe_f9 < recipe_t8
+        assert recipe_f9 < recipe_t9
+        
+        assert not recipe_t8 < recipe_f8
+        assert not recipe_t8 < recipe_f9
+        assert recipe_t8 < recipe_t9
+        
+        assert not recipe_t9 < recipe_f8
+        assert not recipe_t9 < recipe_f9
+        assert not recipe_t9 < recipe_t8
     
 class TestTopK(object):
     
@@ -262,11 +259,11 @@ class TestTopK(object):
         
     def test_pop_order(self, top_k):
         '''
-        Branch recipes are popped according to (next_max_distance, score) descendingly
+        Branch recipes are popped according to score ascendingly
         '''
-        recipe1 = mocks.Recipe(is_leaf=False, next_max_distance=10.0, score=0.0)
-        recipe2 = mocks.Recipe(is_leaf=False, next_max_distance=5.0, score=5.0)
-        recipe3 = mocks.Recipe(is_leaf=False, next_max_distance=5.0, score=4.0)
+        recipe1 = mocks.Recipe(is_leaf=False, score=(False, 0.0)) #TODO test with True too
+        recipe2 = mocks.Recipe(is_leaf=False, score=(False, 3.0))
+        recipe3 = mocks.Recipe(is_leaf=False, score=(False, 4.0))
         
         # Push in one order and check
         top_k.push(recipe3)
@@ -297,17 +294,16 @@ class TestTopK(object):
         '''
         Prune after each push
         
-        Prune recipe iff k recipes <= recipe. recipe1 <= recipe2 iff recipe1 is
-        at least as detailed as recipe2, yet has an equal or worse score.
+        Prune recipe iff k recipes <= recipe.
         
         Basic push functionality already tested by test_pop
-        '''
+        ''' #TODO there's a separate TopK for leafs and branches, so it can go up to 2K if you mix
         top_k = TopK(k=2)
         
-        # When k recipes of the same max_distance have better score, prune recipe
-        recipe5_10 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=10.0)
-        recipe5_9 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=9.0)
-        recipe5_8 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=8.0)
+        # When k recipes have better score, prune recipe
+        recipe5_10 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 10.0))
+        recipe5_9 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 9.0))
+        recipe5_8 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 8.0))
         top_k.push(recipe5_10)
         top_k.push(recipe5_8)
         top_k.push(recipe5_9)
@@ -317,41 +313,7 @@ class TestTopK(object):
         top_k.push(recipe5_8)
         assert set(top_k) == {recipe5_10, recipe5_9}
         
-        # When pushing one with less max_distance but a score <= to the other 2,
-        # gets pruned
-        recipe4_9 = mocks.Recipe(is_leaf=False, max_distance=4.0, score=9.0) 
-        top_k.push(recipe4_9)
-        assert set(top_k) == {recipe5_10, recipe5_9}
-        
-        # When pushing with more max_distance and a score <= to only 5_10,
-        # 5_9 gets pruned
-        recipe6_10 = mocks.Recipe(is_leaf=False, max_distance=6.0, score=10.0)
-        top_k.push(recipe6_10)
-        assert set(top_k) == {recipe6_10, recipe5_10}
-        
-        # When pushing with more max_distance and a worse score than any other,
-        # nothing gets pruned
-        recipe7_8 = mocks.Recipe(is_leaf=False, max_distance=7.0, score=8.0)
-        top_k.push(recipe7_8)
-        assert set(top_k) == {recipe7_8, recipe6_10, recipe5_10}
-        
-        # When pushing with less max_distance and a better score than any other,
-        # nothing gets pruned
-        recipe4_11 = mocks.Recipe(is_leaf=False, max_distance=4.0, score=11.0)
-        top_k.push(recipe4_11)
-        assert set(top_k) == {recipe7_8, recipe6_10, recipe5_10, recipe4_11}
-        
-        # Pushing in between in a way that causes no pruning
-        recipe4h_11 = mocks.Recipe(is_leaf=False, max_distance=4.5, score=11.0)
-        top_k.push(recipe4h_11)
-        assert set(top_k) == {recipe7_8, recipe6_10, recipe5_10, recipe4h_11, recipe4_11}
-        
-        # Pushing in between in a way that causes multiple pruning
-        recipe5h_12 = mocks.Recipe(is_leaf=False, max_distance=5.5, score=12.0)
-        top_k.push(recipe5h_12)
-        assert set(top_k) == {recipe7_8, recipe6_10, recipe5h_12, recipe4h_11}
-        
-        # Pushing something better below still works
-        recipe4_12 = mocks.Recipe(is_leaf=False, max_distance=4, score=12.0)
-        top_k.push(recipe4_12)
-        assert set(top_k) == {recipe7_8, recipe6_10, recipe5h_12, recipe4h_11, recipe4_12}
+        # Pushing in between prunes fine too (and max_distance does not matter)
+        recipe4_9h = mocks.Recipe(is_leaf=False, max_distance=4, score=(False, 9.5))
+        top_k.push(recipe4_9h)
+        assert set(top_k) == {recipe5_10, recipe4_9h}

@@ -14,7 +14,6 @@
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
-import numpy as np
 from soylent_recipes import miner
 
 @attr.s()
@@ -32,7 +31,7 @@ class Node(object):
     def __repr__(self):
         return 'Node(id_={!r}, representatives={!r}, max_distance={!r}, children={!r})'.format(self.id_, [r.name for r in self.representatives], self.max_distance, self.children)
     
-@attr.s(cmp=False)
+@attr.s(cmp=False, hash=False)
 class Recipe(object):
     
     '''
@@ -40,13 +39,12 @@ class Recipe(object):
     '''
     
     clusters = attr.ib(default=())
-    score = attr.ib(default=np.nan)
+    score = attr.ib(default=(False, 0.0))
     solved = attr.ib(default=False)
     amounts = attr.ib(default=None)
     next_cluster = attr.ib(default=None)
     max_distance = attr.ib(default=0.0)
-    next_max_distance = attr.ib(default=0.0)
     is_leaf = attr.ib(default=True)
     
-    __le__ = miner.Recipe.__le__
+    __lt__ = miner.Recipe.__lt__
     __len__ = miner.Recipe.__len__

@@ -17,6 +17,21 @@ import attr
 import numpy as np
 import pandas as pd
 
+def _convert_minimize(minimize):
+    if minimize:
+        for nutrient, weight in minimize.items():
+            if weight < 0.0 or np.isclose(weight, 0.0):
+                raise ValueError(
+                    'minimize weight for nutrient {!r} is <= 0. '
+                    'It must be > 0 and not np.isclose to 0. '
+                    'Got weight={!r}'
+                    .format(nutrient, weight)
+                )
+        sum_ = sum(minimize.values())
+        return {nutrient: weight/sum_ for nutrient, weight in minimize.items()}
+    else:
+        return minimize
+
 @attr.s(frozen=True)
 class NutritionTarget(object):
     '''
@@ -36,7 +51,7 @@ class NutritionTarget(object):
     minima = attr.ib()
     maxima = attr.ib()
     targets = attr.ib()
-    minimize = attr.ib()
+    minimize = attr.ib(convert=_convert_minimize)
     
     def assert_recipe_matches(self, amounts, foods):
         '''

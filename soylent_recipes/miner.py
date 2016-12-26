@@ -20,43 +20,37 @@ import pandas as pd
 from textwrap import dedent
 from itertools import chain
 from chicken_turtle_util.exceptions import InvalidOperationError
+import heapq
 
 _logger = logging.getLogger(__name__)
 
 cancel = False
 
-class TopK(object): # Note: trivial poorly optimised optimisation (poor choice of data structs, likely)
+class TopK(object): #TODO rename TopRecipes, k -> max_branches, max_leafs
     
     def __init__(self, k):
         self._k = k
-        self._recipes = []
+        self._branches = []  # heapq by score, keeping the K highest scoring branch recipes
+        self._leafs = []  # heapq by score, keeping the K highest scoring leaf recipes
         self._pushed = False
     
     def __iter__(self):
         '''
         Yield top recipes, ordered by descending score
         '''
-        return iter(sorted(self._recipes, reverse=True, key=lambda recipe: recipe.score))
+        return iter(sorted(self._leafs + self._branches, reverse=True, key=lambda recipe: recipe.score))
     
     def pop_branches(self):
         '''
-        Yield all branch recipes
+        Yield all branch recipes from worst to best
         
         Manipulating/accessing the TopK object while iterating is
         supported/safe. Any branch recipes pushed while iterating will be
         yielded.
         
-        Recipes are popped in the order in which their refinements (splitting
-        its next_cluster) optimally aid pruning when pushed back into the TopK.
-        
         Yields
         ------
         Recipe
-        
-        Notes
-        -----
-        For optimal pruning, split recipes have an as high as possible
-        max_distance and score.
         '''
         while True:
             recipe = self._pop()
@@ -69,7 +63,7 @@ class TopK(object): # Note: trivial poorly optimised optimisation (poor choice o
         
     def _pop(self):
         '''
-        Pop the next branch recipe to refine
+        Pop the worst branch recipe
         
         Returns
         -------
@@ -82,28 +76,25 @@ class TopK(object): # Note: trivial poorly optimised optimisation (poor choice o
         # account). How would you combine these 2 though?
         
         # Pop
-        recipe = max(
-            (recipe for recipe in self._recipes if not recipe.is_leaf),
-            key=lambda recipe: (recipe.next_max_distance, recipe.score),
-            default=None
-        )
-        if recipe is not None:
-            self._recipes.remove(recipe)
+        if not self._branches:
+            return None
+        recipe = heapq.heappop(self._branches)
         return recipe
     
     def push(self, recipe):
 #         print('p', end='', flush=True)
-        self._pushed = True
-        self._recipes.append(recipe)
-        
-        # Prune recipes
-        #TODO confirm with profiler
-        #TODO is bottleneck, need better perf. But shouldn't we test it works in the firs place, first? May want to lay low on NaN testing, that'll prolly be thrown out
-#         self._recipes.sort(key=lambda recipe: recipe.max_distance, reverse=False) #Note: keeping this sorted would save us from resorting from scratch each time. Also consider using a different data struct; but also take into account that we are using a small K, a simpler data struct might actually be more efficient
-        for recipe in self._recipes[:]: # Note: O(n**2) comparisons + bunch of list deletions. Many ouch
-            better_recipes_count = sum(int(recipe <= recipe2) for recipe2 in self._recipes)
-            if better_recipes_count > self._k:  # Note: count includes self
-                self._recipes.remove(recipe)
+        if recipe.is_leaf:
+            recipes = self._leafs
+        else:
+            recipes = self._branches
+            
+        if len(recipes) >= self._k:
+            popped = heapq.heappushpop(recipes, recipe)
+            if popped != recipe:
+                self._pushed = True
+        else:
+            heapq.heappush(recipes, recipe)
+            self._pushed = True
 #         print('P', end='', flush=True)
         
     @property
@@ -115,7 +106,8 @@ class TopK(object): # Note: trivial poorly optimised optimisation (poor choice o
         return self._pushed
     
     def format_stats(self):
-        max_distances = pd.Series(recipe.max_distance for recipe in self._recipes)
+        recipes = self._leafs + self._branches
+        max_distances = pd.Series(recipe.max_distance for recipe in recipes)
         return (
             dedent('''\
                 Solved: {solved}/{total}
@@ -123,8 +115,8 @@ class TopK(object): # Note: trivial poorly optimised optimisation (poor choice o
                 {max_distances} 
             ''')
             .format(
-                solved=sum(recipe.solved for recipe in self._recipes),
-                total=len(self._recipes),
+                solved=sum(recipe.solved for recipe in recipes),
+                total=len(recipes),
                 max_distances='\n'.join('{:.2f}: {}'.format(max_distance, count) for max_distance, count in max_distances.value_counts().sort_index().items())
             )
         )
@@ -151,7 +143,7 @@ class Recipe(object):
         
         # Solve diet problem resulting in scored recipe
         foods = pd.DataFrame([cluster.representative for cluster in self.clusters])
-        self._score, self._amounts = solver.solve(self._nutrition_target, foods) 
+        self._score, self._amounts = solver.solve(self._nutrition_target, foods)
     
     @property
     def clusters(self):
@@ -169,17 +161,16 @@ class Recipe(object):
         '''
         Score of recipe. 
         
-        ``NaN`` iff nutrition target could not be met/reached.
-        
         Returns
         -------
-        float
+        (solved :: bool, sub_score :: float)
+            sub_score is never NaN.
         '''
         return self._score
     
     @property
     def solved(self):
-        return not np.isnan(self._score)
+        return self._score[0]
     
     @property
     def amounts(self):
@@ -190,10 +181,8 @@ class Recipe(object):
         
         Returns
         -------
-        np.array
+        np.array([float])
         '''
-        if not self.solved:  # should not request amounts when did not manage to solve
-            raise InvalidOperationError('No amounts on unsolved recipe') 
         return self._amounts
     
     @property
@@ -222,25 +211,7 @@ class Recipe(object):
         # For the next cluster to split, pick the one with max max_distance in
         # order to reduce recipe max_distance in the split recipe
         return max((cluster for cluster in self.clusters), key=lambda cluster: cluster.max_distance)
-    
-    @property
-    def next_max_distance(self):
-        '''
-        The worst possible `recipe.max_distance` after splitting `next_cluster`
         
-        Returns
-        -------
-        float
-        '''
-        if self.is_leaf:
-            raise InvalidOperationError('No next_max_distance on a leaf recipe') # Note: we could return self.max_distance in a sense. It simply won't change
-            
-        # Note: assumes next_cluster is the cluster with max max_distance; tightly coupled
-        assert not self.is_leaf
-        other_clusters = (cluster for cluster in self.clusters if cluster != self.next_cluster)
-        clusters = chain(self.next_cluster.children, other_clusters)
-        return max(cluster.max_distance for cluster in clusters)
-    
     @property
     def is_leaf(self):
         '''
@@ -282,26 +253,11 @@ class Recipe(object):
         assert len(set(clusters)) == len(clusters)
         return Recipe(clusters, self._nutrition_target)
     
-    def __le__(self, other):
+    def __lt__(self, other):
         '''
-        recipe1 <= recipe2 iff it's worse or equal to recipe2
-        
-        Returns
-        -------
-        True if worse or equal, False if better or inconclusive.
+        recipe1 < recipe2 iff it's worse than recipe2
         '''
-        # max_distance is like the level of detail. When other is more detailed
-        # than self, it would be unfair to call self worse than other. It might
-        # turn out better than other after a couple more splits.
-        if self.max_distance > other.max_distance:
-            # self is better or the comparison is too unfair
-            return False
-        
-        # When the other is at most as detailed as self, but self has worse
-        # score than other, we call self worse. This is still an approximation
-        # as further splits could make self better than other after all, but the
-        # error is likely smaller in this case than when other is more detailed.
-        return self.score <= other.score 
+        return self.score < other.score #TODO take into account max_distance. When one is far more detailed than the other, this should affect comparison 
     
     def __len__(self):
         '''
@@ -376,7 +332,7 @@ def mine(root_node, nutrition_target, top_recipes):
                 # We need to drop a food to stay within the max foods limit
                 for cluster in recipe_both.clusters:
                     split_recipe = recipe_both.replace([cluster], [])
-                    if split_recipe.score > recipe.score or not recipe.solved:
+                    if split_recipe.score > recipe.score or not recipe.solved: #TODO what if left or right happens to have the same representative. No need to solve it again, but do push it again despite having equal score
                         # Only push if it still improves
                         top_recipes.push(split_recipe)
         

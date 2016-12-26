@@ -17,20 +17,29 @@
 Diet problem solver
 '''
 
-from cvxopt import matrix, solvers
+from cvxopt import matrix
+import cvxopt
 import numpy as np
 import logging
 import pprint
+import pandas as pd
+from math import sqrt
 
 _logger = logging.getLogger(__name__)
-solvers.options['show_progress'] = False
+cvxopt.solvers.options['show_progress'] = False
 
 def solve(nutrition_target, foods):
     '''
-    Solve diet problem
+    Calculate food amounts to reach nutrition_target
     
-    The diet problem: given a list of foods, how much of each food is required
-    to optimally satisfy a nutrition target?
+    This solves a diet problem: given a list of foods, how much of each food is
+    required to optimally satisfy a nutrition target?
+    
+    Currently, only least squares is used to solve. Because of this the returned
+    score[0] is currently always False. In the future, a quadratic program will
+    be used to solve it properly with least squares as a fallback for when no
+    optimal solution exists to the real problem. Least squares solves a
+    relaxed/unconstrained version of the problem.
     
     Parameters
     ----------
@@ -41,29 +50,102 @@ def solve(nutrition_target, foods):
         
     Returns
     -------
-    score : float
-        Score of recipe. ``NaN`` iff nutrition target could not be met/reached.
-    amounts : np.array(float) or None
+    score : (solved :: bool, sub_score :: float)
+        Score of recipe. When the linear problem is unsolvable, solved=False and
+        sub_score is based on a least squares problem instead. sub_score is
+        never NaN.
+    amounts : np.array(float)
         The amounts of each food to use to optimally achieve the nutrition
-        target. ``amounts[i]`` is the amount of the i-th food to use. If no
-        (optimal) solution found, returns ``None``.
+        target. ``amounts[i]`` is the amount of the i-th food to use.
     '''
-    # TODO making use of structure would allow better performance
+    sub_score, amounts = _solve_least_squares(nutrition_target, foods) # solve relaxed problem
+    return (False, sub_score), amounts  #TODO try linear program as well
+
+def _solve_least_squares(nutrition_target, foods):
+    # Convert minima, maxima -> extrema
+    extrema = pd.concat(
+        [
+            pd.Series(nutrition_target.minima, name='min'),
+            pd.Series(nutrition_target.maxima, name='max')
+        ],
+        axis=1
+    )
+    
+    # Convert extrema to pseudo-targets
+    pseudo_targets = []
+    for nutrient, min_, max_ in extrema.itertuples(name=None):
+        assert not (np.isnan(min_) and np.isnan(max_))
+        if np.isnan(min_):
+            target = max_
+        elif np.isnan(max_):
+            target = min_
+        else:
+            target = (min_ + max_) / 2.0
+        pseudo_targets.append((nutrient, target))
+        
+    #
+    A = []
+    b = []
+    
+    # pseudo-targets and targets
+    targets = (
+        (3.0, pseudo_targets),
+        (2.0, nutrition_target.targets.items())
+    )
+    for weight, targets_ in targets:
+        for nutrient, target in targets_:
+            A.append(sqrt(weight) * foods[nutrient].values)
+            b.append(sqrt(weight) * target)
+    
+    # minimize
+    for nutrient, weight in nutrition_target.minimize.items():
+        A.append(sqrt(weight) * foods[nutrient].values)
+        b.append(0.0)
+    
+    # solve
+    x, residual, _, _ = np.linalg.lstsq(A, b)
+    if len(residual) == 0:  # when rank A < number of foods or when len(A) <= number of foods
+        # we found a perfect solution (perhaps one of infinite perfect solutions)
+        # due to A not sufficiently constraining x (though shouldn't b be taken into account as well?)  
+        score = 0.0
+    else:
+        score = -float(residual)
+    return score, x
+    
+def _solve_linear_program(nutrition_target, foods):
+    # TODO it appears that when A, b are given, Ax=b is first solved and only
+    # the free variables are varied in conelp. Instead we should add targets to
+    # the minimizing part. Further, l1-norm won't work as that isn't linear, but
+    # without abs adding targets to the minimize part makes absolutely no sense.
+    # What we need to do instead is calculate l2 norm of Ax-b using coneqp (or
+    # its simpler variant rather). The example shows how to take an l2-norm
+    # using it. It will then minimize that l2-norm as we first expected from
+    # conelp. We then still need to squeeze in the regular
+    # nutrition_target.minimize; they can be easily added. Just do the same as
+    # lsq above, but move the extrema into constraints instead of converting to
+    # pseudo targets. Some code can be shared between the two.
+    assert False
     
     # Note:
     #
     # - http://cvxopt.org/userguide/coneprog.html#linear-programming
-    # - Gx + s = h, s>=0 => Gx <= h  # Note: it appears it's actually xG and xA instead of Gx and Ax
+    # - Gx + s = h, s>=0 => Gx <= h
     # - Ax = b
     # - minimize c^T x
+    #
+    # - size(A) = (p,n)
+    #
+    # It's roughly equivalent to solving `Ax=b`. Then with whatever free
+    # variables are left (i.e. when len(x) > len(A)), it will try to solve `Gx +
+    # s = h` while also minimizing `c^T x`. Verified this by leaving no free
+    # variables after `Ax=b` and setting 1 simple constraint with G and h; after
+    # which is indeed failed to solve.
     #
     # Our x_i: the amount of the i-th food to use in recipe
     
 #     print('?', end='', flush=True)
     G = []
     h = []
-    A = []
-    b = []
     c = []
     
     # minima
@@ -77,11 +159,14 @@ def solve(nutrition_target, foods):
         h.append(maximum)
 
     # targets
-    for nutrient, value in nutrition_target.targets.items():
-        A.append(foods[nutrient])
-        b.append(value)
+    assert not nutrition_target.targets  # because not implemented atm. Need to add to minimize instead
+#     for nutrient, value in nutrition_target.targets.items():
+#         A.append(foods[nutrient] + [target])
+#         A.append(foods[nutrient])
+#         b.append(value)
         
-    # minimize
+    # minimize -> c
+    #TODO assert sum of nutrition_target.minimize weights is 1
     for nutrient, weight in nutrition_target.minimize.items():
         c.append(weight * foods[nutrient].values)
         
@@ -94,25 +179,15 @@ def solve(nutrition_target, foods):
         G = matrix(np.column_stack(G).transpose()) #TODO transpose above
         h = matrix(h)
     
-    if A:
-        assert b
-        A = matrix(np.column_stack(A).transpose())
-        b = matrix(b)
-    else:
-        A = None
-        b = None
-        
     if not c:
         c = matrix(np.zeros(len(foods)))
     else:
         c = matrix(np.array(c).sum(axis=0))
-#     print('g', G)
+#     print('G', G)
 #     print('h', h)
-#     print('A', A)
-#     print('b',b)
 #     print('c', c)
     
-    solution = solvers.lp(c, G, h, A, b)
+    solution = cvxopt.solvers.lp(c, G, h) #Note: providing primalstart/dualstart might improve performance? Could do so based on previously solved recipe # "exploiting structure" is also a thing that could improve performance
     _logger.debug('Diet problem solution:\n' + pprint.pformat(solution))
     
     # objective:
