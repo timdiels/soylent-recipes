@@ -15,30 +15,30 @@
 
 import logging
 from soylent_recipes import solver
-import numpy as np
 import pandas as pd
 from textwrap import dedent
 from itertools import chain
 from chicken_turtle_util.exceptions import InvalidOperationError
-import heapq
+from soylent_recipes.various import TopK
 
 _logger = logging.getLogger(__name__)
 
 cancel = False
 
-class TopK(object): #TODO rename TopRecipes, k -> max_branches, max_leafs
+class TopRecipes(object): #TODO k -> max_branches, max_leafs
     
     def __init__(self, k):
         self._k = k
-        self._branches = []  # heapq by score, keeping the K highest scoring branch recipes
-        self._leafs = []  # heapq by score, keeping the K highest scoring leaf recipes
+        self._key = lambda recipe: recipe.score
+        self._branches = TopK(k, self._key)
+        self._leafs = TopK(k, self._key)
         self._pushed = False
     
     def __iter__(self):
         '''
         Yield top recipes, ordered by descending score
         '''
-        return iter(sorted(self._leafs + self._branches, reverse=True, key=lambda recipe: recipe.score))
+        return iter(sorted(chain(self._leafs, self._branches), reverse=True, key=self._key))
     
     def pop_branches(self):
         '''
@@ -52,49 +52,24 @@ class TopK(object): #TODO rename TopRecipes, k -> max_branches, max_leafs
         ------
         Recipe
         '''
-        while True:
-            recipe = self._pop()
-            if recipe is None:
-                return
-            yield recipe
+        while self._branches:
+            # TODO a combo of next_max_distance, score might work better than
+            # plainly next_max_distance first and score as tie-breaker (the former
+            # being a float makes it unlikely, the score is ever taken into
+            # account). How would you combine these 2 though?
+            yield self._branches.pop()
         
     def unset_pushed(self):
         self._pushed = False
         
-    def _pop(self):
-        '''
-        Pop the worst branch recipe
-        
-        Returns
-        -------
-        Recipe or None
-            Branch recipe or, if no branch recipes, None
-        '''
-        # TODO a combo of next_max_distance, score might work better than
-        # plainly next_max_distance first and score as tie-breaker (the former
-        # being a float makes it unlikely, the score is ever taken into
-        # account). How would you combine these 2 though?
-        
-        # Pop
-        if not self._branches:
-            return None
-        recipe = heapq.heappop(self._branches)
-        return recipe
-    
     def push(self, recipe):
 #         print('p', end='', flush=True)
         if recipe.is_leaf:
             recipes = self._leafs
         else:
             recipes = self._branches
-            
-        if len(recipes) >= self._k:
-            popped = heapq.heappushpop(recipes, recipe)
-            if popped != recipe:
-                self._pushed = True
-        else:
-            heapq.heappush(recipes, recipe)
-            self._pushed = True
+        pushed = recipes.push(recipe)
+        self._pushed = self._pushed or pushed
 #         print('P', end='', flush=True)
         
     @property
@@ -106,7 +81,7 @@ class TopK(object): #TODO rename TopRecipes, k -> max_branches, max_leafs
         return self._pushed
     
     def format_stats(self):
-        recipes = self._leafs + self._branches
+        recipes = list(self._leafs) + list(self._branches)
         max_distances = pd.Series(recipe.max_distance for recipe in recipes)
         return (
             dedent('''\

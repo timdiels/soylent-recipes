@@ -144,7 +144,7 @@ def as_floats(foods):
 def mine(root_node, nutrition_target):
     loop = asyncio.get_event_loop()
     k = 100
-    top_recipes = miner.TopK(k)
+    top_recipes = miner.TopRecipes(k)
     def cancel():
         # Note: cancelling an executor does not cancel the thread running inside
         _logger.info('Cancelling')
