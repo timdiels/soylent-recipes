@@ -1,5 +1,2 @@
 pytest
 pytest-env
-pytest-xdist
-pytest-cov
-coverage-pth

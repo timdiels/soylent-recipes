@@ -1,5 +1,6 @@
 # List of required dependencies
--e /home/limyreth/doc/eclipse_workspace/chicken_turtle_util[click,test,data_frame,path,logging]
+#-e /home/limyreth/doc/eclipse_workspace/chicken_turtle_util[click,test,data_frame,path,logging]
+chicken_turtle_util==4.*
 numpy
 pandas
 attrs
