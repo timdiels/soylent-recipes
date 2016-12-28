@@ -85,3 +85,29 @@ For the clustering algorithm itself:
 
 This way each cluster has an associated max distance, which can be used as a
 level of detail knob.
+
+Doc TODO
+--------
+TopRecipes pops by descending max_distance. I.e. we continue with the least
+refined. Though this does reduce pruning, increasing how much of the search
+space we cover; i.e. it's more expensive. In the future, we might choose to pop
+highest score instead and restart search with a random set of cluster nodes to
+counter greediness. In either case, we simply prune lowest score first.
+
+Scoring
+^^^^^^^
+There are 2 ways in which recipes are scored. First there is partial
+score, which is the negative error to a least squares problem based on the
+nutrition target; this is a (perhaps biased) approximation of the real problem.
+For the real problem, the diet problem, we use a quadratic program; returning
+the negative of the objective it tries to minimize. It constrains nutrient sums
+to be in range of the extrema and minimizes squared distance to
+nutrition_target.targets and squared amounts of nutrition_target.minimize. In
+both problems, weights are added such that extrema take priority over targets
+and targets take priority over minimize.
+
+- minimize weights sum to 1
+- targets are given weight 2
+- pseudo targets are given weight 3
+
+
