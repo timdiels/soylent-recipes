@@ -60,10 +60,10 @@ class TestTopK(object):
         
         # Push adds
         object_10 = Object(10)
-        top_k.push(object_10)
+        assert top_k.push(object_10) is None  # and its return is the popped object if any, else None
         assert set(top_k) == {object_10}
         object_20 = Object(20)
-        top_k.push(object_20)
+        assert top_k.push(object_20) is None
         assert set(top_k) == {object_10, object_20}
         
         # Cannot add object already in TopK
@@ -72,12 +72,12 @@ class TestTopK(object):
             
         # Pushing when len == k, pops the object with lowest key
         object_30 = Object(30)
-        top_k.push(object_30)  # when push with highest key
+        assert top_k.push(object_30) == object_10  # when push with highest key
         assert set(top_k) == {object_20, object_30}
-        top_k.push(object_10)  # when push lowest key
+        assert top_k.push(object_10) == object_10  # when push lowest key
         assert set(top_k) == {object_20, object_30}
         object_25 = Object(25)
-        top_k.push(object_25)  # when push somewhere in the middle
+        assert top_k.push(object_25) == object_20  # when push somewhere in the middle
         assert set(top_k) == {object_25, object_30}
         
     def test_pop(self, top_k):
@@ -146,3 +146,11 @@ class TestTopK(object):
         assert len(top_k) == 2  # not counted by len
         assert top_k.pop() == object_10  # not returned by pop
         assert top_k.pop() == object_20
+        
+        # When exceeding top k,
+        top_k.push(object_10)
+        top_k.push(object_20)
+        top_k.push(object_30)
+        top_k.remove(object_10)  # remove lowest
+        assert top_k.push(Object(40)) is None
+        assert top_k.push(Object(50)) == object_20  # exceeding top k

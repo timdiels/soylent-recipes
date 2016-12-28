@@ -43,7 +43,7 @@ class _Item(object):
         return self._key < other._key
     
     def __eq__(self, other):
-        return self._key == other._key
+        return other is not None and self._key == other._key
     
     def __repr__(self):
         return '_Item(key={!r}, object_={!r}, removed={!r})'.format(
@@ -79,26 +79,41 @@ class TopK(object):
         
         Returns
         -------
-        pushed : bool
-            True if it was pushed, False if it didn't make it in it (key < K
-            other keys in TopK)
+        popped : any or None
+            The popped object, if len(self) was k, else None. The popped object
+            can be `object_`.
         '''
+        if object_ is None:
+            raise ValueError('Object to push cannot be None.')
         if object_ in self._items_dict:
             raise ValueError(
                 'Object already in TopK. Cannot push again. Object: {!r}'
                 .format(object_)
             )
-        key = self._key(object_)
-        item = _Item(key, object_)
-        if len(self._items_dict) >= self._k:
+        
+        # Update heap
+        item = _Item(self._key(object_), object_)
+        if len(self) >= self._k:
+            # Push and pop
             popped = heapq.heappushpop(self._items_heap, item)
-            if popped == item:
-                return False
-            del self._items_dict[popped.object_]
+            
+            # If it's an already removed item, pop again as it doesn't count
+            # towards len(self). Otherwise we'd exceed the top k
+            while popped.removed:
+                popped = heapq.heappop(self._items_heap)
         else:
+            popped = None
             heapq.heappush(self._items_heap, item)
-        self._items_dict[object_] = item
-        return True
+        pushed = popped != item
+        
+        # Update dict
+        if pushed:
+            if popped is not None:
+                del self._items_dict[popped.object_]
+            self._items_dict[object_] = item
+        
+        # Return
+        return popped.object_ if popped is not None else None
     
     def pop(self):
         '''
@@ -120,7 +135,7 @@ class TopK(object):
         try:
             item = self._items_dict.pop(object_)
         except KeyError:
-            raise ValueError('Object not found: {!r}. Could not remove. '.format(object_))
+            raise ValueError('Object not found: {!r}. Could not remove.'.format(object_))
         item.removed = True
     
     def __len__(self):

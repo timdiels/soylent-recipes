@@ -27,12 +27,22 @@ cancel = False
 
 class TopRecipes(object): #TODO k -> max_branches, max_leafs
     
+    '''
+    List of top recipes
+    
+    Keeps k branches, k leafs. When exceeding k branches/leafs, drops the lowest
+    scoring branch/leaf respectively.
+    '''
+    
     def __init__(self, k):
         self._k = k
         self._key = lambda recipe: recipe.score
-        self._branches = TopK(k, self._key)
-        self._leafs = TopK(k, self._key)
         self._pushed = False
+        self._leafs = TopK(k, self._key)
+        self._branches = TopK(k, self._key)
+        
+        # Note: pruning will be unused so long as k>=max_branches, given how we use this
+        self._branches_by_max_distance = TopK(k, lambda recipe: -recipe.max_distance) 
     
     def __iter__(self):
         '''
@@ -42,7 +52,7 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
     
     def pop_branches(self):
         '''
-        Yield all branch recipes from worst to best
+        Yield all branch recipes sorted by descending max_distance
         
         Manipulating/accessing the TopK object while iterating is
         supported/safe. Any branch recipes pushed while iterating will be
@@ -53,24 +63,28 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         Recipe
         '''
         while self._branches:
-            # TODO a combo of next_max_distance, score might work better than
-            # plainly next_max_distance first and score as tie-breaker (the former
-            # being a float makes it unlikely, the score is ever taken into
-            # account). How would you combine these 2 though?
-            yield self._branches.pop()
+            recipe = self._branches_by_max_distance.pop()
+            self._branches.remove(recipe)
+            assert len(self._branches) == len(self._branches_by_max_distance), '{} == {}'.format(len(self._branches), len(self._branches_by_max_distance))
+            yield recipe
         
     def unset_pushed(self):
         self._pushed = False
         
     def push(self, recipe):
-#         print('p', end='', flush=True)
         if recipe.is_leaf:
             recipes = self._leafs
         else:
             recipes = self._branches
-        pushed = recipes.push(recipe)
-        self._pushed = self._pushed or pushed
-#         print('P', end='', flush=True)
+        popped = recipes.push(recipe)
+        pushed = popped != recipe
+        if pushed:
+            self._pushed = True
+            if not recipe.is_leaf:
+                if popped is not None:
+                    self._branches_by_max_distance.remove(popped)
+                self._branches_by_max_distance.push(recipe)
+        assert len(self._branches) == len(self._branches_by_max_distance), '{} == {}'.format(len(self._branches), len(self._branches_by_max_distance))
         
     @property
     def pushed(self):
@@ -228,26 +242,15 @@ class Recipe(object):
         assert len(set(clusters)) == len(clusters)
         return Recipe(clusters, self._nutrition_target)
     
-    def __lt__(self, other):
-        '''
-        recipe1 < recipe2 iff it's worse than recipe2
-        '''
-        return self.score < other.score #TODO take into account max_distance. When one is far more detailed than the other, this should affect comparison 
-    
     def __len__(self):
         '''
         Number of (representing) foods
         '''
         return len(self.clusters)
     
-    def __repr__(self): #TODO: not a good repr, make a format func or so
-        return '{}, {:.2f}, {}, {}'.format(
-            self.score,
-            self.max_distance,
-            ''.join(('f' if cluster.is_leaf else 'C') for cluster in self.clusters),
-            ' '.join(str(cluster.id_) for cluster in self.clusters)
-        )
-
+    def __repr__(self):
+        return 'Recipe(clusters=[{}])'.format(' '.join(map(str, sorted(cluster.id_ for cluster in self.clusters))))
+        
 #TODO add to CTU        
 import cProfile
 import pyprof2calltree
@@ -289,7 +292,6 @@ def mine(root_node, nutrition_target, top_recipes):
     top_recipes.push(Recipe([root_node], nutrition_target))
     
     for recipe in top_recipes.pop_branches():
-#         print('i', end='', flush=True)
         # return when cancelled
         if cancel:
             return

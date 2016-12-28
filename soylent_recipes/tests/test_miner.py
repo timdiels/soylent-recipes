@@ -176,39 +176,6 @@ class TestRecipe(object):
         
         assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
 
-    def test_lt(self, mocker, nutrition_target):
-        '''
-        Test < operator
-        
-        Basically self.score < other.score
-        '''
-        def _Recipe(score):
-            food = pd.Series([])
-            node = Node(id_=1, representative=food, max_distance=0.0, children=())
-            mocker.patch.object(solver, 'solve', lambda *args: (score, np.array([])))
-            return Recipe([node], nutrition_target)
-            
-        recipe_f8 = _Recipe(score=(False, 8.0))
-        recipe_f9 = _Recipe(score=(False, 9.0))
-        recipe_t8 = _Recipe(score=(True, 8.0))
-        recipe_t9 = _Recipe(score=(True, 9.0))
-        
-        assert recipe_f8 < recipe_f9
-        assert recipe_f8 < recipe_t8
-        assert recipe_f8 < recipe_t9
-        
-        assert not recipe_f9 < recipe_f8
-        assert recipe_f9 < recipe_t8
-        assert recipe_f9 < recipe_t9
-        
-        assert not recipe_t8 < recipe_f8
-        assert not recipe_t8 < recipe_f9
-        assert recipe_t8 < recipe_t9
-        
-        assert not recipe_t9 < recipe_f8
-        assert not recipe_t9 < recipe_f9
-        assert not recipe_t9 < recipe_t8
-    
 class TestTopRecipes(object):
     
     @pytest.fixture
@@ -259,11 +226,11 @@ class TestTopRecipes(object):
         
     def test_pop_order(self, top_recipes):
         '''
-        Branch recipes are popped according to score ascendingly
+        Branch recipes are popped according to descending max_distance
         '''
-        recipe1 = mocks.Recipe(is_leaf=False, score=(False, 0.0))
-        recipe2 = mocks.Recipe(is_leaf=False, score=(False, 3.0))
-        recipe3 = mocks.Recipe(is_leaf=False, score=(False, 4.0))
+        recipe1 = mocks.Recipe(is_leaf=False, max_distance=30.0, score=(False, 6.0))
+        recipe2 = mocks.Recipe(is_leaf=False, max_distance=20.0, score=(False, 3.0))
+        recipe3 = mocks.Recipe(is_leaf=False, max_distance=10.0, score=(False, 4.0))
         
         # Push in one order and check
         top_recipes.push(recipe3)
