@@ -275,7 +275,7 @@ class profile(object):
 # TODO ideas:
 # - instead of >, require to be at least x% better
 # - instead of NaN score, solve a diet problem without min-max, or try to get the solver to solve it as close as possible and then add errors for it. Scores of relaxed problem should always be < score of real problem
-@profile()
+# @profile()
 def mine(root_node, nutrition_target, top_recipes):
     '''
     Mine recipes

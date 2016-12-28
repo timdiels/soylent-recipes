@@ -27,7 +27,8 @@ _logger = logging.getLogger(__name__)
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
-def main(usda_directory):
+@click_.option('--output-clustering', is_flag=True, help='Output clustering* files summarizing/displaying the clustering')
+def main(usda_directory, output_clustering):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
@@ -41,7 +42,8 @@ def main(usda_directory):
     foods = as_floats(foods)
     foods = foods.set_index('description')
     root_node = cluster_.agglomerative_euclidean(foods)
-    tree.draw(root_node)
+    if output_clustering:
+        tree.write(root_node)
     mine(root_node, nutrition_target)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 

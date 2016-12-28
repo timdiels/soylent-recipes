@@ -21,6 +21,7 @@ clustering.pdf
 recipes*.txt
 profile.cprofile
 profile.kgrind
+clusterings
 
 # Compiled Object files
 *.slo
