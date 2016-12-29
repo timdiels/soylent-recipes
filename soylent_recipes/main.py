@@ -21,6 +21,7 @@ from soylent_recipes import __version__
 from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner, cluster as cluster_, tree
 import asyncio
 import signal
+import numpy as np
 
 _logger = logging.getLogger(__name__)
 
@@ -40,7 +41,9 @@ def main(usda_directory, output_clustering):
     foods = foods.set_index('description')
     foods = handle_nans(foods, nutrition_target, 10)
     foods = add_energy_components(foods)
+    foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
+    foods, nutrition_target = normalize(foods, nutrition_target)
     root_node = cluster_.agglomerative_euclidean(foods)
     if output_clustering:
         tree.write(root_node)
@@ -145,6 +148,24 @@ def add_energy_components(foods):
     foods = foods.drop(_conversion_factors, axis=1)
     
     return foods
+
+def normalize(foods, nutrition_target):
+    '''
+    Normalize foods and nutrition target such that all pseudo targets are 1.0
+    '''
+    _logger.info('Normalizing foods and nutrition target')
+    
+    # Normalize foods
+    foods = foods / nutrition_target['pseudo_target']
+    
+    # Normalize nutrition_target
+    nutrition_target = nutrition_target.apply(lambda row: row/row['pseudo_target'], axis=1)
+
+    # Post condition
+    assert (nutrition_target['pseudo_target'].apply(lambda x: np.isclose(x, 1.0))).all()
+    
+    # Return
+    return foods, nutrition_target
 
 def mine(root_node, nutrition_target):
     loop = asyncio.get_event_loop()

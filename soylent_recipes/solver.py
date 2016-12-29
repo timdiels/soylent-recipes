@@ -20,7 +20,6 @@ Diet problem solver
 from cvxopt import matrix
 import cvxopt
 import numpy as np
-from math import sqrt
 import logging
 import pprint
 import scipy
@@ -65,7 +64,7 @@ def solve(nutrition_target, foods):
 def _solve_least_squares(nutrition_target, foods):
     # A, b
     A = foods[nutrition_target['pseudo_target'].index].values.transpose()
-    b = nutrition_target['pseudo_target'].values
+    b = nutrition_target['pseudo_target'].values  # Note: currently, this is always 1. If we could make use of that, require a nutrition target with just min,max columns instead and assume target=1. E.g. Ax-1=0 would allow using root finding algorithms instead, if that's beneficial.
     
     # solve
     x, residual = scipy.optimize.nnls(A, b)  # x>=0

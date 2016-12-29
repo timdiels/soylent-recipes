@@ -117,3 +117,10 @@ Remember that a nutrient has either a max or a min constraint, or both.
 
 When has min and max -> pseudo-target= (min+max)/2
 
+Normalising nutrients
+^^^^^^^^^^^^^^^^^^^^^
+When nutrient1 and nutrient2 have a pseudo-target of 1 and 10 respectively, a
+difference in nutrient1 of 1 should be equivalent to a difference of 10 in
+nutrient2 when scoring nutrient error to target or when calculating distance
+between foods for clustering the foods. To achieve this, we normalise the foods
+and nutrition target by dividing by the pseudo-target of the nutrient.
