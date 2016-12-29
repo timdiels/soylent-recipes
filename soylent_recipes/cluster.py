@@ -79,7 +79,7 @@ def _convert_clustering(foods, children, distances):
     
     # Add leaf nodes
     for id_, (_, food) in enumerate(foods.iterrows()):
-        nodes[id_] = Node(id_, representative=food, max_distance=0.0, children=())
+        nodes[id_] = Node(id_, representative=food, representative_node=None, max_distance=0.0, children=())
         
     # Add branch nodes
     _add_branch_nodes(nodes, children, distances)
@@ -118,10 +118,12 @@ def _add_branch_nodes(nodes, children, distances):
         
         # Get representative: the representative of the leaf with the least max distance to other leafs
         representative_leaf_id = leaf_ids[leaf_distances.max(axis=1).argmin()]
-        representative = nodes[representative_leaf_id].representative
+        representative_node = nodes[representative_leaf_id]
+        representative = representative_node.representative
+        
         
         # Create Node
-        nodes[id_] = Node(id_, representative, max_distance, children=children_)
+        nodes[id_] = Node(id_, representative, representative_node, max_distance, children=children_)
 
 def _validate_not_none(self, attribute, value):
     if value is None:
@@ -166,10 +168,13 @@ class Node(object):
     
     id_ = attr.ib(validator=_validate_not_none)
     representative = attr.ib(validator=_validate_not_none, cmp=False, hash=False)
+    representative_node = attr.ib(cmp=False, hash=False)  # None iff is_leaf #TODO test we grab this correctly
     max_distance = attr.ib(validator=_validate_float_positive, convert=float, cmp=False, hash=False)
     children = attr.ib(validator=_validate_children, convert=tuple, cmp=False, hash=False)
     
     def __attrs_post_init__(self):
+        if self.representative_node and not self.representative.equals(self.representative_node.representative):
+            raise ValueError('representative does not equal self.representative_node.representative. It should. Got: {}'.format(self))
         if self.is_leaf != (self.max_distance == 0.0):
             raise ValueError('is_leaf != (max_distance == 0) for {}'.format(self))
     

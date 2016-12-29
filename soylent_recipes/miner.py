@@ -345,8 +345,7 @@ def mine(root_node, nutrition_target, top_recipes):
             # the cluster with the food that represents it. This is an
             # approximation, further splits could still have led to a better
             # score.
-            assert False  #FIXME cluster.representative is a food, need to replace with representative_node Leaf node of representative
-            top_recipes.push(recipe.replace([next_cluster], [next_cluster.representative]))
+            top_recipes.push(recipe.replace([next_cluster], [next_cluster.representative_node]))
     
     # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
     #TODO we could throw out any foods that aren't contributing once we
