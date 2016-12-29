@@ -158,13 +158,15 @@ def mine(root_node, nutrition_target):
     loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes))
     loop.close()
     
+    #TODO these amounts are with normalised foods. So they only portray
+    #proportions, not actual values in grams. So we should find the factor and
+    #multiply it to go from random proportions to actual recipe amounts for the
+    #given target
+    
     # Print top k long format
     def format_recipe(recipe):
         food_names = (cluster.food.name for cluster in recipe.clusters)
-        if recipe.solved:
-            lines = ('{} - {}'.format(amount, food_name) for amount, food_name in zip(recipe.amounts, food_names))
-        else:
-            lines = food_names
+        lines = ('{:.2f} - {}'.format(amount, food_name) for amount, food_name in zip(recipe.amounts, food_names))
         return '{}\n{}'.format(recipe.score, '\n'.join(lines))
     with open('recipes_top_{}.txt'.format(k), 'w') as f:
         f.write(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
