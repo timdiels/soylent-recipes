@@ -48,3 +48,5 @@ class Recipe(object):
     
     __lt__ = miner.Recipe.__lt__
     __len__ = miner.Recipe.__len__
+    __eq__ = miner.Recipe.__eq__
+    __hash__ = miner.Recipe.__hash__

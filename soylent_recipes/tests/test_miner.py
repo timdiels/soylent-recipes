@@ -41,6 +41,12 @@ class TestRecipe(object):
     def score(self):
         return (False, 0.0)
     
+    def patch_solve(self, mocker, score=(False, 0.0), amounts=None):
+        '''
+        Patch solver.solve to return mock value instead of actually solving
+        '''
+        mocker.patch.object(solver, 'solve', lambda *args: (score, amounts))
+    
     def test_branch(self, mocker, nutrition_target):
         '''
         Test everything on a branch recipe
@@ -102,7 +108,7 @@ class TestRecipe(object):
         Test things specific to the `not recipe.solved` case
         '''
         score = (False, 2.0)
-        mocker.patch.object(solver, 'solve', lambda *args: (score, None))
+        self.patch_solve(mocker, score)
         node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
         recipe = Recipe([node], nutrition_target)
         assert not recipe.solved  # score[0] == recipe.solved
@@ -111,7 +117,7 @@ class TestRecipe(object):
         '''
         Test things specific to the `recipe.is_leaf` case
         '''
-        mocker.patch.object(solver, 'solve', lambda *args: (score, None))
+        self.patch_solve(mocker)
         node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
         recipe = Recipe([node], nutrition_target)
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
@@ -175,9 +181,39 @@ class TestRecipe(object):
         assert set(recipe.clusters) == {node2, node3, node4}
         
         assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
+        
+    def test_clusters(self, mocker, nutrition_target):
+        # recipe.clusters is sorted by cluster id
+        self.patch_solve(mocker)
+        node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
+        node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
+        recipe1 = Recipe([node1, node2], nutrition_target)
+        recipe2 = Recipe([node2, node1], nutrition_target)
+        assert recipe1.clusters == (node1, node2)
+        assert recipe2.clusters == (node1, node2)
+    
+    def test_eq(self, mocker, nutrition_target):
+        # recipes are equal iff recipe.clusters equals
+        self.patch_solve(mocker)
+        node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
+        node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
+        node3 = Node(id_=3, representative=pd.Series([]), max_distance=0.0, children=())
+        recipe1 = Recipe([node1, node2], nutrition_target)
+        recipe2 = Recipe([node2, node1], nutrition_target)
+        assert recipe1 == recipe2
+        recipe3 = Recipe([node1, node3], nutrition_target) 
+        assert recipe1 != recipe3
+        assert recipe2 != recipe3
 
 class TestTopRecipes(object):
     
+    @pytest.fixture(autouse=True)
+    def set_recipe_eq_by_identity(self, mocker):
+        '''
+        Patch mock recipes to equal iff identical.
+        '''
+        mocker.patch.object(mocks.Recipe, '__eq__', lambda s, other: id(s) == id(other))
+        
     @pytest.fixture
     def top_recipes(self):
         return TopRecipes(k=100)  # high enough k such that pruning does not kick in

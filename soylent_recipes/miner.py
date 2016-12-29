@@ -127,7 +127,7 @@ class Recipe(object):
         if not clusters:
             raise ValueError('clusters must be non-empty sequence. Got: {!r}'.format(self.clusters))
         
-        self._clusters = tuple(clusters)
+        self._clusters = tuple(sorted(clusters, key=lambda cluster: cluster.id_))
         self._nutrition_target = nutrition_target
         
         # Solve diet problem resulting in scored recipe
@@ -242,6 +242,12 @@ class Recipe(object):
         assert len(set(clusters)) == len(clusters)
         return Recipe(clusters, self._nutrition_target)
     
+    def __eq__(self, other):
+        return other is not None and self.clusters == other.clusters
+    
+    def __hash__(self):
+        return hash(self.clusters)
+    
     def __len__(self):
         '''
         Number of (representing) foods
@@ -249,7 +255,7 @@ class Recipe(object):
         return len(self.clusters)
     
     def __repr__(self):
-        return 'Recipe(clusters=[{}])'.format(' '.join(map(str, sorted(cluster.id_ for cluster in self.clusters))))
+        return 'Recipe(clusters=[{}])'.format(' '.join(str(cluster.id_) for cluster in self.clusters))
         
 #TODO add to CTU        
 import cProfile
