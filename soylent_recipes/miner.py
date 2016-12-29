@@ -40,6 +40,7 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         self._pushed = False
         self._leafs = TopK(k, self._key)
         self._branches = TopK(k, self._key)
+        self._visited = set()
         
         # Note: pruning will be unused so long as k>=max_branches, given how we use this
         self._branches_by_max_distance = TopK(k, lambda recipe: -recipe.max_distance) 
@@ -72,6 +73,15 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         self._pushed = False
         
     def push(self, recipe):
+        if recipe is None:
+            raise ValueError("recipe is None. It shouldn't.")
+        
+        # When we've already visited the recipe, skip it #TODO don't even create the recipe in the first place; thus avoiding scoring it
+        if recipe in self._visited:
+            return
+        self._visited.add(recipe)
+        
+        #
         if recipe.is_leaf:
             recipes = self._leafs
         else:
@@ -278,6 +288,17 @@ class profile(object):
         return profiled
             
 
+# Note: the current miner revisits recipes, which are then ignored by
+# TopRecipes. This is how it ends up at the same point:
+#
+#   a b
+#   split a and drop one
+#   a1 b  ,  a2 b  , ...
+#   split b and drop one
+#   b1 b2 ,  b1 b2 , ...
+#
+# TODO could this be avoided?
+
 # TODO ideas:
 # - instead of >, require to be at least x% better
 # - instead of NaN score, solve a diet problem without min-max, or try to get the solver to solve it as close as possible and then add errors for it. Scores of relaxed problem should always be < score of real problem
@@ -303,11 +324,11 @@ def mine(root_node, nutrition_target, top_recipes):
             return
         
         # Split cluster
-        cluster = recipe.next_cluster
-        left, right = cluster.children
-        recipe_both = recipe.replace([cluster], [left, right])
+        next_cluster = recipe.next_cluster
+        left, right = next_cluster.children
+        recipe_both = recipe.replace([next_cluster], [left, right])
         top_recipes.unset_pushed()
-        if recipe_both.score > recipe.score or not recipe.solved:
+        if recipe_both.score > recipe.score or not recipe.solved: #TODO always true
             if len(recipe_both) <= max_foods:
                 # We have room for both and we know it improves score, so add it
                 top_recipes.push(recipe_both)
@@ -315,7 +336,7 @@ def mine(root_node, nutrition_target, top_recipes):
                 # We need to drop a food to stay within the max foods limit
                 for cluster in recipe_both.clusters:
                     split_recipe = recipe_both.replace([cluster], [])
-                    if split_recipe.score > recipe.score or not recipe.solved: #TODO what if left or right happens to have the same representative. No need to solve it again, but do push it again despite having equal score
+                    if split_recipe.score > recipe.score or not recipe.solved: #TODO always true #TODO what if left or right happens to have the same representative. No need to solve it again, but do push it again despite having equal score
                         # Only push if it still improves
                         top_recipes.push(split_recipe)
         
@@ -325,7 +346,7 @@ def mine(root_node, nutrition_target, top_recipes):
             # approximation, further splits could still have led to a better
             # score.
             assert False  #FIXME cluster.representative is a food, need to replace with representative_node Leaf node of representative
-            top_recipes.push(recipe.replace([cluster], [cluster.representative]))  
+            top_recipes.push(recipe.replace([next_cluster], [next_cluster.representative]))
     
     # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
     #TODO we could throw out any foods that aren't contributing once we

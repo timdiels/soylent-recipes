@@ -218,6 +218,26 @@ class TestTopRecipes(object):
     def top_recipes(self):
         return TopRecipes(k=100)  # high enough k such that pruning does not kick in
     
+    def test_push(self, top_recipes):
+        '''
+        Test push and iter (not exceeding k)
+        '''
+        # When created, iter empty
+        assert list(top_recipes) == []
+        
+        # When push None, raise
+        with pytest.raises(ValueError):
+            top_recipes.push(None)
+            
+        # When push some, pushed recipes appear in iter, sorted descendingly by score
+        leaf = mocks.Recipe(score=3)
+        branch = mocks.Recipe(is_leaf=False, score=2)
+        leaf2 = mocks.Recipe(score=1)
+        top_recipes.push(branch)
+        top_recipes.push(leaf)
+        top_recipes.push(leaf2)
+        assert list(top_recipes) == [leaf, branch, leaf2]
+        
     def test_pushed(self, top_recipes):
         # When constructed, not pushed
         assert not top_recipes.pushed
@@ -234,35 +254,55 @@ class TestTopRecipes(object):
         top_recipes.push(mocks.Recipe())
         assert top_recipes.pushed
 
-    def test_pop(self, top_recipes):
+    def test_pop_branches(self, top_recipes):
+        def Branch():
+            return mocks.Recipe(is_leaf=False)
         # When constructed, nothing to pop
         assert list(top_recipes.pop_branches()) == []
         
         # When push branch, it's returned in pop
-        branch = mocks.Recipe(is_leaf=False)
+        branch = Branch()
         top_recipes.push(branch)
         assert list(top_recipes.pop_branches()) == [branch]
         
         # When push branch while iterating, it's returned as well
+        branch = Branch()
+        branch2 = Branch()
         top_recipes.push(branch)
         first = True
         actual = []
         for recipe in top_recipes.pop_branches():
             actual.append(recipe)
             if first:
-                top_recipes.push(branch)
+                top_recipes.push(branch2)
                 first = False
-        assert actual == [branch, branch]
+        assert actual == [branch, branch2]
         
-        # Only pop branches
+        # When push leafs and branches, only pop branches
+        branch = Branch()
         leaf = mocks.Recipe(is_leaf=True)
         top_recipes.push(leaf)
         top_recipes.push(branch)
         assert list(top_recipes.pop_branches()) == [branch]
         
-    def test_pop_order(self, top_recipes):
+    def test_push_visited(self, top_recipes):
         '''
-        Branch recipes are popped according to descending max_distance
+        Ignore push of recipe that has been pushed before (=visited)
+        '''
+        # When pushed recipe in top_recipes, ignore it
+        branch = mocks.Recipe(is_leaf=False)
+        top_recipes.push(branch)
+        top_recipes.push(branch)
+        assert set(top_recipes) == {branch}
+        
+        # When pushed recipe not in top_recipes, but has been pushed before, ignore it
+        list(top_recipes.pop_branches())
+        top_recipes.push(branch)
+        assert list(top_recipes) == []
+        
+    def test_pop_branches_order(self, top_recipes):
+        '''
+        Pop by descending max_distance
         '''
         recipe1 = mocks.Recipe(is_leaf=False, max_distance=30.0, score=(False, 6.0))
         recipe2 = mocks.Recipe(is_leaf=False, max_distance=20.0, score=(False, 3.0))
@@ -273,43 +313,34 @@ class TestTopRecipes(object):
         top_recipes.push(recipe2)
         top_recipes.push(recipe1)
         assert list(top_recipes.pop_branches()) == [recipe1, recipe2, recipe3]
-
-    def test_iter(self, top_recipes):
-        assert list(top_recipes) == []
         
-        # When iterated, return all recipes sorted descendingly by score
-        leaf = mocks.Recipe(score=3)
-        branch = mocks.Recipe(is_leaf=False, score=2)
-        leaf2 = mocks.Recipe(score=1)
-        top_recipes.push(branch)
-        top_recipes.push(leaf)
-        top_recipes.push(leaf2)
-        assert list(top_recipes) == [leaf, branch, leaf2]
-        
-    def test_push(self):
+    @pytest.mark.parametrize('is_leaf', (False, True))
+    def test_push_more_than_k(self, is_leaf):
         '''
-        Prune after each push
+        When pushing more than k branches, prune
         
-        Prune recipe iff k recipes <= recipe.
-        
-        Basic push functionality already tested by test_pop
-        ''' #TODO there's a separate TopRecipes for leafs and branches, so it can go up to 2K if you mix
+        The analog holds for leafs. I.e. the max size of top recipes is 2k = k
+        leafs + k branches.
+        '''
         top_recipes = TopRecipes(k=2)
+        def recipe(max_distance, sub_score):
+            return mocks.Recipe(is_leaf=is_leaf, max_distance=max_distance, score=(False, sub_score))
         
         # When k recipes have better score, prune recipe
-        recipe5_10 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 10.0))
-        recipe5_9 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 9.0))
-        recipe5_8 = mocks.Recipe(is_leaf=False, max_distance=5.0, score=(False, 8.0))
+        recipe5_10 = recipe(max_distance=5.0, sub_score=10.0)
+        recipe5_9 = recipe(max_distance=5.0, sub_score=9.0)
+        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0)
         top_recipes.push(recipe5_10)
         top_recipes.push(recipe5_8)
         top_recipes.push(recipe5_9)
         assert set(top_recipes) == {recipe5_10, recipe5_9}
         
         # Order in which we push does not matter
+        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0)
         top_recipes.push(recipe5_8)
         assert set(top_recipes) == {recipe5_10, recipe5_9}
         
         # Pushing in between prunes fine too (and max_distance does not matter)
-        recipe4_9h = mocks.Recipe(is_leaf=False, max_distance=4, score=(False, 9.5))
+        recipe4_9h = recipe(max_distance=4.0, sub_score=9.5)
         top_recipes.push(recipe4_9h)
         assert set(top_recipes) == {recipe5_10, recipe4_9h}
