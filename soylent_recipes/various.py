@@ -15,6 +15,9 @@
 
 from chicken_turtle_util.exceptions import InvalidOperationError
 import heapq
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class _Item(object):
     
@@ -42,12 +45,9 @@ class _Item(object):
     def __lt__(self, other):
         return self._key < other._key
     
-    def __eq__(self, other):
-        return other is not None and self._key == other._key
-    
     def __repr__(self):
         return '_Item(key={!r}, object_={!r}, removed={!r})'.format(
-            self._key, self.removed, self.object_
+            self._key, self.object_, self.removed
         )
     
 class TopK(object):
@@ -83,6 +83,8 @@ class TopK(object):
             The popped object, if len(self) was k, else None. The popped object
             can be `object_`.
         '''
+        _logger.debug('-'*80)
+        _logger.debug('object_ {}'.format(object_))
         if object_ is None:
             raise ValueError('Object to push cannot be None.')
         if object_ in self._items_dict:
@@ -101,18 +103,24 @@ class TopK(object):
             # towards len(self). Otherwise we'd exceed the top k
             while popped.removed:
                 popped = heapq.heappop(self._items_heap)
+            
+            #
+            pushed = popped.object_ != item.object_
         else:
             popped = None
+            pushed = True
             heapq.heappush(self._items_heap, item)
-        pushed = popped != item
         
         # Update dict
+        _logger.debug('popped {}'.format(popped))
+        _logger.debug('pushed {}'.format(pushed))
         if pushed:
             if popped is not None:
                 del self._items_dict[popped.object_]
             self._items_dict[object_] = item
         
         # Return
+        self._assert_valid()
         return popped.object_ if popped is not None else None
     
     def pop(self):
@@ -126,6 +134,7 @@ class TopK(object):
             if not item.removed:
                 object_ = item.object_
                 del self._items_dict[object_]
+                self._assert_valid()
                 return object_
     
     def remove(self, object_):
@@ -137,6 +146,24 @@ class TopK(object):
         except KeyError:
             raise ValueError('Object not found: {!r}. Could not remove.'.format(object_))
         item.removed = True
+        self._assert_valid()
+        
+    def _assert_valid(self):
+        '''
+        Assert self is still internally valid
+        '''
+        # assert dict and heap in sync
+        dict_objects = set(self._items_dict.keys())
+        heap_objects = {item.object_ for item in self._items_heap if not item.removed}
+        difference = dict_objects.symmetric_difference(heap_objects)
+        if difference:
+            _logger.debug('dict objects {}'.format(sorted(dict_objects, key=lambda x: x.score)))
+            _logger.debug('heap objects {}'.format(sorted(heap_objects, key=lambda x: x.score)))
+            _logger.debug('len dict objects {}'.format(len(dict_objects)))
+            _logger.debug('len heap objects {}'.format(len(heap_objects)))
+            _logger.debug('len heap items (!rmed) {}'.format(len([item for item in self._items_heap if not item.removed])))
+            _logger.debug(difference)
+            assert False, difference
     
     def __len__(self):
         return len(self._items_dict)
