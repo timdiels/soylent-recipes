@@ -20,10 +20,11 @@ Diet problem solver
 from cvxopt import matrix
 import cvxopt
 import numpy as np
-import logging
-import pprint
 import pandas as pd
 from math import sqrt
+import logging
+import pprint
+import scipy
 
 _logger = logging.getLogger(__name__)
 cvxopt.solvers.options['show_progress'] = False
@@ -103,13 +104,8 @@ def _solve_least_squares(nutrition_target, foods):
         b.append(0.0)
     
     # solve
-    x, residual, _, _ = np.linalg.lstsq(A, b)
-    if len(residual) == 0:  # when rank A < number of foods or when len(A) <= number of foods
-        # we found a perfect solution (perhaps one of infinite perfect solutions)
-        # due to A not sufficiently constraining x (though shouldn't b be taken into account as well?)  
-        score = 0.0
-    else:
-        score = -float(residual)
+    x, residual = scipy.optimize.nnls(A, b)  # x>=0
+    score = -float(residual)
     return score, x
     
 def _solve_linear_program(nutrition_target, foods):

@@ -24,6 +24,7 @@ import pandas as pd
 import numpy as np
 from functools import partial
 import pytest
+from math import sqrt
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
 
@@ -205,7 +206,7 @@ class TestBoth(object):
             # manually confirmed correct weights are used. I.e. 3 for min-max(,
             # 2 for targets) and 1/normalised_weight for minimize (where
             # normalised weights sum to 1)
-            assert np.isclose(score, -1.862068965517241)
+            assert np.isclose(score, -sqrt(1.862068965517241))
             
     def test_weights(self, solve):
         '''
@@ -238,7 +239,7 @@ class TestBoth(object):
             # The score is the negative of the residual, since the optimal cannot be
             # achieved, we need only assert the score to confirm correct weights
             # were chosen.
-            assert np.isclose(score, -13.8)  # Manually calculated the score
+            assert np.isclose(score, -sqrt(13.8))  # Manually calculated the score
             
             # Also check amounts due to paranoia
             assert_allclose(amounts, [0.9])  # Manually checked the amounts are optimal
@@ -279,7 +280,7 @@ def test_pseudo_targets():
     # The score is the negative of the residual, since the optimal cannot be
     # achieved, we need only assert the score to confirm correct pseudo-targets
     # were chosen.
-    assert np.isclose(score, -32.142857142857153)  # Manually calculated the score
+    assert np.isclose(score, -sqrt(32.142857142857153))  # Manually calculated the score
     
     # Also check amounts due to paranoia
     assert_allclose(amounts, [0.85714286])  # Manually checked the amounts are optimal
