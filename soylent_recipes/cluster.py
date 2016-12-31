@@ -25,15 +25,24 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-# Note: might squeeze out some performance by only using lower/upper triangle of `distances`.
-
-def agglomerative_euclidean(foods):
-    _logger.info('Clustering foods using agglomerative_euclidean')
+def agglomerative(foods):
+    '''
+    foods : pd.DataFrame
+        foods to cluster. Contains exactly the nutrients required by the
+        nutrition target the clustering will be used for.
+    '''
+    _logger.info('Clustering foods using agglomerative, distance metric=RED, linkage=complete')
     
-    # Note: there is no squared euclidean
-    # Note: n_clusters has no effect on clustering.children_, so we don't use it
-    distances = pairwise_distances(foods.values, metric='euclidean')
+    # Calculate pairwise distances
+    foods_ = foods.values.copy()
+    foods_ /= np.linalg.norm(foods_, axis=1)[:,np.newaxis]  # Normalize each food by l2-norm
+    distances = pairwise_distances(foods_, metric='euclidean')
+    
+    # Remove duplicate foods
     foods, distances = _remove_duplicate_foods(foods, distances)
+    
+    # Cluster
+    # Note: n_clusters has no effect on clustering.children_, so we don't use it
     clustering = AgglomerativeClustering(linkage='complete', affinity='precomputed', compute_full_tree=True)
     clustering.fit(distances)
     return _convert_clustering(foods, clustering.children_, distances)  # we assume children_ are such that row i only references node ids < i+len(foods)

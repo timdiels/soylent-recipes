@@ -117,6 +117,11 @@ Remember that a nutrient has either a max or a min constraint, or both.
 
 When has min and max -> pseudo-target= (min+max)/2
 
+The solver is least squares. Squares because we want a deviation twice as large
+to count more than twice as much.  This ensures that a difference to
+pseudo-target of [0.1 0.9] is rated far worse than [0.5 0.5], while in
+manhattan distance, these would get an equal 'rating'.
+
 Normalising nutrients
 ^^^^^^^^^^^^^^^^^^^^^
 When nutrient1 and nutrient2 have a pseudo-target of 1 and 10 respectively, a
@@ -124,3 +129,31 @@ difference in nutrient1 of 1 should be equivalent to a difference of 10 in
 nutrient2 when scoring nutrient error to target or when calculating distance
 between foods for clustering the foods. To achieve this, we normalise the foods
 and nutrition target by dividing by the pseudo-target of the nutrient.
+
+Clustering
+^^^^^^^^^^
+We would like a clustering which clusters foods which offer similar output in
+recipes. I.e. the distance function should assign lower distance to foods which
+provide a similar nutrient output when swapped in a recipe. This distance
+function should ignore differences due to scale. E.g. food1 [1, 2] and food2
+[2,4] are equivalent as one is a multiple of the other. It matters that there
+is twice as much of the second nutrient as there is of the former in the food.
+It matters not that food2 has twice as much of each nutrient as food1. After
+all, in a recipe, we can simply take twice as much of food1 as we would of
+food2 and the result would be the same.
+
+In a recipe being solved, deviations will be judged by Euclidean distance. So
+we will use a form of Euclidean distance for the clustering as well.
+
+The chosen distance metric is then: relative Euclidean distance (RED)::
+
+    d(a,b) = ||a/||a||_2, b/||b||_2 ||_2
+
+By first normalising foods a, b to size 1; the metric will give more emphasis
+to proportion rather than size.
+
+Further, we want to use a hierarchical clustering. This allows our search
+algorithm to start with low detail (the center of clusters closer to the root)
+and then split clusters to increase detail. By splitting, we mean to replace a
+cluster by its children. Agglomerative clustering is used, resulting in a
+binary tree of clusters with foods as leafs.

@@ -44,7 +44,7 @@ def main(usda_directory, output_clustering):
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
     foods, nutrition_target = normalize(foods, nutrition_target)
-    root_node = cluster_.agglomerative_euclidean(foods)
+    root_node = cluster_.agglomerative(foods)
     if output_clustering:
         tree.write(root_node)
     mine(root_node, nutrition_target)
