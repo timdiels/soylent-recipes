@@ -20,7 +20,6 @@ Diet problem solver
 from cvxopt import matrix
 import cvxopt
 import numpy as np
-import pandas as pd
 from math import sqrt
 import logging
 import pprint
@@ -63,39 +62,18 @@ def solve(nutrition_target, foods):
     return (False, sub_score), amounts  #TODO try linear program as well
 
 def _solve_least_squares(nutrition_target, foods):
-    # Convert minima, maxima -> extrema
-    extrema = pd.concat(
-        [
-            pd.Series(nutrition_target.minima, name='min'),
-            pd.Series(nutrition_target.maxima, name='max')
-        ],
-        axis=1
-    )
-    
-    # Convert extrema to pseudo-targets
-    pseudo_targets = []
-    for nutrient, min_, max_ in extrema.itertuples(name=None):
-        assert not (np.isnan(min_) and np.isnan(max_))
-        if np.isnan(min_):
-            target = max_
-        elif np.isnan(max_):
-            target = min_
-        else:
-            target = (min_ + max_) / 2.0
-        pseudo_targets.append((nutrient, target))
-        
     #
     A = []
     b = []
     
     # pseudo-targets
     weight = 2.0
-    for nutrient, target in pseudo_targets:
+    for nutrient, target in nutrition_target['pseudo_target'].dropna().items():
         A.append(sqrt(weight) * foods[nutrient].values)
         b.append(sqrt(weight) * target)
     
     # minimize
-    for nutrient, weight in nutrition_target.minimize.items():
+    for nutrient, weight in nutrition_target['minimize_weight'].dropna().items():
         A.append(sqrt(weight) * foods[nutrient].values)
         b.append(0.0)
     

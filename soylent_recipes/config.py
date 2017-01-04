@@ -33,6 +33,7 @@ Body weight and daily energy intake can easily be set below
 '''
 
 import numpy as np
+import pandas as pd
 
 # All values are in grams (g) unless otherwise listed (in a comment that follows it)
 
@@ -79,74 +80,67 @@ _energy_fractions = {
 #
 # The only bits of the config that actually get used by soylent_recipes
 
-# Extrema/bounds to set on nutrients. For each nutrient, its amount in the
-# recipe needs to remain within bounds. E.g. when 'calcium' exceeds its bounds,
-# the recipe is rejected.
-#
-# Values are in SI units. If the min or max is unknown, set it to ``np.nan``. If
-# it's safe to eat any amount, think again, you never know for sure; set it to
-# ``np.nan``. If it's not necessary to eat it, set ``min=0``. The range is
-# inclusive, setting ``min=max`` is allowed.
+# See nutrition_target.create for info on the DataFrame columns.
 #
 # Minima are set to RDA or AI by default, maxima are set to UL.
-extrema = {
+#
+# If the min or max is unknown, set it to ``np.nan``. If it's safe to eat any
+# amount, think again, you never know for sure; set it to ``np.nan``. If it's
+# not necessary to eat it, set ``min=np.nan``.
+target = pd.DataFrame.from_items(
+    orient='index',
+    columns=('min', 'max', 'minimize_weight'),
+    items=(
     # Elements
-    'calcium': (1000e-3, 2500e-3),
-    'copper': (900e-6, 10000e-6),
-    'fluoride': (4e-3, 10e-3),
-    'iron': (8e-3, 45e-3),
-    'magnesium': (400e-3, np.nan),
-    'manganese': (2.3e-3, 11e-3),
-    'phosphorus': (700e-3, 4),
-    'selenium': (55e-6, 400e-6),
-    'zinc': (11e-3, 40e-3),
-    'potassium': (4.7, np.nan),
-    'sodium': (1.5, 2.3),
+    ('calcium', (1000e-3, 2500e-3, np.nan)),
+    ('copper', (900e-6, 10000e-6, np.nan)),
+    ('fluoride', (4e-3, 10e-3, np.nan)),
+    ('iron', (8e-3, 45e-3, np.nan)),
+    ('magnesium', (400e-3, np.nan, np.nan)),
+    ('manganese', (2.3e-3, 11e-3, np.nan)),
+    ('phosphorus', (700e-3, 4, np.nan)),
+    ('selenium', (55e-6, 400e-6, np.nan)),
+    ('zinc', (11e-3, 40e-3, np.nan)),
+    ('potassium', (4.7, np.nan, np.nan)),
+    ('sodium', (1.5, 2.3, np.nan)),
     
     # Vitamins
-    'vitamin a': (900e-6, np.nan),
-    'vitamin a, preformed': (0, 3000e-6),
-    'vitamin c': (90e-3, 2000e-3),
-    'vitamin d': (15e-6, 100e-6),
-    'vitamin e': (15e-3, np.nan),
-    'vitamin e, added': (0, 1000e-3),
-    'vitamin k': (120e-6, np.nan),
-    'thiamin': (1.2e-3, np.nan),
-    'riboflavin': (1.3e-3, np.nan),
-    'niacin': (16e-3, np.nan),
-    'vitamin b6': (1.3e-3, 100e-3),
-    'folate': (400e-6, 1000e-6),
-    'folate, added': (0, 1000e-6), 
-    'vitamin b12': (2.4e-6, np.nan),
-    'pantothenic acid': (5e-3, np.nan),
-    'choline': (550e-3, 3.5), # "Although AIs have been set for choline, there are few data to assess whether a dietary supply of choline is needed at all stages of the life cycle, and it may be that the choline requirement can be met by endogenous synthesis at some of these stages."
-    'carotenoids': (0, np.nan),
+    ('vitamin a', (900e-6, np.nan, np.nan)),
+    ('vitamin a, preformed', (np.nan, 3000e-6, np.nan)),
+    ('vitamin c', (90e-3, 2000e-3, np.nan)),
+    ('vitamin d', (15e-6, 100e-6, np.nan)),
+    ('vitamin e', (15e-3, np.nan, np.nan)),
+    ('vitamin e, added', (np.nan, 1000e-3, np.nan)),
+    ('vitamin k', (120e-6, np.nan, np.nan)),
+    ('thiamin', (1.2e-3, np.nan, np.nan)),
+    ('riboflavin', (1.3e-3, np.nan, np.nan)),
+    ('niacin', (16e-3, np.nan, np.nan)),
+    ('vitamin b6', (1.3e-3, 100e-3, np.nan)),
+    ('folate', (400e-6, 1000e-6, np.nan)),
+    ('folate, added', (np.nan, 1000e-6, np.nan)),
+    ('vitamin b12', (2.4e-6, np.nan, np.nan)),
+    ('pantothenic acid', (5e-3, np.nan, np.nan)),
+    ('choline', (550e-3, 3.5, np.nan)), # "Although AIs have been set for choline, there are few data to assess whether a dietary supply of choline is needed at all stages of the life cycle, and it may be that the choline requirement can be met by endogenous synthesis at some of these stages."
     
     # Water and macronutrients
-    'water': (3.7, np.nan), # l. also includes water contained in food #TODO probably want to remove, trivial to achieve manually.
-    'carbohydrate': (130, np.nan),
-    'fiber': (38, np.nan),
-    'linoleic acid': (17, np.nan),
-    'alpha linolenic acid': (1.6, np.nan),
-    'protein': (_weight*0.8, np.nan),
-    'energy': (1750e3, 1800e3),
-    'fatty acids': (0, np.nan),
+    ('water', (3.7, np.nan, np.nan)), # l. also includes water contained in food #TODO probably want to remove, trivial to achieve manually. Unless the other things in water could cause us to exceed other nutrients (can't drink distilled water). Prolly still can drop this though.
+    ('carbohydrate', (130, np.nan, np.nan)),
+    ('fiber', (38, np.nan, np.nan)),
+    ('linoleic acid', (17, np.nan, np.nan)),
+    ('alpha linolenic acid', (1.6, np.nan, np.nan)),
+    ('protein', (_weight*0.8, np.nan, np.nan)),
+    ('energy', (1750e3, 1800e3, np.nan)),
     
     # Other
-    'cholesterol': (0, 300e-3),
-}
+    ('cholesterol', (np.nan, 300e-3, np.nan)),
 
-# Nutrients to minimize, weighted. Use a negative weight to maximize the nutrient.
-# {nutrient :: str => weight : float}
-# minimizes sum(weight*nutrient_in_recipe)
-minimize = {
-    # roughly no more than 20 g/day (source: google)
-    'fatty acids': 1.0/13.0, #TODO 20g, 13, 20g, 13, what?
+    # roughly no more than 20 g/day (source: google)  #TODO shouldn't the weight be 1/20.0?
+    ('fatty acids', (np.nan, np.nan, 1.0/13.0)),
     
     # foot note on carotenoids: "beta Carotene supplements are advised only to serve as a provitamin A source for individuals at risk of vitamin A deficiency."
     # roughly no more than 6e-3 g/day (source: google)
-    'carotenoids': 1.0/6e-3,
-}
+    ('carotenoids', (np.nan, np.nan, 1.0/6e-3)),
+))
 
 # DRI recommendations not taken into account due to lacking any USDA nutrient data for them.
 # Format: (name, min, max, unit).
@@ -170,9 +164,16 @@ minimize = {
 # Internal
 #
 # Don't change this unless you know what you're doing
+energy_target = {}
 for nutrient, (min_, max_) in _energy_fractions.items():
     assert min_ >= 0, nutrient
     assert min_ <= max_, nutrient
     assert max_ <= 1, nutrient
     name = 'Energy from: {}'.format(nutrient)
-    extrema[name] = (min_ * _energy_target, max_ * _energy_target)
+    energy_target[name] = (min_ * _energy_target, max_ * _energy_target, np.nan)
+energy_target = pd.DataFrame.from_dict(energy_target, orient='index')
+energy_target.columns = target.columns
+target = pd.concat([target, energy_target])
+
+# Allow 0 in min anyway
+target['min'] = target['min'].replace(0, np.nan)

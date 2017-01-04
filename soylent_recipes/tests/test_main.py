@@ -19,7 +19,7 @@ Test soylent_recipes.main
 
 from chicken_turtle_util import data_frame as df_
 from soylent_recipes import main
-from soylent_recipes.nutrition_target import NutritionTarget
+from soylent_recipes import nutrition_target as nutrition_target_
 import pandas as pd
 import numpy as np
 
@@ -35,13 +35,17 @@ def test_handle_nans():
     - fill NaN in harmless nutrients (not appearing in maxima or minimize)
     - fill NaN for the first `risky_fill_count` other nutrients
     '''
-    nutrition_target = NutritionTarget(
-        minima={'harmless1': 1},
-        maxima={
-            'harmful1': 3,
-            'harmful2': 2
-        },
-        minimize={'harmful3': 4},
+    nutrition_target = nutrition_target_.create(
+        pd.DataFrame(
+            [
+                [1, np.nan, np.nan],
+                [np.nan, 3, np.nan],
+                [np.nan, 2, np.nan],
+                [np.nan, np.nan, 4],
+            ],
+            index=('harmless1', 'harmful1', 'harmful2', 'harmful3'),
+            columns=('min', 'max', 'minimize_weight')
+        )
     )
     foods = pd.DataFrame(
         [

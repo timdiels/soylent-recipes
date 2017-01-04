@@ -19,10 +19,10 @@ Test soylent_recipes.solver
 
 from chicken_turtle_util import data_frame as df_
 from chicken_turtle_util.exceptions import InvalidOperationError
-from soylent_recipes.nutrition_target import NutritionTarget
+from soylent_recipes import solver
 from soylent_recipes.miner import TopRecipes, Recipe
 from soylent_recipes.cluster import Leaf, Branch
-from soylent_recipes import solver
+from .various import NutritionTarget
 from . import mocks
 import pytest
 import pandas as pd
@@ -37,7 +37,7 @@ class TestRecipe(object):
      
     @pytest.fixture
     def nutrition_target(self):
-        return NutritionTarget({}, {}, {})
+        return NutritionTarget([], [])
     
     @pytest.fixture
     def score(self):
@@ -72,7 +72,7 @@ class TestRecipe(object):
         amounts = np.array([2.0, 1.1, 3.0])
         def solve(nutrition_target_, foods):
             # Correct args passed in
-            assert nutrition_target_ == nutrition_target
+            assert nutrition_target_.equals(nutrition_target)
             df_.assert_equals(foods, expected_foods, ignore_order={1})
             
             # Return mock values 

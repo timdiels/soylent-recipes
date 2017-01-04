@@ -91,13 +91,13 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     _logger.debug('Non-null value counts by column:\n{}'.format(foods.count().to_string()))
         
     # Fillna(0) for harmless nutrients
-    nutrients = set(foods.columns) - {'description'} - _conversion_factors.keys()
-    for nutrient in nutrients:
-        if nutrient not in nutrition_target.maxima and nutrient not in nutrition_target.minimize:
-            count = foods[nutrient].isnull().sum()
-            if count:
-                foods[nutrient] = foods[nutrient].fillna(0)
-                _logger.info('Filled {} NaNs with 0 in {} (harmless)'.format(count, nutrient))
+    mask = nutrition_target[['max', 'minimize_weight']].isnull().all(axis=1)
+    harmless_nutrients = nutrition_target.index[mask]
+    for nutrient in harmless_nutrients:
+        count = foods[nutrient].isnull().sum()
+        if count:
+            foods[nutrient] = foods[nutrient].fillna(0)
+            _logger.info('Filled {} NaNs with 0 in {} (harmless)'.format(count, nutrient))
     _logger.debug('Non-null counts now are:\n{}'.format(foods.count().to_string()))
     
     # Fillna(0) for the most NaN ridden nutrients

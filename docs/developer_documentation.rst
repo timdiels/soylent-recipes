@@ -36,7 +36,7 @@ swapping one food with another in a recipe. As such, the design is such that:
 
 - Nutrient differences are weighted: (from largest to smallest weight):
   
-  - nutrients with a non-zero min and/or max
+  - nutrients with a min and/or max constraint
   - nutrients appearing in minimize
 
   Not being in range of `[min, max]` leads to a recipe being rejected, making
@@ -48,9 +48,9 @@ swapping one food with another in a recipe. As such, the design is such that:
 
 - Nutrient values are interpreted relative to the nutrition target:
 
-  - If nutrient has a non-zero min and max: ``/= avg(min, max)``
-  - If nutrient has only a non-zero min: ``/= min``
-  - If nutrient has only a non-zero max: ``/= max``
+  - If nutrient has a min and max constraint: ``/= avg(min, max)``
+  - If nutrient has only a min: ``/= min``
+  - If nutrient has only a max: ``/= max``
   - If nutrient only appears in minimize: normalise values to lie in range of
     ``[0, weight]``. (TODO minimize weights should sum to 1 and be >0)
   
@@ -105,4 +105,36 @@ extrema take priority over minimize.
 - minimize weights sum to 1
 - pseudo targets are given weight 2
 
+NutritionTarget
+^^^^^^^^^^^^^^^
+See soylent_recipes.nutrition_target.NutritionTarget
+
+Design choice:
+NutritionTarget min cannot be 0. This way it is nan if there is no min
+constraint. min=0 would not actually constrain the nutrient as negative
+values are impossible due to already requiring positive amounts of foods.
+
+Pseudo targets
+^^^^^^^^^^^^^^
+When solving the relaxed problem with least squares, extrema are converted to
+pseudo targets as distance to a target is all that least squares understands.
+
+When has no min, but does have a max, pseudo=0.5*max. Placing it at min would punish
+values close to the max far too harshly. Placing it at max would punish
+values at zero far too harshly and punish exceeding the max far too lightly.
+Putting it in the middle, punishes being at min or max equally. One could
+consider 0.3*max. Question is which makes the best estimator for simply being
+in the range [0, max]. Note that minimize is like pseudo-target=0 in the
+least squares problem.
+
+When no max, but has non-zero min -> pseudo-target=1.1*min.
+Placing the target at min would punish falling short of min far too lightly.
+1.1*min assigns more error to falling short of min, at the cost of
+overshooting the min. A reasonable approximation. Other than that the choice
+of 1.1 is fairly arbitrary. E.g. would 1.2 be better or what about 1.05?
+
+When no max and no min. This should appear also in minimize or it's
+pretty much unconstrained then. Hence, don't treat it as a min-max case,
+
+When has min and max -> pseudo-target= (min+max)/2
 
