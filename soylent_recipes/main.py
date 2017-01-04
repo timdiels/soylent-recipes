@@ -224,4 +224,5 @@ def mine(root_node, nutrition_target):
     
     # Print top k stats
     _logger.info(top_recipes.format_stats())
+    _logger.info('Recipes scored: {}'.format(miner.recipes_scored))
     

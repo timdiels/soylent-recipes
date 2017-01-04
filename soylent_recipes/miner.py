@@ -120,6 +120,8 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
             )
         )
 
+recipes_scored = 0
+
 class Recipe(object):
     
     '''
@@ -143,6 +145,9 @@ class Recipe(object):
         # Solve diet problem resulting in scored recipe
         foods = pd.DataFrame([cluster.food for cluster in self.clusters])
         self._score, self._amounts = solver.solve(self._nutrition_target, foods)
+#         print(self._score[1])
+        global recipes_scored
+        recipes_scored += 1
     
     @property
     def clusters(self):
