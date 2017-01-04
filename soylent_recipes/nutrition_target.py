@@ -43,14 +43,11 @@ class NutritionTarget(object):
         Minimum value constraints on nutrients (and variables)
     maxima : {nutrient :: str => float}
         Maximum value constraints on nutrients (and variables)
-    targets : {nutrient :: str => float}
-        Exact value constraints on nutrients (and variables). Must match exactly (allowing some float error though). 
     minimize : {nutrient :: str => weight :: float}
         Minimize the amount of given nutrients, along with weights. I.e. minimize weighted sum.
     '''
     minima = attr.ib()
     maxima = attr.ib()
-    targets = attr.ib()
     minimize = attr.ib(convert=_convert_minimize)
     
     def assert_recipe_matches(self, amounts, foods): #TODO rename assert_recipe_satisfies
@@ -68,8 +65,6 @@ class NutritionTarget(object):
             assert result[nutrient] > min_ or np.isclose(result[nutrient], min_)
         for nutrient, max_ in self.maxima.items():
             assert result[nutrient] < max_ or np.isclose(result[nutrient], max_) 
-        for nutrient, target in self.targets.items():
-            assert np.isclose(result[nutrient], target)
 
 def from_config():
     '''
@@ -85,12 +80,11 @@ def from_config():
         assert not np.isinf(max_), nutrient
         
         if not np.isnan(max_):
-            assert min_ <= max_, "{}'s min ({}) > max ({}). Should be min <= max.".format(nutrient, min_, max_)
+            assert min_ + 1e-8 < max_, "{}'s min ({}) >= max ({}). Should be min < max.".format(nutrient, min_, max_)
             
     # split into targets, minima, maxima
-    targets = {nutrient: min_ for nutrient, (min_, max_) in extrema.items() if np.isclose(min_, max_)}
-    minima = {nutrient: min_ for nutrient, (min_, max_) in extrema.items() if not np.isclose(min_, max_)}
-    maxima = {nutrient: max_ for nutrient, (min_, max_) in extrema.items() if not np.isnan(max_) and not np.isclose(min_, max_)}
+    minima = {nutrient: min_ for nutrient, (min_, max_) in extrema.items()}
+    maxima = {nutrient: max_ for nutrient, (min_, max_) in extrema.items() if not np.isnan(max_)}
     
     # minimize
     for nutrient, weight in minimize.items():
@@ -103,8 +97,7 @@ def from_config():
     # make sure everthing is float
     minima = {nutrient: float(value) for nutrient, value in minima.items()}
     maxima = {nutrient: float(value) for nutrient, value in maxima.items()}
-    targets = {nutrient: float(value) for nutrient, value in targets.items()}
     minimize = {nutrient: float(weight) for nutrient, weight in minimize.items()}
     
-    return NutritionTarget(minima, maxima, targets, minimize)
+    return NutritionTarget(minima, maxima, minimize)
 

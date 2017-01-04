@@ -32,14 +32,15 @@ def test_handle_nans():
     
     - fill energy conversion factors (cal/g) with the generic value across
       foods. Also add missing conversion factor columns.
-    - fill NaN in harmless nutrients (not appearing in targets, maxima or
-      minimize)
+    - fill NaN in harmless nutrients (not appearing in maxima or minimize)
     - fill NaN for the first `risky_fill_count` other nutrients
     '''
     nutrition_target = NutritionTarget(
         minima={'harmless1': 1},
-        maxima={'harmful2': 2},
-        targets={'harmful1': 3},
+        maxima={
+            'harmful1': 3,
+            'harmful2': 2
+        },
         minimize={'harmful3': 4},
     )
     foods = pd.DataFrame(

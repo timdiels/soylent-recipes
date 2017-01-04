@@ -88,15 +88,11 @@ def _solve_least_squares(nutrition_target, foods):
     A = []
     b = []
     
-    # pseudo-targets and targets
-    targets = (
-        (3.0, pseudo_targets),
-        (2.0, nutrition_target.targets.items())
-    )
-    for weight, targets_ in targets:
-        for nutrient, target in targets_:
-            A.append(sqrt(weight) * foods[nutrient].values)
-            b.append(sqrt(weight) * target)
+    # pseudo-targets
+    weight = 2.0
+    for nutrient, target in pseudo_targets:
+        A.append(sqrt(weight) * foods[nutrient].values)
+        b.append(sqrt(weight) * target)
     
     # minimize
     for nutrient, weight in nutrition_target.minimize.items():

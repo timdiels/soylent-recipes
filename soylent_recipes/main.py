@@ -93,7 +93,7 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     # Fillna(0) for harmless nutrients
     nutrients = set(foods.columns) - {'description'} - _conversion_factors.keys()
     for nutrient in nutrients:
-        if nutrient not in nutrition_target.maxima and nutrient not in nutrition_target.minimize and nutrient not in nutrition_target.targets:
+        if nutrient not in nutrition_target.maxima and nutrient not in nutrition_target.minimize:
             count = foods[nutrient].isnull().sum()
             if count:
                 foods[nutrient] = foods[nutrient].fillna(0)

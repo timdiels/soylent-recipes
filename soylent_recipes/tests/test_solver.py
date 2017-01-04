@@ -46,7 +46,6 @@ class TestBoth(object):
                 'nutrient2': 2.0,
             },
             maxima={},
-            targets={},
             minimize={},
         )
         foods = pd.DataFrame(
@@ -69,7 +68,6 @@ class TestBoth(object):
                 'nutrient1': 5.0,
                 'nutrient2': 2.0,
             },
-            targets={},
             minimize={},
         )
         foods = pd.DataFrame(
@@ -95,36 +93,12 @@ class TestBoth(object):
                 'nutrient1': 3.0,
                 'nutrient2': 2.0,
             },
-            targets={},
             minimize={},
         )
         foods = pd.DataFrame(
             [
                 [3.0, 0.0],  # unlike previous tests, these values are asymmetric
                 [2.0, 4.0],
-            ],
-            columns=['nutrient1', 'nutrient2']
-        )
-        score, amounts = solve(nutrition_target, foods)
-        nutrition_target.assert_recipe_matches(amounts, foods)
-        
-    def test_targets(self, solve):
-        '''
-        When target has targets, adhere to them
-        '''
-        nutrition_target = NutritionTarget(
-            minima={},
-            maxima={},
-            targets={
-                'nutrient1': 5.0,
-                'nutrient2': 2.0,
-            },
-            minimize={},
-        )
-        foods = pd.DataFrame(
-            [
-                [2.0, 0.0],
-                [3.0, 4.0],
             ],
             columns=['nutrient1', 'nutrient2']
         )
@@ -137,14 +111,12 @@ class TestBoth(object):
         '''
         nutrition_target = NutritionTarget(
             minima={
-                'nutrient3': 0.0,  # Note: each nutrient needs to appear in at least one constraint
+                'nutrient1': 5.0,
+                'nutrient2': 2.0,
+                'nutrient3': 0.0,
                 'nutrient4': 0.0,
             },
             maxima={},
-            targets={
-                'nutrient1': 5.0,
-                'nutrient2': 2.0,
-            },
             minimize={'nutrient3': 1, 'nutrient4': 1},
         )
         foods = pd.DataFrame(
@@ -174,7 +146,6 @@ class TestBoth(object):
                     'nutrient3': 0.0,
                 },
                 maxima={},
-                targets={},
                 minimize={'nutrient2': 1, 'nutrient3': 2},
             )
         else:
@@ -184,7 +155,6 @@ class TestBoth(object):
                     'nutrient1': 3.0  # Note: lsq relaxes the problem by converting minima/maxima to targets
                 },
                 maxima={},
-                targets={},
                 minimize={'nutrient2': 1, 'nutrient3': 2},
             )
         foods = pd.DataFrame(
@@ -201,21 +171,20 @@ class TestBoth(object):
             nutrition_target.assert_recipe_matches(amounts, foods)
         else:
             # manually confirmed these to be optimal
-            assert_allclose(amounts, [18.62068966,   0.93103448])
+            assert_allclose(amounts, [18.0,   0.9])
             
             # manually confirmed correct weights are used. I.e. 3 for min-max(,
             # 2 for targets) and 1/normalised_weight for minimize (where
             # normalised weights sum to 1)
-            assert np.isclose(score, -sqrt(1.862068965517241))
+            assert np.isclose(score, -1.3416407864998738)
             
     def test_weights(self, solve):
         '''
-        Test correct weights are given to error in extrema, targets and minimize
+        Test correct weights are given to error in extrema and minimize
         
         Weights:
         
-        - extrema: 3 (for lp, simply ignore this line; extrema not part of score)
-        - targets: 2
+        - extrema: 2 (for lp, simply ignore this line; extrema not part of score)
         - minimize: weights normalised such that they sum to 1
         '''
         if solve == lp:
@@ -224,12 +193,11 @@ class TestBoth(object):
             nutrition_target = NutritionTarget(
                 minima={'nutrient1': 2.0},
                 maxima={},
-                targets={'nutrient2': 3.0},
-                minimize={'nutrient3': 4.0},
+                minimize={'nutrient2': 4.0},
             )
             foods = pd.DataFrame(
-                [[1.0, 2.0, 3.0]],
-                columns=['nutrient1', 'nutrient2', 'nutrient3']
+                [[1.0, 3.0]],
+                columns=['nutrient1', 'nutrient2']
             )
             
             score, amounts = lsq(nutrition_target, foods)
@@ -237,10 +205,10 @@ class TestBoth(object):
             # The score is the negative of the residual, since the optimal cannot be
             # achieved, we need only assert the score to confirm correct weights
             # were chosen.
-            assert np.isclose(score, -sqrt(13.8))  # Manually calculated the score
+            assert np.isclose(score, -2.5584085962673253)  # Manually calculated the score
             
             # Also check amounts due to paranoia
-            assert_allclose(amounts, [0.9])  # Manually checked the amounts are optimal
+            assert_allclose(amounts, [0.36363636])  # Manually checked the amounts are optimal
 
 def test_pseudo_targets():
     '''
@@ -263,7 +231,6 @@ def test_pseudo_targets():
             'nutrient1': 5.0,
             'nutrient3': 2.0,
         },
-        targets={},
         minimize={},
     )
     foods = pd.DataFrame(
@@ -276,7 +243,7 @@ def test_pseudo_targets():
     # The score is the negative of the residual, since the optimal cannot be
     # achieved, we need only assert the score to confirm correct pseudo-targets
     # were chosen.
-    assert np.isclose(score, -sqrt(32.142857142857153))  # Manually calculated the score
+    assert np.isclose(score, -4.6291004988627575)  # Manually calculated the score
     
     # Also check amounts due to paranoia
     assert_allclose(amounts, [0.85714286])  # Manually checked the amounts are optimal

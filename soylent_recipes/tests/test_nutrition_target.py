@@ -102,8 +102,6 @@ def test_from_config():
             'Energy from: sugars, added': 437500.0,
             'Energy from: linoleic acid': 175000.0,
         },
-        targets={
-        },
         minimize={  # weights sum to 1
             'fatty acids': 0.000461325542057512,
             'carotenoids': 0.9995386744579425,
@@ -111,7 +109,6 @@ def test_from_config():
     )
     assert nutrition_target.minima == expected.minima
     assert nutrition_target.maxima == expected.maxima
-    assert nutrition_target.targets == expected.targets
     assert nutrition_target.minimize == expected.minimize
 
 # TODO

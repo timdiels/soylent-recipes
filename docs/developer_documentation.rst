@@ -37,28 +37,26 @@ swapping one food with another in a recipe. As such, the design is such that:
 - Nutrient differences are weighted: (from largest to smallest weight):
   
   - nutrients with a non-zero min and/or max
-  - nutrients with a target
   - nutrients appearing in minimize
 
   Not being in range of `[min, max]` leads to a recipe being rejected, making
   these nutrients important to have more weight; such that foods are more
   quickly considered different enough to warrant trying each of them.
-  Nutrients with a target can't cause a recipe to be rejected. Nutrients only
-  appearing in minimize should be avoided, but we haven't yet determined when
-  they actually become harmful (no max).
+  Nutrients appearing in minimize can't cause a food to be rejected; those
+  nutrients should be avoided, but we haven't yet determined when they actually
+  become harmful (no max).
 
 - Nutrient values are interpreted relative to the nutrition target:
 
-  - If nutrient has a target: ``/= target``
   - If nutrient has a non-zero min and max: ``/= avg(min, max)``
   - If nutrient has only a non-zero min: ``/= min``
   - If nutrient has only a non-zero max: ``/= max``
   - If nutrient only appears in minimize: normalise values to lie in range of
     ``[0, weight]``. (TODO minimize weights should sum to 1 and be >0)
   
-  E.g. if `nutrient1` has a target of 1 and `nutrient2` has a target of 10, a
-  difference of 1 in `nutrient1` will count 10 times as much as a difference
-  of 1 in `nutrient2`
+  E.g. if `nutrient1` has a pseudo target of 1 and `nutrient2` has a pseudo
+  target of 10, a difference of 1 in `nutrient1` will count 10 times as much as
+  a difference of 1 in `nutrient2`
 
 Formally, the distance function is defined as::
 
@@ -69,8 +67,7 @@ Formally, the distance function is defined as::
     TODO latex, d(f_1, f_2, t) = f_{1,i}...
 
 f_1, f_2: food1 and food2, as vectors of nutrient values
-t := nutrition target TODO prolly split into M=maxima, m=minima, t=targets,
-minimize?
+t := nutrition target TODO prolly split into M=maxima, m=minima, minimize?
 
 For the clustering algorithm itself:
 
@@ -101,13 +98,11 @@ score, which is the negative error to a least squares problem based on the
 nutrition target; this is a (perhaps biased) approximation of the real problem.
 For the real problem, the diet problem, we use a quadratic program; returning
 the negative of the objective it tries to minimize. It constrains nutrient sums
-to be in range of the extrema and minimizes squared distance to
-nutrition_target.targets and squared amounts of nutrition_target.minimize. In
-both problems, weights are added such that extrema take priority over targets
-and targets take priority over minimize.
+to be in range of the extrema and minimizes squared amounts of
+nutrition_target.minimize. In both problems, weights are added such that
+extrema take priority over minimize.
 
 - minimize weights sum to 1
-- targets are given weight 2
-- pseudo targets are given weight 3
+- pseudo targets are given weight 2
 
 

@@ -37,7 +37,7 @@ class TestRecipe(object):
      
     @pytest.fixture
     def nutrition_target(self):
-        return NutritionTarget({}, {}, {}, {})
+        return NutritionTarget({}, {}, {})
     
     @pytest.fixture
     def score(self):
