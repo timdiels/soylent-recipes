@@ -18,9 +18,53 @@ Test soylent_recipes.cluster
 '''
 
 from soylent_recipes import cluster as cluster_
-from . import mocks
 import pandas as pd
 import numpy as np
+import attr
+
+#TODO test Branch, Leaf
+
+@attr.s()
+class ExpectedNode(object):
+    
+    '''
+    assert_node_equals input data class
+    '''
+    
+    id_ = attr.ib()
+    foods = attr.ib(cmp=False, hash=False)  # set of acceptable foods
+    leaf_node_ids = attr.ib(cmp=False, hash=False)  # set of acceptable leaf node ids
+    max_distance = attr.ib(cmp=False, hash=False)
+    children = attr.ib(cmp=False, hash=False)
+
+def assert_node_equals(actual, expected):
+    '''
+    Recursively check whether nodes truly equal
+    
+    Parameters
+    ----------
+    actual : soylent_recipes.cluster.Node
+    expected : ExpectedNode
+    expected_nodes : {id : int => ExpectedNode}
+    '''
+    # id_
+    assert actual.id_ == expected.id_
+    
+    # leaf_node
+    assert actual.leaf_node.id_ in expected.leaf_node_ids
+    
+    # food
+    assert any(actual.food.equals(food) for food in expected.foods), '\nActual:\n{}\n\nExpected one of:\n{}\n'.format(actual.food, expected.foods)
+    
+    # max_distance
+    np.testing.assert_approx_equal(actual.max_distance, expected.max_distance)
+    
+    # children
+    children = {child.id_: child for child in actual.children}
+    expected_children = {child.id_: child for child in expected.children}
+    assert children.keys() == expected_children.keys()
+    for id_ in children.keys():
+        assert_node_equals(children[id_], expected_children[id_])
 
 def test_convert_cluster():
     foods = pd.DataFrame(
@@ -53,20 +97,20 @@ def test_convert_cluster():
     ])
     
     expected = (
-        mocks.Node(id_=8, representatives=[foods.iloc[2]], max_distance=9.0, children=(
-            mocks.Node(id_=4, representatives=[foods.iloc[4]], max_distance=0.0, children=()),
-            mocks.Node(id_=7, representatives=[foods.iloc[2]], max_distance=8.0, children=(
-                mocks.Node(id_=6, representatives=[foods.iloc[0], foods.iloc[2]], max_distance=4.0, children=(
-                    mocks.Node(id_=0, representatives=[foods.iloc[0]], max_distance=0.0, children=()),
-                    mocks.Node(id_=2, representatives=[foods.iloc[2]], max_distance=0.0, children=())
+        ExpectedNode(id_=8, foods=[foods.iloc[2]], leaf_node_ids=[2], max_distance=9.0, children=(
+            ExpectedNode(id_=4, foods=[foods.iloc[4]], leaf_node_ids=[4], max_distance=0.0, children=()),
+            ExpectedNode(id_=7, foods=[foods.iloc[2]], leaf_node_ids=[2], max_distance=8.0, children=(
+                ExpectedNode(id_=6, foods=[foods.iloc[0], foods.iloc[2]], leaf_node_ids=[0, 2], max_distance=4.0, children=(
+                    ExpectedNode(id_=0, foods=[foods.iloc[0]], leaf_node_ids=[0], max_distance=0.0, children=()),
+                    ExpectedNode(id_=2, foods=[foods.iloc[2]], leaf_node_ids=[2], max_distance=0.0, children=())
                 )),
-                mocks.Node(id_=5, representatives=[foods.iloc[1], foods.iloc[3]], max_distance=2.0, children=(
-                    mocks.Node(id_=1, representatives=[foods.iloc[1]], max_distance=0.0, children=()),
-                    mocks.Node(id_=3, representatives=[foods.iloc[3]], max_distance=0.0, children=())
+                ExpectedNode(id_=5, foods=[foods.iloc[1], foods.iloc[3]], leaf_node_ids=[1, 3], max_distance=2.0, children=(
+                    ExpectedNode(id_=1, foods=[foods.iloc[1]], leaf_node_ids=[1], max_distance=0.0, children=()),
+                    ExpectedNode(id_=3, foods=[foods.iloc[3]], leaf_node_ids=[3], max_distance=0.0, children=())
                 ))
             ))
-        )
-    ))
+        ))
+    )
     
     root = cluster_._convert_clustering(foods, children, distances)
-    root.assert_equals(expected)
+    assert_node_equals(root, expected)

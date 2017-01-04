@@ -21,7 +21,6 @@ from chicken_turtle_util import series as series_
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
 import numpy as np
-import attr
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ def _convert_clustering(foods, children, distances):
     
     # Add leaf nodes
     for id_, (_, food) in enumerate(foods.iterrows()):
-        nodes[id_] = Node(id_, representative=food, representative_node=None, max_distance=0.0, children=())
+        nodes[id_] = Leaf(id_, food)
         
     # Add branch nodes
     _add_branch_nodes(nodes, children, distances)
@@ -116,102 +115,182 @@ def _add_branch_nodes(nodes, children, distances):
         leaf_distances = distances[np.ix_(leaf_ids, leaf_ids)]
         max_distance = leaf_distances.max()  # Note: np.triu_indices_from(arr) might be faster by checking only half a square 
         
-        # Get representative: the representative of the leaf with the least max distance to other leafs
-        representative_leaf_id = leaf_ids[leaf_distances.max(axis=1).argmin()]
-        representative_node = nodes[representative_leaf_id]
-        representative = representative_node.representative
+        # Get leaf_node: the leaf with the least max distance to other leafs
+        leaf_id = leaf_ids[leaf_distances.max(axis=1).argmin()]
+        leaf_node = nodes[leaf_id]
         
-        
-        # Create Node
-        nodes[id_] = Node(id_, representative, representative_node, max_distance, children=children_)
+        # Create branch
+        nodes[id_] = Branch(id_, leaf_node, max_distance, children_)
 
-def _validate_not_none(self, attribute, value):
-    if value is None:
-        raise ValueError("{} musn't be None".format(attribute.name))
-    
-def _validate_float_positive(self, attribute, value):
-    if not (value >= 0.0):
-        raise ValueError('{} should be >= 0.0. Instead got {!r}'.format(attribute.name, value))
-    
-def _validate_children(self, attribute, value):
-    for child in value:
-        if child is None:
-            raise ValueError('`children` contains a None value, this is not allowed. children={!r}'.format(value))
-    _validate_not_none(self, attribute, value)
-    
-@attr.s(frozen=True, repr=False)  # Note: slots=True might improve performance
 class Node(object):
     
     '''
     Node of a hierarchical clustering
     
+    This documents the Node interface, do not instantiate, use Leaf and/or
+    Branch instead.
+    
+    All attributes are read-only. Hash and equality are by id.
+    
+    Attributes
+    ----------
+    id_ : int
+        Unique node id
+    food : pd.Series
+        The food that the the node represents (best). If a branch, this is the
+        the food nearest to its average food; a branch actually represents
+        multiple foods.
+    leaf_node : Node
+        Leaf node to which self.food belongs. This is a descendant of the
+        current node if a branch node and self otherwise.
+    max_distance : float
+        Least upper bound to the distance between any 2 foods in the cluster. 0
+        iff leaf.
+    children : tuple(Node)
+        Children of the node. Empty if is_leaf.
+    is_leaf : bool
+        True iff is leaf node, i.e. iff self.children
+    '''
+    
+class Branch(object):  # No inherit from Node as inheritance is evil, a circular dependency.
+    
+    '''
+    Branch node
+    
+    See Node for attributes.
+    
     Parameters
     ----------
     id_ : int
         Unique node id
-    representative : pd.Series
-        Food that represents the cluster. This is an actual food, e.g. the food
-        nearest to the center, not some made-up food such as the average of all
-        foods. If None, derive from children.
+    leaf_node : Node
+        Leaf node which best represents the node. This is a descendant of the
+        current node.
     max_distance : float
-        Least upper bound to the distance between any 2 foods in the cluster. If
-        None, derive from children.
+        Least upper bound to the distance between any 2 foods in the cluster. 0
+        iff leaf.
     children : iterable(Node)
-        Children of the cluster.
-        
-    Attributes
-    ----------
-    children : tuple(Node)
-    representative : pd.Series
-    max_distance : float
+        Children of the node. Empty if is_leaf.
     '''
     
-    id_ = attr.ib(validator=_validate_not_none)
-    representative = attr.ib(validator=_validate_not_none, cmp=False, hash=False)
-    representative_node = attr.ib(cmp=False, hash=False)  # None iff is_leaf #TODO test we grab this correctly
-    max_distance = attr.ib(validator=_validate_float_positive, convert=float, cmp=False, hash=False)
-    children = attr.ib(validator=_validate_children, convert=tuple, cmp=False, hash=False)
+    def __init__(self, id_, leaf_node, max_distance, children):
+        # Validate ...
+        _validate_not_none('id_', id_)
+        _validate_not_none('leaf_node', leaf_node)
+        if not (max_distance > 0.0):
+            raise ValueError('max_distance should be > 0.0. Got {!r}'.format(max_distance))
+        
+        # Validate children
+        children_ = children
+        children = tuple(children)
+        if not children:
+            raise ValueError('children must not be empty or None. Got: {!r}'.format(children_))
+        for child in children:
+            if child is None:
+                raise ValueError('`children` contains a None value, this is not allowed. children={!r}'.format(children_))
+        
+        # Set self
+        self._id = id_
+        self._leaf_node = leaf_node
+        self._max_distance = float(max_distance)
+        self._children = children
+        
+    @property
+    def id_(self):
+        return self._id
     
-    def __attrs_post_init__(self):
-        if self.representative_node and not self.representative.equals(self.representative_node.representative):
-            raise ValueError('representative does not equal self.representative_node.representative. It should. Got: {}'.format(self))
-        if self.is_leaf != (self.max_distance == 0.0):
-            raise ValueError('is_leaf != (max_distance == 0) for {}'.format(self))
+    @property
+    def food(self):
+        return self._leaf_node.food
+    
+    @property
+    def leaf_node(self):
+        return self._leaf_node
+    
+    @property
+    def max_distance(self):
+        return self._max_distance
+    
+    @property
+    def children(self):
+        return self._children
     
     @property
     def is_leaf(self):
-        return not self.children
+        return False
     
     def __repr__(self):
-        return 'Node(id_={!r}, representative={!r}, max_distance={!r}, children={!r})'.format(self.id_, self.representative.name, self.max_distance, self.children)
+        return (
+            'Branch(id_={!r}, food={!r}, max_distance={!r}, children={!r})'
+            .format(self.id_, self.food.name, self.max_distance, self.children)
+        )
         
-    def assert_equals(self, other):
-        '''
-        For debugging, recursively check whether truly equal to other node
+    def __eq__(self, other):
+        return other is not None and self.id_ == other.id_
+    
+    def __hash__(self):
+        return hash(self.id_)
         
-        Parameters
-        ----------
-        other : _Node
-        '''
-        # id_
-        assert self.id_ == other.id_
+class Leaf(object):
+    
+    '''
+    Leaf node
+    
+    See Node for attributes.
+    
+    Parameters
+    ----------
+    id_ : int
+        Unique node id
+    food : pd.Series
+        The food that the node represents.
+    '''
+    
+    def __init__(self, id_, food):
+        # Validate
+        _validate_not_none('id_', id_)
+        _validate_not_none('food', food)
         
-        # representative
-        for representative in other.representatives:
-            try:
-                series_.assert_equals(self.representative, representative)
-                break
-            except AssertionError:
-                pass
-        else:
-            raise
+        # Set self
+        self._id = id_
+        self._food = food.copy()
         
-        # max_distance
-        np.testing.assert_approx_equal(self.max_distance, other.max_distance)
+    @property
+    def id_(self):
+        return self._id
+    
+    @property
+    def food(self):
+        return self._food
+    
+    @property
+    def leaf_node(self):
+        return self
+    
+    @property
+    def max_distance(self):
+        return 0.0
+    
+    @property
+    def children(self):
+        return ()
+    
+    @property
+    def is_leaf(self):
+        return True
+    
+    def __repr__(self):
+        return (
+            'Leaf(id_={!r}, food={!r})'
+            .format(self.id_, self.food.name)
+        )
         
-        # children
-        children = {child.id_: child for child in self.children}
-        other_children = {child.id_: child for child in other.children}
-        assert children.keys() == other_children.keys()
-        for id_ in children.keys():
-            children[id_].assert_equals(other_children[id_])
+    def __eq__(self, other):
+        return other is not None and self.id_ == other.id_
+    
+    def __hash__(self):
+        return hash(self.id_)
+
+def _validate_not_none(attribute, value):
+    if value is None:
+        raise ValueError("{} musn't be None".format(attribute))

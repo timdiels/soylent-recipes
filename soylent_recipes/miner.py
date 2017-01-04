@@ -141,13 +141,13 @@ class Recipe(object):
         self._nutrition_target = nutrition_target
         
         # Solve diet problem resulting in scored recipe
-        foods = pd.DataFrame([cluster.representative for cluster in self.clusters])
+        foods = pd.DataFrame([cluster.food for cluster in self.clusters])
         self._score, self._amounts = solver.solve(self._nutrition_target, foods)
     
     @property
     def clusters(self):
         '''
-        Clusters whose representatives form the foods of the recipe
+        Cluster nodes whose foods form the foods of the recipe
         
         Returns
         -------
@@ -176,7 +176,7 @@ class Recipe(object):
         '''
         Amount of each food to use to achieve the most optimal score `score`.
         
-        `amounts[i]` is the amount of `clusters[i].representative` to use.
+        `amounts[i]` is the amount of `clusters[i].food` to use.
         
         Returns
         -------
@@ -342,10 +342,10 @@ def mine(root_node, nutrition_target, top_recipes):
         
         if not top_recipes.pushed:
             # None of the above splits resulted in improved score, so replace
-            # the cluster with the food that represents it. This is an
+            # the cluster with the food that it represents. This is an
             # approximation, further splits could still have led to a better
             # score.
-            top_recipes.push(recipe.replace([next_cluster], [next_cluster.representative_node]))
+            top_recipes.push(recipe.replace([next_cluster], [next_cluster.leaf_node]))
     
     # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
     #TODO we could throw out any foods that aren't contributing once we

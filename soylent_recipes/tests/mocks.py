@@ -16,21 +16,6 @@
 import attr
 from soylent_recipes import miner
 
-@attr.s()
-class Node(object):
-    
-    '''
-    Mock of soylent_recipes.cluster.Node
-    '''
-    
-    id_ = attr.ib()
-    representatives = attr.ib(cmp=False, hash=False)
-    max_distance = attr.ib(cmp=False, hash=False)
-    children = attr.ib(cmp=False, hash=False)
-    
-    def __repr__(self):
-        return 'Node(id_={!r}, representatives={!r}, max_distance={!r}, children={!r})'.format(self.id_, [r.name for r in self.representatives], self.max_distance, self.children)
-    
 @attr.s(cmp=False, hash=False)
 class Recipe(object):
     

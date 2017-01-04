@@ -160,7 +160,7 @@ def mine(root_node, nutrition_target):
     
     # Print top k long format
     def format_recipe(recipe):
-        food_names = (cluster.representative.name for cluster in recipe.clusters)
+        food_names = (cluster.food.name for cluster in recipe.clusters)
         if recipe.solved:
             lines = ('{} - {}'.format(amount, food_name) for amount, food_name in zip(recipe.amounts, food_names))
         else:

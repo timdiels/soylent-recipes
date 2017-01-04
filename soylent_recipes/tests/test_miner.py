@@ -21,7 +21,7 @@ from chicken_turtle_util import data_frame as df_
 from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes.nutrition_target import NutritionTarget
 from soylent_recipes.miner import TopRecipes, Recipe
-from soylent_recipes.cluster import Node
+from soylent_recipes.cluster import Leaf, Branch
 from soylent_recipes import solver
 from . import mocks
 import pytest
@@ -30,6 +30,8 @@ import numpy as np
 from functools import partial
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
+
+Leaf_ = partial(Leaf, food=pd.Series())
 
 class TestRecipe(object):
      
@@ -78,18 +80,14 @@ class TestRecipe(object):
         mocker.patch.object(solver, 'solve', solve)
         
         #
-        def leaf(id_):
-            return Node(id_, max_distance=0.0, representative=pd.Series([]), children=())
+        leaf3 = Leaf(3, food0)
+        leaf4 = Leaf_(4)
+        leaf5 = Leaf(5, food1)
+        leaf6 = Leaf_(4)
         clusters = [
-            Node(id_=0, max_distance=3.0, representative=food0, children=(
-                leaf(3),
-                leaf(4)
-            )),
-            Node(id_=1, max_distance=4.5, representative=food1, children=(
-                leaf(5),
-                leaf(6)
-            )),
-            Node(id_=2, max_distance=0.0, representative=food2, children=()),
+            Branch(id_=0, max_distance=3.0, leaf_node=leaf3, children=(leaf3,leaf4)),
+            Branch(id_=1, max_distance=4.5, leaf_node=leaf5, children=(leaf5,leaf6)),
+            Leaf(id_=2, food=food2),
         ]
         
         # Create and assert
@@ -109,7 +107,7 @@ class TestRecipe(object):
         '''
         score = (False, 2.0)
         self.patch_solve(mocker, score)
-        node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
+        node = Leaf(id_=1, food=pd.Series([]))
         recipe = Recipe([node], nutrition_target)
         assert not recipe.solved  # score[0] == recipe.solved
         
@@ -118,7 +116,7 @@ class TestRecipe(object):
         Test things specific to the `recipe.is_leaf` case
         '''
         self.patch_solve(mocker)
-        node = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
+        node = Leaf_(id_=1)
         recipe = Recipe([node], nutrition_target)
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
         assert recipe.max_distance == 0.0
@@ -131,62 +129,59 @@ class TestRecipe(object):
         '''
         solve = mocker.Mock(return_value=(score, None))
         mocker.patch.object(solver, 'solve', solve)
-        node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
-        node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
-        node3 = Node(id_=3, representative=pd.Series([]), max_distance=0.0, children=())
-        node4 = Node(id_=4, representative=pd.Series([]), max_distance=0.0, children=())
-        recipe = Recipe([node1], nutrition_target)
+        nodes = [Leaf_(id_=i) for i in range(4)]
+        recipe = Recipe([nodes[0]], nutrition_target)
         
         # When replacee == replacement, raise
         with pytest.raises(ValueError):
-            recipe.replace([node1], [node1])
+            recipe.replace([nodes[0]], [nodes[0]])
             
         # When replacee empty, raise
         with pytest.raises(ValueError):
-            recipe.replace([], [node2])
+            recipe.replace([], [nodes[1]])
             
         # When replacee missing, raise
         with pytest.raises(Exception):
-            recipe.replace([node2], [node3])
+            recipe.replace([nodes[1]], [nodes[2]])
         with pytest.raises(Exception):
-            recipe.replace([node1, node2], [node3])
+            recipe.replace([nodes[0], nodes[1]], [nodes[2]])
             
         # When replacee and replacement overlap in any other way, raise
         with pytest.raises(ValueError):
-            recipe.replace([node1], [node2, node1])
+            recipe.replace([nodes[0]], [nodes[1], nodes[0]])
             
         # When replace with one, all good
-        recipe = recipe.replace([node1], [node2])
-        assert set(recipe.clusters) == {node2}
+        recipe = recipe.replace([nodes[0]], [nodes[1]])
+        assert set(recipe.clusters) == {nodes[1]}
         
         # When replace with multiple, all good
-        recipe = recipe.replace([node2], [node1, node3])
-        assert set(recipe.clusters) == {node1, node3}
+        recipe = recipe.replace([nodes[1]], [nodes[0], nodes[2]])
+        assert set(recipe.clusters) == {nodes[0], nodes[2]}
         
         # When replace multiple with multiple, all good
-        recipe = recipe.replace([node1, node3], [node2, node4])
-        assert set(recipe.clusters) == {node2, node4}
+        recipe = recipe.replace([nodes[0], nodes[2]], [nodes[1], nodes[3]])
+        assert set(recipe.clusters) == {nodes[1], nodes[3]}
         
         # When replace multiple with one, all good
-        recipe = recipe.replace([node2, node4], [node3])
-        assert set(recipe.clusters) == {node3}
+        recipe = recipe.replace([nodes[1], nodes[3]], [nodes[2]])
+        assert set(recipe.clusters) == {nodes[2]}
         
         # When replace with none, leaving behind some, all good
-        recipe = recipe.replace([node3], [node1, node2, node4])
-        recipe = recipe.replace([node4], [])
-        assert set(recipe.clusters) == {node1, node2}
+        recipe = recipe.replace([nodes[2]], [nodes[0], nodes[1], nodes[3]])
+        recipe = recipe.replace([nodes[3]], [])
+        assert set(recipe.clusters) == {nodes[0], nodes[1]}
         
         # When replace some, but not all, all good
-        recipe = recipe.replace([node1], [node3, node4])
-        assert set(recipe.clusters) == {node2, node3, node4}
+        recipe = recipe.replace([nodes[0]], [nodes[2], nodes[3]])
+        assert set(recipe.clusters) == {nodes[1], nodes[2], nodes[3]}
         
         assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
         
     def test_clusters(self, mocker, nutrition_target):
         # recipe.clusters is sorted by cluster id
         self.patch_solve(mocker)
-        node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
-        node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
+        node1 = Leaf(id_=1, food=pd.Series([]))
+        node2 = Leaf(id_=2, food=pd.Series([]))
         recipe1 = Recipe([node1, node2], nutrition_target)
         recipe2 = Recipe([node2, node1], nutrition_target)
         assert recipe1.clusters == (node1, node2)
@@ -195,13 +190,11 @@ class TestRecipe(object):
     def test_eq(self, mocker, nutrition_target):
         # recipes are equal iff recipe.clusters equals
         self.patch_solve(mocker)
-        node1 = Node(id_=1, representative=pd.Series([]), max_distance=0.0, children=())
-        node2 = Node(id_=2, representative=pd.Series([]), max_distance=0.0, children=())
-        node3 = Node(id_=3, representative=pd.Series([]), max_distance=0.0, children=())
-        recipe1 = Recipe([node1, node2], nutrition_target)
-        recipe2 = Recipe([node2, node1], nutrition_target)
+        nodes = [Leaf_(id_=i) for i in range(3)]
+        recipe1 = Recipe([nodes[0], nodes[1]], nutrition_target)
+        recipe2 = Recipe([nodes[1], nodes[0]], nutrition_target)
         assert recipe1 == recipe2
-        recipe3 = Recipe([node1, node3], nutrition_target) 
+        recipe3 = Recipe([nodes[0], nodes[2]], nutrition_target) 
         assert recipe1 != recipe3
         assert recipe2 != recipe3
 
