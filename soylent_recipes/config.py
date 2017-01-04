@@ -141,10 +141,7 @@ extrema = {
 # minimizes sum(weight*nutrient_in_recipe)
 minimize = {
     # roughly no more than 20 g/day (source: google)
-    'fatty acids': 1.0/13.0,
-    
-    # roughly no more than .3 g/day (source: google) 
-    'cholesterol': 1.0/0.3,
+    'fatty acids': 1.0/13.0, #TODO 20g, 13, 20g, 13, what?
     
     # foot note on carotenoids: "beta Carotene supplements are advised only to serve as a provitamin A source for individuals at risk of vitamin A deficiency."
     # roughly no more than 6e-3 g/day (source: google)
