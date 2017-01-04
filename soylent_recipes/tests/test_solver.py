@@ -56,7 +56,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
-        score, amounts = solve(nutrition_target, foods)
+        _, amounts = solve(nutrition_target, foods)
         nutrition_target.assert_recipe_matches(amounts, foods)
         
     def test_maxima(self, solve):
@@ -79,7 +79,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
-        score, amounts = solve(nutrition_target, foods)
+        _, amounts = solve(nutrition_target, foods)
         nutrition_target.assert_recipe_matches(amounts, foods)
         
     def test_minmax_overlap(self, solve):
@@ -128,7 +128,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
-        score, amounts = solve(nutrition_target, foods)
+        _, amounts = solve(nutrition_target, foods)
         nutrition_target.assert_recipe_matches(amounts, foods)
         
     def test_minimize(self, solve):
@@ -156,7 +156,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2', 'nutrient3', 'nutrient4']
         )
-        score, amounts = solve(nutrition_target, foods)
+        _, amounts = solve(nutrition_target, foods)
         nutrition_target.assert_recipe_matches(amounts, foods)
         assert_allclose(amounts[1:3], [0, 0])
         
@@ -233,8 +233,6 @@ class TestBoth(object):
             )
             
             score, amounts = lsq(nutrition_target, foods)
-            print(score)
-            print(amounts)
             
             # The score is the negative of the residual, since the optimal cannot be
             # achieved, we need only assert the score to confirm correct weights
@@ -274,8 +272,6 @@ def test_pseudo_targets():
     )
     
     score, amounts = lsq(nutrition_target, foods)
-    print(score)
-    print(amounts)
     
     # The score is the negative of the residual, since the optimal cannot be
     # achieved, we need only assert the score to confirm correct pseudo-targets

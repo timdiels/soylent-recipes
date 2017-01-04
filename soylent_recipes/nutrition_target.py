@@ -53,7 +53,7 @@ class NutritionTarget(object):
     targets = attr.ib()
     minimize = attr.ib(convert=_convert_minimize)
     
-    def assert_recipe_matches(self, amounts, foods):
+    def assert_recipe_matches(self, amounts, foods): #TODO rename assert_recipe_satisfies
         '''
         Assert recipe satisfies this nutrition target
         
