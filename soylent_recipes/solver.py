@@ -59,23 +59,13 @@ def solve(nutrition_target, foods):
         target. ``amounts[i]`` is the amount of the i-th food to use.
     '''
     sub_score, amounts = _solve_least_squares(nutrition_target, foods) # solve relaxed problem
+    assert (amounts >= 0.0).all()
     return (False, sub_score), amounts  #TODO try linear program as well
 
 def _solve_least_squares(nutrition_target, foods):
-    #
-    A = []
-    b = []
-    
-    # pseudo-targets
-    weight = 2.0
-    for nutrient, target in nutrition_target['pseudo_target'].dropna().items():
-        A.append(sqrt(weight) * foods[nutrient].values)
-        b.append(sqrt(weight) * target)
-    
-    # minimize
-    for nutrient, weight in nutrition_target['minimize_weight'].dropna().items():
-        A.append(sqrt(weight) * foods[nutrient].values)
-        b.append(0.0)
+    # A, b
+    A = foods[nutrition_target['pseudo_target'].index].values.transpose()
+    b = nutrition_target['pseudo_target'].values
     
     # solve
     x, residual = scipy.optimize.nnls(A, b)  # x>=0

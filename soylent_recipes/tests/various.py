@@ -17,4 +17,4 @@ import pandas as pd
 from soylent_recipes import nutrition_target as nutrition_target_
 
 def NutritionTarget(data, index):
-    return nutrition_target_.create(pd.DataFrame(data, index=index, columns=('min', 'max', 'minimize_weight')))
+    return nutrition_target_.create(pd.DataFrame(data, index=index, columns=('min', 'max')))

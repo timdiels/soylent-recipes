@@ -34,25 +34,11 @@ swapping one food with another in a recipe. As such, the design is such that:
   nutrition (all nutrient values equal) as 10 units of `food2`, their distance
   is 0.
 
-- Nutrient differences are weighted: (from largest to smallest weight):
-  
-  - nutrients with a min and/or max constraint
-  - nutrients appearing in minimize
-
-  Not being in range of `[min, max]` leads to a recipe being rejected, making
-  these nutrients important to have more weight; such that foods are more
-  quickly considered different enough to warrant trying each of them.
-  Nutrients appearing in minimize can't cause a food to be rejected; those
-  nutrients should be avoided, but we haven't yet determined when they actually
-  become harmful (no max).
-
 - Nutrient values are interpreted relative to the nutrition target:
 
   - If nutrient has a min and max constraint: ``/= avg(min, max)``
   - If nutrient has only a min: ``/= min``
   - If nutrient has only a max: ``/= max``
-  - If nutrient only appears in minimize: normalise values to lie in range of
-    ``[0, weight]``. (TODO minimize weights should sum to 1 and be >0)
   
   E.g. if `nutrient1` has a pseudo target of 1 and `nutrient2` has a pseudo
   target of 10, a difference of 1 in `nutrient1` will count 10 times as much as
@@ -67,7 +53,7 @@ Formally, the distance function is defined as::
     TODO latex, d(f_1, f_2, t) = f_{1,i}...
 
 f_1, f_2: food1 and food2, as vectors of nutrient values
-t := nutrition target TODO prolly split into M=maxima, m=minima, minimize?
+t := nutrition target TODO prolly split into M=maxima, m=minima?
 
 For the clustering algorithm itself:
 
@@ -98,12 +84,7 @@ score, which is the negative error to a least squares problem based on the
 nutrition target; this is a (perhaps biased) approximation of the real problem.
 For the real problem, the diet problem, we use a quadratic program; returning
 the negative of the objective it tries to minimize. It constrains nutrient sums
-to be in range of the extrema and minimizes squared amounts of
-nutrition_target.minimize. In both problems, weights are added such that
-extrema take priority over minimize.
-
-- minimize weights sum to 1
-- pseudo targets are given weight 2
+to be in range of the extrema.
 
 NutritionTarget
 ^^^^^^^^^^^^^^^
@@ -124,8 +105,7 @@ values close to the max far too harshly. Placing it at max would punish
 values at zero far too harshly and punish exceeding the max far too lightly.
 Putting it in the middle, punishes being at min or max equally. One could
 consider 0.3*max. Question is which makes the best estimator for simply being
-in the range [0, max]. Note that minimize is like pseudo-target=0 in the
-least squares problem.
+in the range [0, max].
 
 When no max, but has non-zero min -> pseudo-target=1.1*min.
 Placing the target at min would punish falling short of min far too lightly.
@@ -133,8 +113,7 @@ Placing the target at min would punish falling short of min far too lightly.
 overshooting the min. A reasonable approximation. Other than that the choice
 of 1.1 is fairly arbitrary. E.g. would 1.2 be better or what about 1.05?
 
-When no max and no min. This should appear also in minimize or it's
-pretty much unconstrained then. Hence, don't treat it as a min-max case,
+Remember that a nutrient has either a max or a min constraint, or both.
 
 When has min and max -> pseudo-target= (min+max)/2
 

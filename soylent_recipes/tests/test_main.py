@@ -38,13 +38,13 @@ def test_handle_nans():
     nutrition_target = nutrition_target_.create(
         pd.DataFrame(
             [
-                [1, np.nan, np.nan],
-                [np.nan, 3, np.nan],
-                [np.nan, 2, np.nan],
-                [np.nan, np.nan, 4],
+                [1, np.nan],
+                [np.nan, 3],
+                [np.nan, 2],
+                [np.nan, 4],
             ],
             index=('harmless1', 'harmful1', 'harmful2', 'harmful3'),
-            columns=('min', 'max', 'minimize_weight')
+            columns=('min', 'max')
         )
     )
     foods = pd.DataFrame(

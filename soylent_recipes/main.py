@@ -73,8 +73,7 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     foods : pd.DataFrame
     nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
     risky_fill_count : int
-        Number of nutrients to fillna(0) despite them having a max or are
-        required to be minimized according to the nutrition target.
+        Number of nutrients to fillna(0) despite them having a max constraint.
     '''
     original_food_count = len(foods)
     
@@ -91,7 +90,7 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     _logger.debug('Non-null value counts by column:\n{}'.format(foods.count().to_string()))
         
     # Fillna(0) for harmless nutrients
-    mask = nutrition_target[['max', 'minimize_weight']].isnull().all(axis=1)
+    mask = nutrition_target['max'].isnull()
     harmless_nutrients = nutrition_target.index[mask]
     for nutrient in harmless_nutrients:
         count = foods[nutrient].isnull().sum()
