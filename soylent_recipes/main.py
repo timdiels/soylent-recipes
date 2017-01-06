@@ -37,10 +37,10 @@ def main(usda_directory, output_clustering):
     _logger.info('Hi!!! This is version none!')
     nutrition_target = nutrition_target_.from_config()
     foods = foods_.import_usda(Path(usda_directory))
+    foods = foods.set_index('description')
     foods = handle_nans(foods, nutrition_target, 10)
     foods = add_energy_components(foods)
-    foods = as_floats(foods)
-    foods = foods.set_index('description')
+    foods = foods.astype(float)
     root_node = cluster_.agglomerative_euclidean(foods)
     if output_clustering:
         tree.write(root_node)
@@ -74,7 +74,13 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
     risky_fill_count : int
         Number of nutrients to fillna(0) despite them having a max constraint.
+        
+    Return
+    ------
+    pd.DataFrame
+        Foods after adjustments
     '''
+    foods = foods.copy()
     original_food_count = len(foods)
     
     # Fillna conversion factors
@@ -112,8 +118,8 @@ def handle_nans(foods, nutrition_target, risky_fill_count):
     foods = foods.dropna()
     
     _logger.info('{} out of {} foods remain after dropping foods with (still) incomplete nutrition data'.format(len(foods), original_food_count))
-    _logger.debug('Dropped foods:\n{}'.format(dropped_foods['description'].sort_values().to_string(index=False)))
-    _logger.debug('Kept foods:\n{}'.format(foods['description'].sort_values().to_string(index=False)))
+    _logger.debug('Dropped foods:\n{}'.format(sorted(dropped_foods.index)))
+    _logger.debug('Kept foods:\n{}'.format(sorted(foods.index)))
     
     return foods
 
@@ -123,7 +129,14 @@ def add_energy_components(foods):
     
     E.g. 'Energy from: protein' is the amount of calories per gram of food
     coming from protein.
+    
+    Return
+    ------
+    pd.DataFrame
+        Foods after adjustments
     '''
+    foods = foods.copy()
+    
     # Add energy components
     for factor, (_, nutrient) in _conversion_factors.items():
         foods['Energy from: {}'.format(nutrient)] = foods[nutrient] * foods[factor]
@@ -131,15 +144,6 @@ def add_energy_components(foods):
     # Drop conversion factors
     foods = foods.drop(_conversion_factors, axis=1)
     
-    return foods
-
-def as_floats(foods):
-    '''
-    Change dtype of numeric columns to float (in-place)
-    '''
-    # make foods as floaty as possible
-    mask = foods.columns != 'description'
-    foods.loc[:,mask] = foods.loc[:,mask].astype(float)
     return foods
 
 def mine(root_node, nutrition_target):

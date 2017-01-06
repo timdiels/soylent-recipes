@@ -46,33 +46,41 @@ def test_handle_nans():
     )
     foods = pd.DataFrame(
         [
-            ['food1', np.nan, np.nan, np.nan, np.nan, np.nan, 1, 2],
-            ['food2', 1, 2, 3, 4, 5, 6, 7],
-            ['food3', 1, 2, 3, 4, np.nan, np.nan, 7], # will be dropped because one too many harmful/risky NaN
+            [np.nan, np.nan, np.nan, np.nan, np.nan, 1, 2],
+            [1, 2, 3, 4, 5, 6, 7],
+            [1, 2, 3, 4, np.nan, np.nan, 7], # will be dropped because one too many harmful/risky NaN
         ],
+        index=['food1', 'food2', 'food3'], 
         columns=(
-            'description', 'Conversion factor: protein', 'Conversion factor: fat', 
+            'Conversion factor: protein', 'Conversion factor: fat',
             'Conversion factor: carbohydrate', 'harmless1', 'harmful1', 'harmful2',
             'harmful3'
         )
     )
-    foods = main.handle_nans(foods, nutrition_target, risky_fill_count=1)
+    original = foods.copy()
+    actual = main.handle_nans(foods, nutrition_target, risky_fill_count=1)
+    
+    # Input untouched
+    df_.assert_equals(foods, original)
+    
+    # Output as expected
     expected = pd.DataFrame(
         [
-            ['food1', 4e3, 9e3, 4e3, 0, 0, 1, 2, 3.95e3, 9e3, 9e3, 9e3],
-            ['food2', 1, 2, 3, 4, 5, 6, 7, 3.95e3, 9e3, 9e3, 9e3],
+            [4e3, 9e3, 4e3, 0, 0, 1, 2, 3.95e3, 9e3, 9e3, 9e3],
+            [1, 2, 3, 4, 5, 6, 7, 3.95e3, 9e3, 9e3, 9e3],
         ],
+        index=['food1', 'food2'],
         columns=(
-            'description', 'Conversion factor: protein', 'Conversion factor: fat', 
+            'Conversion factor: protein', 'Conversion factor: fat',
             'Conversion factor: carbohydrate', 'harmless1', 'harmful1', 'harmful2',
-            'harmful3', 
+            'harmful3',
             'Conversion factor: sugars, added',
             'Conversion factor: linoleic acid',
             'Conversion factor: alpha linolenic acid',
             'Conversion factor: linoleic acid + alpha linolenic acid',
         )
     )
-    df_.assert_equals(foods, expected, ignore_order={1}, all_close=True)
+    df_.assert_equals(actual, expected, ignore_order={1}, all_close=True)
     
 def test_add_energy_components():
     '''
@@ -81,10 +89,10 @@ def test_add_energy_components():
     '''
     foods = pd.DataFrame(
         [
-            ['food1', 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 10],
+            [1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 10],
         ],
+        index=['food1'],
         columns=(
-            'description',
             'Conversion factor: protein',
             'Conversion factor: fat', 
             'Conversion factor: carbohydrate',
@@ -102,13 +110,19 @@ def test_add_energy_components():
             'nutrient1',
         )
     )
-    foods = main.add_energy_components(foods)
+    original = foods.copy()
+    actual = main.add_energy_components(foods)
+    
+    # Input untouched
+    df_.assert_equals(foods, original)
+    
+    # Output as expected
     expected = pd.DataFrame(
         [
-            ['food1', 1, 4, 9, 16, 25, 36, 49, 1, 2, 3, 4, 5, 6, 7, 10],
+            [1, 4, 9, 16, 25, 36, 49, 1, 2, 3, 4, 5, 6, 7, 10],
         ],
+        index=['food1'],
         columns=(
-            'description',
             'Energy from: protein',
             'Energy from: fat', 
             'Energy from: carbohydrate',
@@ -126,5 +140,4 @@ def test_add_energy_components():
             'nutrient1',
         )
     )
-    df_.assert_equals(foods, expected, ignore_order={1}, all_close=True)
-    
+    df_.assert_equals(actual, expected, ignore_order={1}, all_close=True)
