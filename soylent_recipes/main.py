@@ -207,9 +207,10 @@ def mine(root_node, nutrition_target, foods):
     loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes, foods))
     loop.close()
     
-    # Print top k stats
+    # Print stats
     _logger.info(top_recipes.format_stats())
     _logger.info('Recipes scored: {}'.format(miner.recipes_scored))
+    _logger.info('Recipes skipped (already visited): {}'.format(miner.recipes_revisited))
     
     return top_recipes
 

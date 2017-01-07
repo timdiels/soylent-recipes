@@ -79,6 +79,8 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         
         # When we've already visited the recipe, skip it #TODO don't even create the recipe in the first place; thus avoiding scoring it
         if recipe in self._visited:
+            global recipes_revisited
+            recipes_revisited += 1
             return
         self._visited.add(recipe)
         
@@ -122,6 +124,7 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         )
 
 recipes_scored = 0
+recipes_revisited = 0  # recipes rejected due to already having been visited
 
 class Recipe(object):
     
