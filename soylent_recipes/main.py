@@ -36,6 +36,7 @@ def main(usda_directory, output_clustering):
     '''
     logging_.configure('soylent.log')
     logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger('soylent_recipes.various').setLevel(logging.INFO)
     _logger.info('Hi!!! This is version none!')
     nutrition_target = nutrition_target_.from_config()
     foods = foods_.import_usda(Path(usda_directory))
