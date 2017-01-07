@@ -59,7 +59,7 @@ def _write(root, max_depth):
     '''
     # Convert to tree
     tree = Tree()
-    root_ = tree.add_child(name=root.representative.name)
+    root_ = tree.add_child(name=root.food.name)
     _add_children(root, root_, max_depth=max_depth-1)
     
     # Render tree to file
@@ -104,5 +104,5 @@ def _add_children(parent, parent_, max_depth):
     if max_depth == 0:
         return
     for child in parent.children:
-        child_ = parent_.add_child(name=child.representative.name, dist=parent.max_distance - child.max_distance)
+        child_ = parent_.add_child(name=child.food.name, dist=parent.max_distance - child.max_distance)
         _add_children(child, child_, max_depth-1)
