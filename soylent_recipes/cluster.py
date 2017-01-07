@@ -41,6 +41,13 @@ def agglomerative(foods):
     # Remove duplicate foods
     foods, distances = _remove_duplicate_foods(foods, distances)
     
+    # TODO it is suggested that a complete linkage clustering is not a
+    # hierarchical classification, by the second to last point of
+    # http://stats.stackexchange.com/questions/63546/comparing-hierarchical-clustering-dendrograms-obtained-by-different-distances/63549#63549
+    #
+    # We may need to reconsider whether this clustering will perform well in our
+    # search algorithm and whether a different linkage would work better.
+    
     # Cluster
     # Note: n_clusters has no effect on clustering.children_, so we don't use it
     clustering = AgglomerativeClustering(linkage='complete', affinity='precomputed', compute_full_tree=True)
