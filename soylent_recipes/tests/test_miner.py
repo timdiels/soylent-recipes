@@ -25,13 +25,10 @@ from soylent_recipes.cluster import Leaf, Branch
 from .various import NutritionTarget
 from . import mocks
 import pytest
-import pandas as pd
 import numpy as np
 from functools import partial
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
-
-Leaf_ = partial(Leaf, food=pd.Series())
 
 class TestRecipe(object):
      
@@ -54,17 +51,20 @@ class TestRecipe(object):
         Test everything on a branch recipe
         '''
         # Later we check these or combined and passed to `solve`
-        food0 = pd.Series([0.2, 1.3], index=['nutr0', 'nutr1'], name='food0')
-        food1 = pd.Series([2.2, 0.0], index=['nutr0', 'nutr1'], name='food1')
-        food2 = pd.Series([0.1, 4.0], index=['nutr0', 'nutr1'], name='food2')
-        expected_foods = pd.DataFrame(
+        foods_ = np.array(
             [
                 [0.2, 1.3],
                 [2.2, 0.0],
-                [0.1, 4.0]
+                [1337, 22.0],  # added this unused one to test food_indices are used correctly
+                [0.1, 4.0],
+            ]
+        )
+        expected_foods = np.array(
+            [
+                [2.2, 0.0],
+                [0.1, 4.0],
+                [0.2, 1.3],
             ],
-            columns=['nutr0', 'nutr1'],
-            index=['food0', 'food1', 'food2']
         )
         
         # Mock `solve`
@@ -73,25 +73,25 @@ class TestRecipe(object):
         def solve(nutrition_target_, foods):
             # Correct args passed in
             assert nutrition_target_.equals(nutrition_target)
-            df_.assert_equals(foods, expected_foods, ignore_order={1})
+            np.testing.assert_allclose(foods, expected_foods)  # Note: column order does not matter
             
             # Return mock values 
             return (score, amounts)
         mocker.patch.object(solver, 'solve', solve)
         
         #
-        leaf3 = Leaf(3, food0)
-        leaf4 = Leaf_(4)
-        leaf5 = Leaf(5, food1)
-        leaf6 = Leaf_(4)
+        leaf3 = Leaf(3, food_index=1)
+        leaf4 = Leaf(4, food_index=-1)  # index set to -1 to trigger KeyError if it were to be used. leaf4 is not supposed to be used
+        leaf5 = Leaf(5, food_index=3)
+        leaf6 = Leaf(4, food_index=-1)
         clusters = [
             Branch(id_=0, max_distance=3.0, leaf_node=leaf3, children=(leaf3,leaf4)),
             Branch(id_=1, max_distance=4.5, leaf_node=leaf5, children=(leaf5,leaf6)),
-            Leaf(id_=2, food=food2),
+            Leaf(id_=2, food_index=0),
         ]
         
         # Create and assert
-        recipe = Recipe(clusters, nutrition_target)
+        recipe = Recipe(clusters, nutrition_target, foods_)
         assert recipe.score == score  # matches return of `solve`
         assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
         assert recipe.solved  # score[0] == recipe.solved
@@ -107,8 +107,9 @@ class TestRecipe(object):
         '''
         score = (False, 2.0)
         self.patch_solve(mocker, score)
-        node = Leaf(id_=1, food=pd.Series([]))
-        recipe = Recipe([node], nutrition_target)
+        node = Leaf(id_=1, food_index=0)
+        foods = np.ones((1,1))
+        recipe = Recipe([node], nutrition_target, foods)
         assert not recipe.solved  # score[0] == recipe.solved
         
     def test_leaf(self, mocker, nutrition_target, score):
@@ -116,8 +117,9 @@ class TestRecipe(object):
         Test things specific to the `recipe.is_leaf` case
         '''
         self.patch_solve(mocker)
-        node = Leaf_(id_=1)
-        recipe = Recipe([node], nutrition_target)
+        node = Leaf(id_=1, food_index=0)
+        foods = np.ones((1,1))
+        recipe = Recipe([node], nutrition_target, foods)
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
         assert recipe.max_distance == 0.0
         with pytest.raises(InvalidOperationError):
@@ -129,8 +131,9 @@ class TestRecipe(object):
         '''
         solve = mocker.Mock(return_value=(score, None))
         mocker.patch.object(solver, 'solve', solve)
-        nodes = [Leaf_(id_=i) for i in range(4)]
-        recipe = Recipe([nodes[0]], nutrition_target)
+        nodes = [Leaf(id_=i, food_index=i) for i in range(4)]
+        foods = np.ones((4,1))
+        recipe = Recipe([nodes[0]], nutrition_target, foods)
         
         # When replacee == replacement, raise
         with pytest.raises(ValueError):
@@ -180,21 +183,23 @@ class TestRecipe(object):
     def test_clusters(self, mocker, nutrition_target):
         # recipe.clusters is sorted by cluster id
         self.patch_solve(mocker)
-        node1 = Leaf(id_=1, food=pd.Series([]))
-        node2 = Leaf(id_=2, food=pd.Series([]))
-        recipe1 = Recipe([node1, node2], nutrition_target)
-        recipe2 = Recipe([node2, node1], nutrition_target)
+        node1 = Leaf(id_=1, food_index=0)
+        node2 = Leaf(id_=2, food_index=1)
+        foods = np.ones((2,1))
+        recipe1 = Recipe([node1, node2], nutrition_target, foods)
+        recipe2 = Recipe([node2, node1], nutrition_target, foods)
         assert recipe1.clusters == (node1, node2)
         assert recipe2.clusters == (node1, node2)
     
     def test_eq(self, mocker, nutrition_target):
         # recipes are equal iff recipe.clusters equals
         self.patch_solve(mocker)
-        nodes = [Leaf_(id_=i) for i in range(3)]
-        recipe1 = Recipe([nodes[0], nodes[1]], nutrition_target)
-        recipe2 = Recipe([nodes[1], nodes[0]], nutrition_target)
+        nodes = [Leaf(id_=i, food_index=i) for i in range(3)]
+        foods = np.ones((3,1))
+        recipe1 = Recipe([nodes[0], nodes[1]], nutrition_target, foods)
+        recipe2 = Recipe([nodes[1], nodes[0]], nutrition_target, foods)
         assert recipe1 == recipe2
-        recipe3 = Recipe([nodes[0], nodes[2]], nutrition_target) 
+        recipe3 = Recipe([nodes[0], nodes[2]], nutrition_target, foods)
         assert recipe1 != recipe3
         assert recipe2 != recipe3
 

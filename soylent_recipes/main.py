@@ -47,8 +47,8 @@ def main(usda_directory, output_clustering):
     normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
     root_node = cluster_.agglomerative(normalized_foods)
     if output_clustering:
-        tree.write(root_node)
-    top_recipes = mine(root_node, normalized_nutrition_target)
+        tree.write(root_node, foods)
+    top_recipes = mine(root_node, normalized_nutrition_target, normalized_foods)
     output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
@@ -180,12 +180,14 @@ def normalize(foods, nutrition_target):
     # Return
     return foods, nutrition_target
 
-def mine(root_node, nutrition_target):
+def mine(root_node, nutrition_target, foods):
     '''
     Parameters
     ----------
     root_node : soylent_recipes.cluster.Node
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
+    foods : pd.DataFrame
+        Normalized foods
     
     Returns
     -------
@@ -202,7 +204,7 @@ def mine(root_node, nutrition_target):
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
-    loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes))
+    loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes, foods))
     loop.close()
     
     # Print top k stats
@@ -220,8 +222,8 @@ def output_result(foods, nutrition_target, top_recipes):
     '''
     # Write recipes.txt
     def format_recipe(recipe):
-        food_names = [cluster.food.name for cluster in recipe.clusters]
-        recipe_foods = foods.loc[food_names]
+        recipe_foods = foods.iloc[[cluster.food_index for cluster in recipe.clusters]]
+        food_names = recipe_foods.index
          
         # amounts
         rounded_amounts = recipe.amounts.round()

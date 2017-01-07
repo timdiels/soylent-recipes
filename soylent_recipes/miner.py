@@ -15,6 +15,7 @@
 
 import logging
 from soylent_recipes import solver
+import numpy as np
 import pandas as pd
 from textwrap import dedent
 from itertools import chain
@@ -133,17 +134,20 @@ class Recipe(object):
         Clusters whose representatives form the foods of the recipe
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
         Nutrition target the recipe should be solved for
+    all_foods : np.array
+        All normalized foods.
     '''
     
-    def __init__(self, clusters, nutrition_target):
+    def __init__(self, clusters, nutrition_target, all_foods):
         if not clusters:
             raise ValueError('clusters must be non-empty sequence. Got: {!r}'.format(self.clusters))
         
         self._clusters = tuple(sorted(clusters, key=lambda cluster: cluster.id_))
         self._nutrition_target = nutrition_target
+        self._all_foods = all_foods
         
         # Solve diet problem resulting in scored recipe
-        foods = pd.DataFrame([cluster.food for cluster in self.clusters])
+        foods = all_foods[[cluster.food_index for cluster in self.clusters]]
         self._score, self._amounts = solver.solve(self._nutrition_target, foods)
 #         print(self._score[1])
         global recipes_scored
@@ -255,7 +259,7 @@ class Recipe(object):
             clusters.remove(cluster)
         clusters.extend(replacement)
         assert len(set(clusters)) == len(clusters)
-        return Recipe(clusters, self._nutrition_target)
+        return Recipe(clusters, self._nutrition_target, self._all_foods)
     
     def __eq__(self, other):
         return other is not None and self.clusters == other.clusters
@@ -308,21 +312,23 @@ class profile(object):
 # - instead of >, require to be at least x% better
 # - instead of NaN score, solve a diet problem without min-max, or try to get the solver to solve it as close as possible and then add errors for it. Scores of relaxed problem should always be < score of real problem
 # @profile()
-def mine(root_node, nutrition_target, top_recipes):
+def mine(root_node, nutrition_target, top_recipes, foods):
     '''
     Mine recipes
     
     Parameters
     ----------
     root_node : soylent_recipes.cluster.Node
-        Root node of hierarchical clustering of foods
+        Root node of hierarchical clustering of normalized foods
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
     top_recipes : TopK
+    foods : pd.DataFrame
+        All normalized foods, matching the food indices referenced by the cluster nodes.
     '''
-    assert (root_node.food.index == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
+    assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
     _logger.info('Mining')
     max_foods = 10
-    top_recipes.push(Recipe([root_node], nutrition_target))
+    top_recipes.push(Recipe([root_node], nutrition_target, foods.values))
     
     for recipe in top_recipes.pop_branches():
         # return when cancelled

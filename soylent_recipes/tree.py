@@ -33,7 +33,7 @@ _styles = {
     'circular_topology': _circular_style
 }
 
-def write(root):
+def write(root, foods):
     '''
     Write out food clustering tree files
     '''
@@ -43,24 +43,27 @@ def write(root):
     # Write at various depths
     max_depth = 2
     while max_depth < tree_depth:
-        _write(root, max_depth)
+        _write(root, foods, max_depth)
         max_depth *= 2
-    _write(root, tree_depth)
+    _write(root, foods, tree_depth)
             
-def _write(root, max_depth):
+def _write(root, foods, max_depth):
     '''
     Parameters
     ----------
     root : soylent_recipes.cluster.Node
         Root node of tree to write to files
+    foods : pd.DataFrame
+        Foods. Node food indices must match row indices of `foods`, i.e.
+        ``foods.iloc[node.food_index]``.
     max_depth : int
         Length of longest path from root to leaf in drawn tree. I.e. cuts the
         actual tree short at max_depth.
     '''
     # Convert to tree
     tree = Tree()
-    root_ = tree.add_child(name=root.food.name)
-    _add_children(root, root_, max_depth=max_depth-1)
+    root_ = tree.add_child(name=foods.index[root.food_index])
+    _add_children(root, root_, foods, max_depth=max_depth-1)
     
     # Render tree to file
     for style_name, style in _styles.items():
@@ -86,7 +89,7 @@ def _tree_depth(node):
     else:
         return 1
 
-def _add_children(parent, parent_, max_depth):
+def _add_children(parent, parent_, foods, max_depth):
     '''
     Add node's children to tree node (recursively)
     
@@ -104,5 +107,5 @@ def _add_children(parent, parent_, max_depth):
     if max_depth == 0:
         return
     for child in parent.children:
-        child_ = parent_.add_child(name=child.food.name, dist=parent.max_distance - child.max_distance)
-        _add_children(child, child_, max_depth-1)
+        child_ = parent_.add_child(name=foods.index[child.food_index], dist=parent.max_distance - child.max_distance)
+        _add_children(child, child_, foods, max_depth-1)

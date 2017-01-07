@@ -44,9 +44,10 @@ def solve(nutrition_target, foods):
     ----------
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
         The desired nutrition
-    foods : pd.DataFrame
+    foods : np.array
         The foods to use to achieve the nutrition target. Contains exactly the
-        nutrients required by the nutrition target in the exact same order.
+        nutrients required by the nutrition target in the exact same order. Rows
+        represent foods, columns represent nutrients.
         
     Returns
     -------
@@ -63,8 +64,8 @@ def solve(nutrition_target, foods):
     return (False, sub_score), amounts  #TODO try linear program as well
 
 def solve_least_squares(foods):
-    A = foods.values.transpose()
-    b = np.ones(len(foods.columns))
+    A = foods.transpose()
+    b = np.ones(foods.shape[1])
     return scipy.optimize.nnls(A, b)  # x>=0  #TODO could try a root finder alg instead, if that's faster and similarly accurate
 
 def _solve_linear_program(nutrition_target, foods):

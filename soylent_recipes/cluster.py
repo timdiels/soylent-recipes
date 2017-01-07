@@ -32,6 +32,7 @@ def agglomerative(foods):
         nutrition target the clustering will be used for.
     '''
     _logger.info('Clustering foods using agglomerative, distance metric=RED, linkage=complete')
+    foods = foods.copy()
     
     # Calculate pairwise distances
     foods_ = foods.values.copy()
@@ -39,7 +40,7 @@ def agglomerative(foods):
     distances = pairwise_distances(foods_, metric='euclidean')
     
     # Remove duplicate foods
-    foods, distances = _remove_duplicate_foods(foods, distances)
+    food_indices, distances = _remove_duplicate_foods(distances)  #TODO test _remove_duplicate_foods (did a manual check once). rm sanity checks once test added.
     
     # TODO it is suggested that a complete linkage clustering is not a
     # hierarchical classification, by the second to last point of
@@ -52,31 +53,45 @@ def agglomerative(foods):
     # Note: n_clusters has no effect on clustering.children_, so we don't use it
     clustering = AgglomerativeClustering(linkage='complete', affinity='precomputed', compute_full_tree=True)
     clustering.fit(distances)
-    return _convert_clustering(foods, clustering.children_, distances)  # we assume children_ are such that row i only references node ids < i+len(foods)
+    return _convert_clustering(food_indices, clustering.children_, distances)  # we assume children_ are such that row i only references node ids < i+len(foods)
 
-def _remove_duplicate_foods(foods, distances):
+def _remove_duplicate_foods(distances):
     '''
     Remove duplicate foods (keeping one of each group of duplicates)
+    
+    Parameters
+    ----------
+    distances : np.array
+        Pairwise distances between foods
+        
+    Returns
+    -------
+    food_indices : np.array
+        Indices of kept foods.
+    distances : np.array
+        Pairwise distances between kept foods. distances[i,j] is the distance
+        between the food pointed to by food_indices[i] and food_indices[j].
     '''
     mask = distances == 0.0
     mask[np.tril_indices_from(mask)] = False  # only consider upper triangle
     mask = mask.any(axis=0)  # collapse rows, now we have a row vector, a mask of foods to remove
     mask = ~mask  # mask of foods to keep
-    foods = foods[mask]
+    food_indices = np.where(mask)[0]
     distances = distances[np.ix_(mask, mask)]
-    assert len(foods) == len(distances)  # sanity check
+    assert len(food_indices) == len(distances)  # sanity check
     assert distances.shape[0] == distances.shape[1]  # sanity check
-    return foods, distances
+    return food_indices, distances
     
     
-def _convert_clustering(foods, children, distances):
+def _convert_clustering(food_indices, children, distances):
     '''
     Convert hierarchical clustering to Node representation
     
     Parameters
     ----------
-    foods : pd.DataFrame
-        The foods that were clustered.
+    food_indices : np.array
+        Indices of the foods that were clustered. Node i corresponds to
+        the food referred to by food_indices[i]
     children : expr(sklearn.cluster.AgglomerativeClustering.children_)
         Clustering hierarchy as 2D array of children. Each row i may only
         reference node ids < i+len(foods).
@@ -90,11 +105,11 @@ def _convert_clustering(foods, children, distances):
     '''
     # Leaf and branch nodes
     # nodes[i] corresponds to foods.iloc[i] and distances[i] for i < len(foods)
-    nodes = np.empty(len(foods) + len(children), dtype=object)
+    nodes = np.empty(len(food_indices) + len(children), dtype=object)
     
     # Add leaf nodes
-    for id_, (_, food) in enumerate(foods.iterrows()):
-        nodes[id_] = Leaf(id_, food)
+    for id_, food_index in enumerate(food_indices):
+        nodes[id_] = Leaf(id_, food_index)
         
     # Add branch nodes
     _add_branch_nodes(nodes, children, distances)
@@ -152,10 +167,11 @@ class Node(object):
     ----------
     id_ : int
         Unique node id
-    food : pd.Series
-        The food that the the node represents (best). If a branch, this is the
-        the food nearest to its average food; a branch actually represents
-        multiple foods.
+    food_index : int
+        Index pointing to the food that the the node represents (best). If a
+        branch, this is the the food nearest to its average food; a branch
+        actually represents multiple foods. The index refers to the foods
+        DataFrame that was passed to the function creating this Node.
     leaf_node : Node
         Leaf node to which self.food belongs. This is a descendant of the
         current node if a branch node and self otherwise.
@@ -216,8 +232,8 @@ class Branch(object):  # No inherit from Node as inheritance is evil, a circular
         return self._id
     
     @property
-    def food(self):
-        return self._leaf_node.food
+    def food_index(self):
+        return self._leaf_node.food_index
     
     @property
     def leaf_node(self):
@@ -237,8 +253,8 @@ class Branch(object):  # No inherit from Node as inheritance is evil, a circular
     
     def __repr__(self):
         return (
-            'Branch(id_={!r}, food={!r}, max_distance={!r}, children={!r})'
-            .format(self.id_, self.food.name, self.max_distance, self.children)
+            'Branch(id_={!r}, food_index={!r}, max_distance={!r}, children={!r})'
+            .format(self.id_, self.food_index, self.max_distance, self.children)
         )
         
     def __eq__(self, other):
@@ -257,27 +273,27 @@ class Leaf(object):
     Parameters
     ----------
     id_ : int
-        Unique node id
-    food : pd.Series
-        The food that the node represents.
+        Unique node id.
+    food_index : int
+        Index pointing to the food that the node represents.
     '''
     
-    def __init__(self, id_, food):
+    def __init__(self, id_, food_index):
         # Validate
         _validate_not_none('id_', id_)
-        _validate_not_none('food', food)
+        _validate_not_none('food', food_index)
         
         # Set self
         self._id = id_
-        self._food = food.copy()
+        self._food_index = food_index
         
     @property
     def id_(self):
         return self._id
     
     @property
-    def food(self):
-        return self._food
+    def food_index(self):
+        return self._food_index
     
     @property
     def leaf_node(self):
@@ -297,8 +313,8 @@ class Leaf(object):
     
     def __repr__(self):
         return (
-            'Leaf(id_={!r}, food={!r})'
-            .format(self.id_, self.food.name)
+            'Leaf(id_={!r}, food_index={!r})'
+            .format(self.id_, self.food_index)
         )
         
     def __eq__(self, other):
