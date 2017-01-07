@@ -152,6 +152,16 @@ def add_energy_components(foods):
 def normalize(foods, nutrition_target):
     '''
     Normalize foods and nutrition target such that all pseudo targets are 1.0
+    
+    Parameters
+    ----------
+    foods : pd.DataFrame
+    soylent_recipes.nutrition_target.NutritionTarget
+    
+    Returns
+    -------
+    foods : pd.DataFrame
+    soylent_recipes.nutrition_target.NormalizedNutritionTarget
     '''
     _logger.info('Normalizing foods and nutrition target')
     
@@ -161,13 +171,20 @@ def normalize(foods, nutrition_target):
     # Normalize nutrition_target
     nutrition_target = nutrition_target.apply(lambda row: row/row['pseudo_target'], axis=1)
 
-    # Post condition
+    # Drop pseudo_target column
     assert (nutrition_target['pseudo_target'].apply(lambda x: np.isclose(x, 1.0))).all()
+    del nutrition_target['pseudo_target']
     
     # Return
     return foods, nutrition_target
 
 def mine(root_node, nutrition_target):
+    '''
+    Parameters
+    ----------
+    root_node : soylent_recipes.cluster.Node
+    nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
+    '''
     loop = asyncio.get_event_loop()
     k = 100
     top_recipes = miner.TopRecipes(k)

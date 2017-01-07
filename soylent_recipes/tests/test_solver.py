@@ -19,7 +19,7 @@ Test soylent_recipes.solver
 
 from chicken_turtle_util import data_frame as df_
 from soylent_recipes import solver
-from soylent_recipes import nutrition_target as nutrition_target_
+from soylent_recipes import nutrition_target as nutrition_target_, main
 from .various import NutritionTarget
 import pandas as pd
 import numpy as np
@@ -28,7 +28,10 @@ import pytest
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
 
-lsq = solver._solve_least_squares
+def lsq(nutrition_target, foods):
+    amounts, residual = solver.solve_least_squares(foods)
+    return -float(residual), amounts
+
 lp = solver._solve_linear_program
 
 def nutrition(amounts, foods):
@@ -36,7 +39,7 @@ def nutrition(amounts, foods):
     
 def lsq_score(nutrition_target, nutrition_):
     # score is negative of the l2-norm to the pseudo target
-    return -np.sqrt(((nutrition_ - nutrition_target['pseudo_target'])**2).sum())
+    return -np.sqrt(((nutrition_ - 1)**2).sum())
 
 #TODO not testing _solve_linear_program at the moment as we're temporarily not
 #using it, and it's broken because wrong interpretation of A,x params to lp
@@ -61,6 +64,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
+        foods, nutrition_target = main.normalize(foods, nutrition_target)
         score, amounts = solve(nutrition_target, foods)
         nutrition_ = nutrition(amounts, foods)
         nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
@@ -84,6 +88,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
+        foods, nutrition_target = main.normalize(foods, nutrition_target)
         score, amounts = solve(nutrition_target, foods)
         nutrition_ = nutrition(amounts, foods)
         nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
@@ -107,6 +112,7 @@ class TestBoth(object):
             ],
             columns=['nutrient1', 'nutrient2']
         )
+        foods, nutrition_target = main.normalize(foods, nutrition_target)
         score, amounts = solve(nutrition_target, foods)
         nutrition_ = nutrition(amounts, foods)
         nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
@@ -132,6 +138,7 @@ def test_lsq_approximate():
         ],
         columns=nutrients
     )
+    foods, nutrition_target = main.normalize(foods, nutrition_target)
     score, amounts = lsq(nutrition_target, foods)
     nutrition_ = nutrition(amounts, foods)
     
@@ -154,4 +161,5 @@ def test_lsq_approximate():
             amounts_[0] += step * sign
             scores.append(lsq_score(nutrition_target, nutrition(amounts_, foods)))
     assert score > min(scores) # if this fails, increase `step`
-    assert score >= max(scores)
+    max_score = max(scores)
+    assert score > max_score or np.isclose(score, max_score)

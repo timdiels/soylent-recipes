@@ -175,10 +175,10 @@ def test_normalize():
     # actual_nutrition_target as expected
     expected = pd.DataFrame(
         [
-            [0.5, 1.5, 1.0],
-            [2.0/3.0, 4.0/3.0, 1.0],
+            [0.5, 1.5],
+            [2.0/3.0, 4.0/3.0],
         ],
         index=nutrition_target.index,
-        columns=nutrition_target.columns
+        columns=('min', 'max')
     )
     df_.assert_equals(actual_nutrition_target, expected, all_close=True)

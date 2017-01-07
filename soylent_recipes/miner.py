@@ -129,7 +129,7 @@ class Recipe(object):
     ----------
     clusters : Iterable(soylent_recipes.cluster.Node)
         Clusters whose representatives form the foods of the recipe
-    nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
+    nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
         Nutrition target the recipe should be solved for
     '''
     
@@ -311,9 +311,10 @@ def mine(root_node, nutrition_target, top_recipes):
     ----------
     root_node : soylent_recipes.cluster.Node
         Root node of hierarchical clustering of foods
-    nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
+    nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
     top_recipes : TopK
     '''
+    assert (root_node.food.index == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
     _logger.info('Mining')
     max_foods = 10
     top_recipes.push(Recipe([root_node], nutrition_target))

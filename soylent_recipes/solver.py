@@ -42,10 +42,11 @@ def solve(nutrition_target, foods):
     
     Parameters
     ----------
-    nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
+    nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
         The desired nutrition
     foods : pd.DataFrame
-        The foods to use to achieve the nutrition target
+        The foods to use to achieve the nutrition target. Contains exactly the
+        nutrients required by the nutrition target in the exact same order.
         
     Returns
     -------
@@ -57,20 +58,15 @@ def solve(nutrition_target, foods):
         The amounts of each food to use to optimally achieve the nutrition
         target. ``amounts[i]`` is the amount of the i-th food to use.
     '''
-    sub_score, amounts = _solve_least_squares(nutrition_target, foods) # solve relaxed problem
-    assert (amounts >= 0.0).all()
+    amounts, residual = solve_least_squares(foods) # solve relaxed problem
+    sub_score = -float(residual)
     return (False, sub_score), amounts  #TODO try linear program as well
 
-def _solve_least_squares(nutrition_target, foods):
-    # A, b
-    A = foods[nutrition_target['pseudo_target'].index].values.transpose()
-    b = nutrition_target['pseudo_target'].values  # Note: currently, this is always 1. If we could make use of that, require a nutrition target with just min,max columns instead and assume target=1. E.g. Ax-1=0 would allow using root finding algorithms instead, if that's beneficial.
-    
-    # solve
-    x, residual = scipy.optimize.nnls(A, b)  # x>=0
-    score = -float(residual)
-    return score, x
-    
+def solve_least_squares(foods):
+    A = foods.values.transpose()
+    b = np.ones(len(foods.columns))
+    return scipy.optimize.nnls(A, b)  # x>=0  #TODO could try a root finder alg instead, if that's faster and similarly accurate
+
 def _solve_linear_program(nutrition_target, foods):
     # TODO it appears that when A, b are given, Ax=b is first solved and only
     # the free variables are varied in conelp. Instead we should add targets to

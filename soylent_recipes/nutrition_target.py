@@ -155,6 +155,18 @@ class NutritionTarget(object):
     def __init__(self, *args, **kwargs):
         raise Exception('This is an interface, for use in documentation only. Do not reference it in code')
     
+class NormalizedNutritionTarget(object):
+    '''
+    Interface: constraints and nutrition preferences
+    
+    NutritionTarget after it has been normalized. Values have been normalized
+    and the pseudo_target column dropped. As pseudo target, use 1 (vector of
+    ones).
+    '''
+    
+    def __init__(self, *args, **kwargs):
+        raise Exception('This is an interface, for use in documentation only. Do not reference it in code')
+    
 def assert_satisfied(nutrition_target, result):
     '''
     Assert nutrition target satisfied by given nutrition (of a recipe)
