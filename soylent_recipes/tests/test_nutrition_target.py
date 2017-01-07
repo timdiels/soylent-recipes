@@ -185,7 +185,6 @@ vitamin d                                          1.500000e-05  1.000000e-04
 vitamin e                                          1.500000e-02           NaN
 vitamin e, added                                            NaN  1.000000e+00
 vitamin k                                          1.200000e-04           NaN
-water                                              3.700000e+00           NaN
 zinc                                               1.100000e-02  4.000000e-02
 '''
 

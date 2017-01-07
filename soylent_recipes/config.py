@@ -122,8 +122,7 @@ target = pd.DataFrame.from_items(
     ('pantothenic acid', (5e-3, np.nan)),
     ('choline', (550e-3, 3.5)), # "Although AIs have been set for choline, there are few data to assess whether a dietary supply of choline is needed at all stages of the life cycle, and it may be that the choline requirement can be met by endogenous synthesis at some of these stages."
     
-    # Water and macronutrients
-    ('water', (3.7, np.nan)), # l. also includes water contained in food #TODO probably want to remove, trivial to achieve manually. Unless the other things in water could cause us to exceed other nutrients (can't drink distilled water). Prolly still can drop this though.
+    # Macronutrients
     ('carbohydrate', (130, np.nan)),
     ('fiber', (38, np.nan)),
     ('linoleic acid', (17, np.nan)),
@@ -141,6 +140,11 @@ target = pd.DataFrame.from_items(
     # foot note on carotenoids: "beta Carotene supplements are advised only to serve as a provitamin A source for individuals at risk of vitamin A deficiency."
     ('carotenoids', (np.nan, 6e-3)),
 ))
+
+# Dropped water requirement as trivial to add water source manually afterwards
+# and check other nutrients stay within bounds (probably impossible to exceed)
+#
+#('water', (3.7, np.nan)),  
 
 # DRI recommendations not taken into account due to lacking any USDA nutrient data for them.
 # Format: (name, min, max, unit).
