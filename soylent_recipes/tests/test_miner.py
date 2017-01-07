@@ -20,7 +20,7 @@ Test soylent_recipes.solver
 from chicken_turtle_util import data_frame as df_
 from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes import solver
-from soylent_recipes.miner import TopRecipes, Recipe
+from soylent_recipes.miner import TopRecipes, Recipes
 from soylent_recipes.cluster import Leaf, Branch
 from .various import NutritionTarget
 from . import mocks
@@ -30,21 +30,25 @@ from functools import partial
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
 
+def patch_solve(mocker, score=(False, 0.0), amounts=None):
+    '''
+    Patch solver.solve to return mock value instead of actually solving
+    '''
+    mocker.patch.object(solver, 'solve', lambda *args: (score, amounts))
+
+@pytest.fixture
+def nutrition_target():
+    return NutritionTarget([], [])
+    
+@pytest.fixture
+def score():
+    return (False, 0.0)
+    
 class TestRecipe(object):
-     
-    @pytest.fixture
-    def nutrition_target(self):
-        return NutritionTarget([], [])
     
-    @pytest.fixture
-    def score(self):
-        return (False, 0.0)
-    
-    def patch_solve(self, mocker, score=(False, 0.0), amounts=None):
-        '''
-        Patch solver.solve to return mock value instead of actually solving
-        '''
-        mocker.patch.object(solver, 'solve', lambda *args: (score, amounts))
+    '''
+    Test Recipe and Recipes.create
+    '''
     
     def test_branch(self, mocker, nutrition_target):
         '''
@@ -91,7 +95,7 @@ class TestRecipe(object):
         ]
         
         # Create and assert
-        recipe = Recipe(clusters, nutrition_target, foods_)
+        recipe = Recipes(nutrition_target, foods_).create(clusters)
         assert recipe.score == score  # matches return of `solve`
         assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
         assert recipe.solved  # score[0] == recipe.solved
@@ -106,112 +110,102 @@ class TestRecipe(object):
         Test things specific to the `not recipe.solved` case
         '''
         score = (False, 2.0)
-        self.patch_solve(mocker, score)
+        patch_solve(mocker, score)
         node = Leaf(id_=1, food_index=0)
         foods = np.ones((1,1))
-        recipe = Recipe([node], nutrition_target, foods)
+        recipe = Recipes(nutrition_target, foods).create([node])
         assert not recipe.solved  # score[0] == recipe.solved
         
     def test_leaf(self, mocker, nutrition_target, score):
         '''
         Test things specific to the `recipe.is_leaf` case
         '''
-        self.patch_solve(mocker)
+        patch_solve(mocker)
         node = Leaf(id_=1, food_index=0)
         foods = np.ones((1,1))
-        recipe = Recipe([node], nutrition_target, foods)
+        recipe = Recipes(nutrition_target, foods).create([node])
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
         assert recipe.max_distance == 0.0
         with pytest.raises(InvalidOperationError):
             recipe.next_cluster
-
-    def test_replace(self, mocker, nutrition_target, score):
+        
+class TestRecipes(object):
+    
+    # Note trivial case of create() has already been tested above
+    
+    def test_create_visited(self, mocker, nutrition_target):
         '''
-        Test recipe.replace() entirely
+        When creating recipe with same set of clusters, return None
         '''
+        patch_solve(mocker)
+        nodes = [Leaf(id_=i, food_index=i) for i in range(2)]
+        foods = np.ones((len(nodes),1))
+        recipes = Recipes(nutrition_target, foods)
+        
+        # First time, return recipe
+        assert recipes.create([nodes[0], nodes[1]]) is not None
+        
+        # Seen clusters before, return None
+        assert recipes.create([nodes[0], nodes[1]]) is None
+        
+        # Order of clusters does not matter, return None
+        assert recipes.create([nodes[1], nodes[0]]) is None
+    
+    def test_replace(self, mocker, nutrition_target):
         solve = mocker.Mock(return_value=(score, None))
         mocker.patch.object(solver, 'solve', solve)
         nodes = [Leaf(id_=i, food_index=i) for i in range(4)]
         foods = np.ones((4,1))
-        recipe = Recipe([nodes[0]], nutrition_target, foods)
+        recipes = Recipes(nutrition_target, foods)
+        recipe = recipes.create([nodes[0]])
         
         # When replacee == replacement, raise
         with pytest.raises(ValueError):
-            recipe.replace([nodes[0]], [nodes[0]])
+            recipes.replace(recipe, [nodes[0]], [nodes[0]])
             
         # When replacee empty, raise
         with pytest.raises(ValueError):
-            recipe.replace([], [nodes[1]])
+            recipes.replace(recipe, [], [nodes[1]])
             
         # When replacee missing, raise
         with pytest.raises(Exception):
-            recipe.replace([nodes[1]], [nodes[2]])
+            recipes.replace(recipe, [nodes[1]], [nodes[2]])
         with pytest.raises(Exception):
-            recipe.replace([nodes[0], nodes[1]], [nodes[2]])
+            recipes.replace(recipe, [nodes[0], nodes[1]], [nodes[2]])
             
         # When replacee and replacement overlap in any other way, raise
         with pytest.raises(ValueError):
-            recipe.replace([nodes[0]], [nodes[1], nodes[0]])
+            recipes.replace(recipe, [nodes[0]], [nodes[1], nodes[0]])
             
         # When replace with one, all good
-        recipe = recipe.replace([nodes[0]], [nodes[1]])
+        recipe = recipes.replace(recipe, [nodes[0]], [nodes[1]])
         assert set(recipe.clusters) == {nodes[1]}
         
         # When replace with multiple, all good
-        recipe = recipe.replace([nodes[1]], [nodes[0], nodes[2]])
+        recipe = recipes.replace(recipe, [nodes[1]], [nodes[0], nodes[2]])
         assert set(recipe.clusters) == {nodes[0], nodes[2]}
         
         # When replace multiple with multiple, all good
-        recipe = recipe.replace([nodes[0], nodes[2]], [nodes[1], nodes[3]])
+        recipe = recipes.replace(recipe, [nodes[0], nodes[2]], [nodes[1], nodes[3]])
         assert set(recipe.clusters) == {nodes[1], nodes[3]}
         
         # When replace multiple with one, all good
-        recipe = recipe.replace([nodes[1], nodes[3]], [nodes[2]])
+        recipe = recipes.replace(recipe, [nodes[1], nodes[3]], [nodes[2]])
         assert set(recipe.clusters) == {nodes[2]}
         
         # When replace with none, leaving behind some, all good
-        recipe = recipe.replace([nodes[2]], [nodes[0], nodes[1], nodes[3]])
-        recipe = recipe.replace([nodes[3]], [])
+        recipe = recipes.replace(recipe, [nodes[2]], [nodes[0], nodes[1], nodes[3]])
+        recipe = recipes.replace(recipe, [nodes[3]], [])
         assert set(recipe.clusters) == {nodes[0], nodes[1]}
         
         # When replace some, but not all, all good
-        recipe = recipe.replace([nodes[0]], [nodes[2], nodes[3]])
+        recipe = recipes.replace(recipe, [nodes[0]], [nodes[2], nodes[3]])
         assert set(recipe.clusters) == {nodes[1], nodes[2], nodes[3]}
         
         assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
-        
-    def test_clusters(self, mocker, nutrition_target):
-        # recipe.clusters is sorted by cluster id
-        self.patch_solve(mocker)
-        node1 = Leaf(id_=1, food_index=0)
-        node2 = Leaf(id_=2, food_index=1)
-        foods = np.ones((2,1))
-        recipe1 = Recipe([node1, node2], nutrition_target, foods)
-        recipe2 = Recipe([node2, node1], nutrition_target, foods)
-        assert recipe1.clusters == (node1, node2)
-        assert recipe2.clusters == (node1, node2)
-    
-    def test_eq(self, mocker, nutrition_target):
-        # recipes are equal iff recipe.clusters equals
-        self.patch_solve(mocker)
-        nodes = [Leaf(id_=i, food_index=i) for i in range(3)]
-        foods = np.ones((3,1))
-        recipe1 = Recipe([nodes[0], nodes[1]], nutrition_target, foods)
-        recipe2 = Recipe([nodes[1], nodes[0]], nutrition_target, foods)
-        assert recipe1 == recipe2
-        recipe3 = Recipe([nodes[0], nodes[2]], nutrition_target, foods)
-        assert recipe1 != recipe3
-        assert recipe2 != recipe3
 
 class TestTopRecipes(object):
     
-    @pytest.fixture(autouse=True)
-    def set_recipe_eq_by_identity(self, mocker):
-        '''
-        Patch mock recipes to equal iff identical.
-        '''
-        mocker.patch.object(mocks.Recipe, '__eq__', lambda s, other: id(s) == id(other))
-        
     @pytest.fixture
     def top_recipes(self):
         return TopRecipes(k=100)  # high enough k such that pruning does not kick in
@@ -264,7 +258,6 @@ class TestTopRecipes(object):
         assert list(top_recipes.pop_branches()) == [branch]
         
         # When push branch while iterating, it's returned as well
-        branch = Branch()
         branch2 = Branch()
         top_recipes.push(branch)
         first = True
@@ -277,26 +270,10 @@ class TestTopRecipes(object):
         assert actual == [branch, branch2]
         
         # When push leafs and branches, only pop branches
-        branch = Branch()
         leaf = mocks.Recipe(is_leaf=True)
         top_recipes.push(leaf)
         top_recipes.push(branch)
         assert list(top_recipes.pop_branches()) == [branch]
-        
-    def test_push_visited(self, top_recipes):
-        '''
-        Ignore push of recipe that has been pushed before (=visited)
-        '''
-        # When pushed recipe in top_recipes, ignore it
-        branch = mocks.Recipe(is_leaf=False)
-        top_recipes.push(branch)
-        top_recipes.push(branch)
-        assert set(top_recipes) == {branch}
-        
-        # When pushed recipe not in top_recipes, but has been pushed before, ignore it
-        list(top_recipes.pop_branches())
-        top_recipes.push(branch)
-        assert list(top_recipes) == []
         
     def test_pop_branches_order(self, top_recipes):
         '''
@@ -334,7 +311,6 @@ class TestTopRecipes(object):
         assert set(top_recipes) == {recipe5_10, recipe5_9}
         
         # Order in which we push does not matter
-        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0)
         top_recipes.push(recipe5_8)
         assert set(top_recipes) == {recipe5_10, recipe5_9}
         

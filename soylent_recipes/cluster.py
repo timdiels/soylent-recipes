@@ -161,7 +161,7 @@ class Node(object):
     This documents the Node interface, do not instantiate, use Leaf and/or
     Branch instead.
     
-    All attributes are read-only. Hash and equality are by id.
+    All attributes are read-only. Hash, equality and comparison are by id.
     
     Attributes
     ----------
@@ -262,6 +262,9 @@ class Branch(object):  # No inherit from Node as inheritance is evil, a circular
     
     def __hash__(self):
         return hash(self.id_)
+    
+    def __lt__(self, other):
+        return self.id_ < other.id_
         
 class Leaf(object):
     
@@ -322,6 +325,9 @@ class Leaf(object):
     
     def __hash__(self):
         return hash(self.id_)
+    
+    def __lt__(self, other):
+        return self.id_ < other.id_
 
 def _validate_not_none(attribute, value):
     if value is None:

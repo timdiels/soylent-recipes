@@ -41,7 +41,6 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         self._pushed = False
         self._leafs = TopK(k, self._key)
         self._branches = TopK(k, self._key)
-        self._visited = set()
         
         # Note: pruning will be unused so long as k>=max_branches, given how we use this
         self._branches_by_max_distance = TopK(k, lambda recipe: -recipe.max_distance) 
@@ -76,13 +75,6 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
     def push(self, recipe):
         if recipe is None:
             raise ValueError("recipe is None. It shouldn't.")
-        
-        # When we've already visited the recipe, skip it #TODO don't even create the recipe in the first place; thus avoiding scoring it
-        if recipe in self._visited:
-            global recipes_revisited
-            recipes_revisited += 1
-            return
-        self._visited.add(recipe)
         
         #
         if recipe.is_leaf:
@@ -123,13 +115,90 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
             )
         )
 
+# TODO this a weird mix of global, add a Context class (probably spanning just the mining context)
 recipes_scored = 0
 recipes_revisited = 0  # recipes rejected due to already having been visited
+
+class Recipes(object):
+    
+    '''
+    Context of created recipes
+    '''
+    
+    def __init__(self, nutrition_target, all_foods):
+        '''
+        Parameters
+        ----------
+        nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
+            Nutrition target the recipes should be solved for
+        all_foods : np.array
+            All normalized foods.
+        '''
+        self._nutrition_target = nutrition_target
+        self._foods = all_foods
+        self._visited = set()
+        
+    def create(self, clusters):
+        '''
+        Create recipe if it has not been created before
+        
+        Returns
+        -------
+        Recipe or None
+            Recipe if first time creating it, None otherwise.
+        '''
+        # clusters
+        if not clusters:
+            raise ValueError('clusters must be non-empty sequence. Got: {!r}'.format(self.clusters))
+        clusters = tuple(sorted(clusters))
+        
+        # When we've already visited the recipe, skip it
+        if clusters in self._visited:
+            global recipes_revisited
+            recipes_revisited += 1
+            return None
+        else:
+            self._visited.add(clusters)
+            return Recipe(clusters, self._nutrition_target, self._foods)
+        
+    def replace(self, recipe, replacee, replacement):
+        '''
+        Replace clusters on recipe with clusters
+        
+        Parameters
+        ----------
+        recipe : Recipe
+            Recipe whose clusters to start from
+        replacee : Iterable(_Cluster)
+            One or more clusters to replace
+        replacement : Iterable(_Cluster)
+            Zero or more clusters to replace the replacee with
+            
+        Returns
+        -------
+        Recipe
+            Recipe with clusters replaced
+        '''
+        if not replacee:
+            raise ValueError('replacee must not be empty. replacee={!r}'.format(replacee))
+        if not set(replacement).isdisjoint(set(replacee)):
+            raise ValueError(
+                'replacement and replacee overlap: replacee={!r}. replacement={!r}.'
+                .format(replacee, replacement)
+            )
+        clusters = list(recipe.clusters)
+        for cluster in replacee:
+            clusters.remove(cluster)
+        clusters.extend(replacement)
+        assert len(set(clusters)) == len(clusters)
+        return self.create(clusters)
 
 class Recipe(object):
     
     '''
     A recipe: which foods, how much of each, resulting score.
+    
+    Do not create directly, use Recipes.create instead.
     
     Parameters
     ----------
@@ -142,16 +211,11 @@ class Recipe(object):
     '''
     
     def __init__(self, clusters, nutrition_target, all_foods):
-        if not clusters:
-            raise ValueError('clusters must be non-empty sequence. Got: {!r}'.format(self.clusters))
-        
-        self._clusters = tuple(sorted(clusters, key=lambda cluster: cluster.id_))
-        self._nutrition_target = nutrition_target
-        self._all_foods = all_foods
+        self._clusters = clusters
         
         # Solve diet problem resulting in scored recipe
         foods = all_foods[[cluster.food_index for cluster in self.clusters]]
-        self._score, self._amounts = solver.solve(self._nutrition_target, foods)
+        self._score, self._amounts = solver.solve(nutrition_target, foods)
 #         print(self._score[1])
         global recipes_scored
         recipes_scored += 1
@@ -234,42 +298,6 @@ class Recipe(object):
         '''
         return all(cluster.is_leaf for cluster in self.clusters)
         
-    def replace(self, replacee, replacement):
-        '''
-        Replace clusters with clusters
-        
-        Parameters
-        ----------
-        replacee : Iterable(_Cluster)
-            One or more clusters to replace
-        replacement : Iterable(_Cluster)
-            Zero or more clusters to replace the replacee with
-            
-        Returns
-        -------
-        Recipe
-            Recipe with clusters replaced
-        '''
-        if not replacee:
-            raise ValueError('replacee must not be empty. replacee={!r}'.format(replacee))
-        if not set(replacement).isdisjoint(set(replacee)):
-            raise ValueError(
-                'replacement and replacee overlap: replacee={!r}. replacement={!r}.'
-                .format(replacee, replacement)
-            )
-        clusters = list(self.clusters)
-        for cluster in replacee:
-            clusters.remove(cluster)
-        clusters.extend(replacement)
-        assert len(set(clusters)) == len(clusters)
-        return Recipe(clusters, self._nutrition_target, self._all_foods)
-    
-    def __eq__(self, other):
-        return other is not None and self.clusters == other.clusters
-    
-    def __hash__(self):
-        return hash(self.clusters)
-    
     def __len__(self):
         '''
         Number of (representing) foods
@@ -331,7 +359,8 @@ def mine(root_node, nutrition_target, top_recipes, foods):
     assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
     _logger.info('Mining')
     max_foods = 10
-    top_recipes.push(Recipe([root_node], nutrition_target, foods.values))
+    recipes = Recipes(nutrition_target, foods.values)
+    top_recipes.push(recipes.create([root_node]))
     
     for recipe in top_recipes.pop_branches():
         # return when cancelled
@@ -341,17 +370,17 @@ def mine(root_node, nutrition_target, top_recipes, foods):
         # Split cluster
         next_cluster = recipe.next_cluster
         left, right = next_cluster.children
-        recipe_both = recipe.replace([next_cluster], [left, right])
+        recipe_both = recipes.replace(recipe, [next_cluster], [left, right])
         top_recipes.unset_pushed()
-        if recipe_both.score > recipe.score or not recipe.solved: #TODO always true
+        if recipe_both and (recipe_both.score > recipe.score or not recipe.solved): #TODO always true, because never solved
             if len(recipe_both) <= max_foods:
                 # We have room for both and we know it improves score, so add it
                 top_recipes.push(recipe_both)
             else:
                 # We need to drop a food to stay within the max foods limit
                 for cluster in recipe_both.clusters:
-                    split_recipe = recipe_both.replace([cluster], [])
-                    if split_recipe.score > recipe.score or not recipe.solved: #TODO always true #TODO what if left or right happens to have the same representative. No need to solve it again, but do push it again despite having equal score
+                    split_recipe = recipes.replace(recipe_both, [cluster], [])
+                    if split_recipe and (split_recipe.score > recipe.score or not recipe.solved): #TODO always true #TODO what if left or right happens to have the same representative. No need to solve it again, but do push it again despite having equal score
                         # Only push if it still improves
                         top_recipes.push(split_recipe)
         
@@ -360,7 +389,9 @@ def mine(root_node, nutrition_target, top_recipes, foods):
             # the cluster with the food that it represents. This is an
             # approximation, further splits could still have led to a better
             # score.
-            top_recipes.push(recipe.replace([next_cluster], [next_cluster.leaf_node]))
+            recipe = recipes.replace(recipe, [next_cluster], [next_cluster.leaf_node])
+            if recipe:
+                top_recipes.push(recipe)
     
     # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
     #TODO we could throw out any foods that aren't contributing once we
