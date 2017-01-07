@@ -70,6 +70,7 @@ class TopK(object):
         self._key = key
         self._items_heap = []  # heapq of _Item
         self._items_dict = {}  # {object_ :: any => _Item}
+        self._assert_count = 0
         
     def push(self, object_):
         '''
@@ -152,6 +153,9 @@ class TopK(object):
         '''
         Assert self is still internally valid
         '''
+        self._assert_count+=1
+        if self._assert_count % 5000 != 0:  # only check every once in a while
+            return
         # assert dict and heap in sync
         dict_objects = set(self._items_dict.keys())
         heap_objects = {item.object_ for item in self._items_heap if not item.removed}
