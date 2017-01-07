@@ -212,16 +212,6 @@ def mine(root_node, nutrition_target):
     with open('recipes_top_{}.txt'.format(k), 'w') as f:
         f.write(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
         
-    # Print top k short format
-    def format_recipe_short(recipe):
-        return '{}, {:.2f}, {}, {}'.format(
-            recipe.score,
-            recipe.max_distance,
-            ''.join(('f' if cluster.is_leaf else 'C') for cluster in recipe.clusters),
-            ' '.join(str(cluster.id_) for cluster in recipe.clusters)
-        )
-    _logger.info('\n'.join(format_recipe_short(recipe) for recipe in top_recipes))
-    
     # Print top k stats
     _logger.info(top_recipes.format_stats())
     _logger.info('Recipes scored: {}'.format(miner.recipes_scored))
