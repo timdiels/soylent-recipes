@@ -22,6 +22,7 @@ from soylent_recipes import nutrition_target as nutrition_target_, foods as food
 import asyncio
 import signal
 import numpy as np
+import pandas as pd
 
 _logger = logging.getLogger(__name__)
 
@@ -43,11 +44,12 @@ def main(usda_directory, output_clustering):
     foods = add_energy_components(foods)
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
-    foods, nutrition_target = normalize(foods, nutrition_target)
-    root_node = cluster_.agglomerative(foods)
+    normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
+    root_node = cluster_.agglomerative(normalized_foods)
     if output_clustering:
         tree.write(root_node)
-    mine(root_node, nutrition_target)
+    top_recipes = mine(root_node, normalized_nutrition_target)
+    output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
 # Conversion factors (cal/g) to default to when NaN on a food
@@ -184,6 +186,10 @@ def mine(root_node, nutrition_target):
     ----------
     root_node : soylent_recipes.cluster.Node
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
+    
+    Returns
+    -------
+    TopRecipes
     '''
     loop = asyncio.get_event_loop()
     k = 100
@@ -199,20 +205,43 @@ def mine(root_node, nutrition_target):
     loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes))
     loop.close()
     
-    #TODO these amounts are with normalised foods. So they only portray
-    #proportions, not actual values in grams. So we should find the factor and
-    #multiply it to go from random proportions to actual recipe amounts for the
-    #given target
-    
-    # Print top k long format
-    def format_recipe(recipe):
-        food_names = (cluster.food.name for cluster in recipe.clusters)
-        lines = ('{:.2f} - {}'.format(amount, food_name) for amount, food_name in zip(recipe.amounts, food_names))
-        return '{}\n{}'.format(recipe.score, '\n'.join(lines))
-    with open('recipes_top_{}.txt'.format(k), 'w') as f:
-        f.write(('\n' + '-'*60 + '\n').join(format_recipe(recipe) for recipe in top_recipes))
-        
     # Print top k stats
     _logger.info(top_recipes.format_stats())
     _logger.info('Recipes scored: {}'.format(miner.recipes_scored))
+    
+    return top_recipes
+
+def output_result(foods, nutrition_target, top_recipes):
+    '''
+    foods : pd.DataFrame
+        Foods before normalisation
+    nutrition_target : NutritionTarget
+    top_recipes : TopRecipes
+    '''
+    # Write recipes.txt
+    def format_recipe(recipe):
+        food_names = [cluster.food.name for cluster in recipe.clusters]
+        recipe_foods = foods.loc[food_names]
+         
+        # amounts
+        rounded_amounts = recipe.amounts.round()
+        lines = ['{:.0f}g - {}'.format(amount, food_name) for amount, food_name in zip(rounded_amounts, food_names)]
+        lines.append('=')
+        lines.append('{:.0f}g'.format(rounded_amounts.sum()))
+        amounts = '\n'.join(lines)
+        
+        # nutrition
+        nutrition_ = recipe_foods.transpose().dot(recipe.amounts)
+        nutrition = nutrition_target.copy()
+        nutrition.insert(1, 'max_err', (nutrition['max'] < nutrition_).apply(lambda x: '!' if x else ''))
+        nutrition.insert(1, 'actual', nutrition_)
+        nutrition.insert(1, 'min_err', (nutrition['min'] > nutrition_).apply(lambda x: '!' if x else ''))
+        
+        #
+        return 'Score: {}\n\n{}\n\n{}'.format(recipe.score, amounts, nutrition.to_string())
+    
+    with open('recipes.txt', 'w') as f:
+        f.write('Amounts are in grams of edible portion. E.g. if the food has bones, you should\n')
+        f.write('weigh without the bones.\n\n')
+        f.write(('\n\n' + '-'*60 + '\n\n').join(format_recipe(recipe) for recipe in top_recipes))
     
