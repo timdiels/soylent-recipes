@@ -22,7 +22,6 @@ from soylent_recipes import nutrition_target as nutrition_target_, foods as food
 import asyncio
 import signal
 import numpy as np
-import pandas as pd
 
 _logger = logging.getLogger(__name__)
 
