@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 cancel = False
 
-class TopRecipes(object): #TODO k -> max_branches, max_leafs
+class TopRecipes(object):
     
     '''
     List of top recipes
