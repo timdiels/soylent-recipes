@@ -14,7 +14,7 @@
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
-from soylent_recipes import miner
+from soylent_recipes.mining.recipes import Recipe as _Recipe
 
 @attr.s(cmp=False, hash=False)
 class Recipe(object):
@@ -31,7 +31,7 @@ class Recipe(object):
     max_distance = attr.ib(default=0.0)
     is_leaf = attr.ib(default=True)
     
-    __lt__ = miner.Recipe.__lt__
-    __len__ = miner.Recipe.__len__
-    __eq__ = miner.Recipe.__eq__
-    __hash__ = miner.Recipe.__hash__
+    __lt__ = _Recipe.__lt__
+    __len__ = _Recipe.__len__
+    __eq__ = _Recipe.__eq__
+    __hash__ = _Recipe.__hash__

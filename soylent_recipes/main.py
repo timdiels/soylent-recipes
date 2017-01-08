@@ -18,7 +18,9 @@ from pathlib import Path
 from chicken_turtle_util import click as click_, logging as logging_
 import click
 from soylent_recipes import __version__
-from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner, cluster as cluster_, tree
+from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, cluster as cluster_, tree
+from soylent_recipes.mining.miners import Miner
+from soylent_recipes.mining.top_recipes import TopRecipes
 from tabulate import tabulate
 import asyncio
 import signal
@@ -198,11 +200,9 @@ def mine(root_node, nutrition_target, foods):
     TopRecipes
     '''
     loop = asyncio.get_event_loop()
-    top_recipes = miner.TopRecipes(max_leafs=10, max_branches=1000)
-    def cancel():
-        # Note: cancelling an executor does not cancel the thread running inside
-        _logger.info('Cancelling')
-        miner.cancel = True
+    top_recipes = TopRecipes(max_leafs=10, max_branches=1000)
+    miner = Miner()
+    cancel = miner.cancel  # Note: cancelling an executor does not cancel the thread running inside
     loop.add_signal_handler(signal.SIGHUP, cancel)
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
