@@ -114,6 +114,11 @@ def import_usda(usda_directory):
     
     # Drop usda nutrient columns, leaving just the internal ones
     nutrient_values = nutrient_values.drop(used_nutrients, axis=1)
+    
+    # Add pseudo nutrient: mass
+    nutrient_values['mass'] = 1.0  # 1g
+    
+    # Sort nutrients by name
     nutrient_values = nutrient_values.sort_index(axis=1)
     
     # Load and merge in food descriptions

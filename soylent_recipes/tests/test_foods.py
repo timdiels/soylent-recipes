@@ -54,6 +54,7 @@ def test_import_usda(usda_data_dir):
         linoleic acid + alpha linolenic acid           0.03043
         magnesium                                        2e-05
         manganese                                            0
+        mass                                                 1
         niacin                                         4.2e-07
         pantothenic acid                               1.1e-06
         phosphorus                                     0.00024
