@@ -363,7 +363,7 @@ def mine(root_node, nutrition_target, top_recipes, foods):
     '''
     assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
     _logger.info('Mining')
-    max_foods = 10
+    max_foods = 20
     recipes = Recipes(nutrition_target, foods.values)
     top_recipes.push(recipes.create([root_node]))
     
