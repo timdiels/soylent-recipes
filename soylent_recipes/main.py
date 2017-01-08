@@ -22,6 +22,7 @@ from soylent_recipes import nutrition_target as nutrition_target_, foods as food
 import asyncio
 import signal
 import numpy as np
+import colored_traceback
 
 _logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ def main(usda_directory, output_clustering):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
+    colored_traceback.add_hook()
     logging_.configure('soylent.log')
     logging.getLogger().setLevel(logging.DEBUG)
     logging.getLogger('soylent_recipes.various').setLevel(logging.INFO)

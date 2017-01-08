@@ -41,7 +41,8 @@ setup(
                             'chicken-turtle-util[click,test,data_frame,path,logging]==4.*',
                             'cvxopt',
                             'numpy',
-                            'pandas'],
+                            'pandas',
+                            'colored-traceback'],
     'keywords': 'soylent diet-problem',
     'license': 'GPL3',
     'long_description': 'soylent-recipes\n'
