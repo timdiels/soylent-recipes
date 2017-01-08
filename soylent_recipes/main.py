@@ -207,13 +207,13 @@ def mine(root_node, nutrition_target, foods):
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
-    loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes, foods))
+    stats = loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes, foods))
     loop.close()
     
     # Print stats
     _logger.info(top_recipes.format_stats())
-    _logger.info('Recipes scored: {}'.format(miner.recipes_scored))
-    _logger.info('Recipes skipped (already visited): {}'.format(miner.recipes_revisited))
+    _logger.info('Recipes scored: {}'.format(stats.recipes_scored))
+    _logger.info('Recipes skipped (already visited): {}'.format(stats.recipes_skipped_due_to_visited))
     
     return top_recipes
 

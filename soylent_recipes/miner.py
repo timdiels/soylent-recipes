@@ -20,6 +20,7 @@ from textwrap import dedent
 from itertools import chain
 from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes.various import TopK
+import attr
 
 _logger = logging.getLogger(__name__)
 
@@ -119,10 +120,6 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
         '''
         return len(self._leafs) + len(self._branches)
 
-# TODO this a weird mix of global, add a Context class (probably spanning just the mining context)
-recipes_scored = 0
-recipes_revisited = 0  # recipes rejected due to already having been visited
-
 class Recipes(object):
     
     '''
@@ -141,6 +138,16 @@ class Recipes(object):
         self._nutrition_target = nutrition_target
         self._foods = all_foods
         self._visited = set()
+        self._recipes_scored = 0
+        self._recipes_skipped_due_to_visited = 0  # recipes rejected due to already having been visited
+        
+    @property
+    def recipes_scored(self):
+        return self._recipes_scored
+    
+    @property
+    def recipes_skipped_due_to_visited(self):
+        return self._recipes_skipped_due_to_visited
         
     def create(self, clusters):
         '''
@@ -158,10 +165,10 @@ class Recipes(object):
         
         # When we've already visited the recipe, skip it
         if clusters in self._visited:
-            global recipes_revisited
-            recipes_revisited += 1
+            self._recipes_skipped_due_to_visited += 1
             return None
         else:
+            self._recipes_scored += 1
             self._visited.add(clusters)
             return Recipe(clusters, self._nutrition_target, self._foods)
         
@@ -220,9 +227,6 @@ class Recipe(object):
         # Solve diet problem resulting in scored recipe
         foods = all_foods[[cluster.food_index for cluster in self.clusters]]
         self._score, self._amounts = solver.solve(nutrition_target, foods)
-#         print(self._score[1])
-        global recipes_scored
-        recipes_scored += 1
     
     @property
     def clusters(self):
@@ -311,6 +315,11 @@ class Recipe(object):
     def __repr__(self):
         return 'Recipe(clusters=[{}])'.format(' '.join(str(cluster.id_) for cluster in self.clusters))
         
+@attr.s(frozen=True)
+class Stats(object):
+    recipes_scored = attr.ib()
+    recipes_skipped_due_to_visited = attr.ib()
+    
 # Note: the current miner revisits recipes, which are then ignored by
 # TopRecipes. This is how it ends up at the same point:
 #
@@ -338,6 +347,10 @@ def mine(root_node, nutrition_target, top_recipes, foods):
     top_recipes : TopK
     foods : pd.DataFrame
         All normalized foods, matching the food indices referenced by the cluster nodes.
+        
+    Returns
+    -------
+    Stats
     '''
     assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
     _logger.info('Mining')
@@ -348,7 +361,7 @@ def mine(root_node, nutrition_target, top_recipes, foods):
     for recipe in top_recipes.pop_branches():
         # return when cancelled
         if cancel:
-            return
+            break
         
         # Split cluster
         next_cluster = recipe.next_cluster
@@ -375,6 +388,11 @@ def mine(root_node, nutrition_target, top_recipes, foods):
             recipe = recipes.replace(recipe, [next_cluster], [next_cluster.leaf_node])
             if recipe:
                 top_recipes.push(recipe)
+                
+    return Stats(
+        recipes.recipes_scored,
+        recipes.recipes_skipped_due_to_visited
+    )
     
     # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
     #TODO we could throw out any foods that aren't contributing once we
