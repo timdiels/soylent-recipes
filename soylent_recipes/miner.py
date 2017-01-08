@@ -15,7 +15,6 @@
 
 import logging
 from soylent_recipes import solver
-import numpy as np
 import pandas as pd
 from textwrap import dedent
 from itertools import chain
