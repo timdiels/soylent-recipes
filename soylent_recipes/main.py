@@ -247,5 +247,5 @@ def output_result(foods, nutrition_target, top_recipes):
     with open('recipes.txt', 'w') as f:
         f.write('Amounts are in grams of edible portion. E.g. if the food has bones, you should\n')
         f.write('weigh without the bones.\n\n')
-        f.write(('\n\n' + '-'*60 + '\n\n').join(format_recipe(recipe) for recipe in top_recipes))
+        f.write(('\n\n' + '-'*60 + '\n\n').join(format_recipe(recipe) for recipe in top_recipes if recipe.is_leaf))
     
