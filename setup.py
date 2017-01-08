@@ -42,6 +42,7 @@ setup(
                             'cvxopt',
                             'numpy',
                             'pandas',
+                            'tabulate',
                             'colored-traceback'],
     'keywords': 'soylent diet-problem',
     'license': 'GPL3',

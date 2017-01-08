@@ -19,9 +19,11 @@ from chicken_turtle_util import click as click_, logging as logging_
 import click
 from soylent_recipes import __version__
 from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, miner, cluster as cluster_, tree
+from tabulate import tabulate
 import asyncio
 import signal
 import numpy as np
+import pandas as pd
 import colored_traceback
 
 _logger = logging.getLogger(__name__)
@@ -229,10 +231,16 @@ def output_result(foods, nutrition_target, top_recipes):
          
         # amounts
         rounded_amounts = recipe.amounts.round()
-        lines = ['{:.0f}g - {}'.format(amount, food_name) for amount, food_name in zip(rounded_amounts, food_names)]
-        lines.append('=')
-        lines.append('{:.0f}g'.format(rounded_amounts.sum()))
-        amounts = '\n'.join(lines)
+        df = pd.concat(
+            [
+                pd.Series(rounded_amounts, name='amount').apply('{:.0f}g'.format), 
+                pd.Series(food_names, name='food')
+            ],
+            axis=1
+        )
+        df.loc['append1'] = ['=', '']
+        df.loc['append2'] = ['{:.0f}g'.format(rounded_amounts.sum()), '']
+        amounts = tabulate(df, showindex=False, tablefmt='plain')
         
         # nutrition
         nutrition_ = recipe_foods.transpose().dot(recipe.amounts)
