@@ -208,7 +208,7 @@ class TestTopRecipes(object):
     
     @pytest.fixture
     def top_recipes(self):
-        return TopRecipes(k=100)  # high enough k such that pruning does not kick in
+        return TopRecipes(max_leafs=100, max_branches=100)  # high enough k such that pruning does not kick in
     
     def test_push(self, top_recipes):
         '''
@@ -292,19 +292,26 @@ class TestTopRecipes(object):
     @pytest.mark.parametrize('is_leaf', (False, True))
     def test_push_more_than_k(self, is_leaf):
         '''
-        When pushing more than k branches, prune
+        When pushing more than max_branches branches, prune
         
-        The analog holds for leafs. I.e. the max size of top recipes is 2k = k
-        leafs + k branches.
+        The analog holds for leafs.
         '''
-        top_recipes = TopRecipes(k=2)
-        def recipe(max_distance, sub_score):
+        kwargs = dict(
+            max_leafs=4,
+            max_branches=4,
+        )
+        if is_leaf:
+            kwargs['max_leafs'] = 2
+        else:
+            kwargs['max_branches'] = 2
+        top_recipes = TopRecipes(**kwargs)
+        def recipe(max_distance, sub_score, is_leaf):
             return mocks.Recipe(is_leaf=is_leaf, max_distance=max_distance, score=(False, sub_score))
         
         # When k recipes have better score, prune recipe
-        recipe5_10 = recipe(max_distance=5.0, sub_score=10.0)
-        recipe5_9 = recipe(max_distance=5.0, sub_score=9.0)
-        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0)
+        recipe5_10 = recipe(max_distance=5.0, sub_score=10.0, is_leaf=is_leaf)
+        recipe5_9 = recipe(max_distance=5.0, sub_score=9.0, is_leaf=is_leaf)
+        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0, is_leaf=is_leaf)
         top_recipes.push(recipe5_10)
         top_recipes.push(recipe5_8)
         top_recipes.push(recipe5_9)
@@ -315,6 +322,13 @@ class TestTopRecipes(object):
         assert set(top_recipes) == {recipe5_10, recipe5_9}
         
         # Pushing in between prunes fine too (and max_distance does not matter)
-        recipe4_9h = recipe(max_distance=4.0, sub_score=9.5)
+        recipe4_9h = recipe(max_distance=4.0, sub_score=9.5, is_leaf=is_leaf)
         top_recipes.push(recipe4_9h)
         assert set(top_recipes) == {recipe5_10, recipe4_9h}
+        
+        # Check the other kind of recipe used the other maximum set, i.e. 4
+        original = len(top_recipes)
+        for _ in range(5):
+            top_recipes.push(recipe(1.0, 1.0, not is_leaf))
+        added = len(top_recipes) - original
+        assert added == 4  # 4 got added, 1 got pruned

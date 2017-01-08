@@ -35,15 +35,14 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
     scoring branch/leaf respectively.
     '''
     
-    def __init__(self, k):
-        self._k = k
+    def __init__(self, max_leafs, max_branches):
         self._key = lambda recipe: recipe.score
         self._pushed = False
-        self._leafs = TopK(k, self._key)
-        self._branches = TopK(k, self._key)
+        self._leafs = TopK(max_leafs, self._key)
+        self._branches = TopK(max_branches, self._key)
         
         # Note: pruning will be unused so long as k>=max_branches, given how we use this
-        self._branches_by_max_distance = TopK(k, lambda recipe: -recipe.max_distance) 
+        self._branches_by_max_distance = TopK(max_branches, lambda recipe: -recipe.max_distance) 
     
     def __iter__(self):
         '''
@@ -114,6 +113,12 @@ class TopRecipes(object): #TODO k -> max_branches, max_leafs
                 max_distances='\n'.join('{:.2f}: {}'.format(max_distance, count) for max_distance, count in max_distances.value_counts().sort_index().items())
             )
         )
+        
+    def __len__(self):
+        '''
+        Number of recipes (leaf or branch) in top
+        '''
+        return len(self._leafs) + len(self._branches)
 
 # TODO this a weird mix of global, add a Context class (probably spanning just the mining context)
 recipes_scored = 0
