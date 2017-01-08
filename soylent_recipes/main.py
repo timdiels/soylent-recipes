@@ -238,6 +238,7 @@ def output_result(foods, nutrition_target, top_recipes):
             ],
             axis=1
         )
+        df = df.sort_values(['food'])
         df.loc['append1'] = ['=', '']
         df.loc['append2'] = ['{:.0f}g'.format(rounded_amounts.sum()), '']
         amounts = tabulate(df, showindex=False, tablefmt='plain')
@@ -248,6 +249,7 @@ def output_result(foods, nutrition_target, top_recipes):
         nutrition.insert(1, 'max_err', (nutrition['max'] < nutrition_).apply(lambda x: '!' if x else ''))
         nutrition.insert(1, 'actual', nutrition_)
         nutrition.insert(1, 'min_err', (nutrition['min'] > nutrition_).apply(lambda x: '!' if x else ''))
+        nutrition = nutrition.sort_index()
         
         #
         return 'Score: {}\n\n{}\n\n{}'.format(recipe.score, amounts, nutrition.to_string())
