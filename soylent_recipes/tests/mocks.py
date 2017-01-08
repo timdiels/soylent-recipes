@@ -14,13 +14,13 @@
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
 import attr
-from soylent_recipes.mining.recipes import Recipe as _Recipe
+from soylent_recipes.mining.cluster_recipe import ClusterRecipe as _ClusterRecipe
 
 @attr.s(cmp=False, hash=False)
-class Recipe(object):
+class ClusterRecipe(object):
     
     '''
-    Mock of soylent_recipes.miner.Recipe
+    Mock of soylent_recipes.mining.cluster_recipe.ClusterRecipe
     '''
     
     clusters = attr.ib(default=())
@@ -31,7 +31,7 @@ class Recipe(object):
     max_distance = attr.ib(default=0.0)
     is_leaf = attr.ib(default=True)
     
-    __lt__ = _Recipe.__lt__
-    __len__ = _Recipe.__len__
-    __eq__ = _Recipe.__eq__
-    __hash__ = _Recipe.__hash__
+    __lt__ = _ClusterRecipe.__lt__
+    __len__ = _ClusterRecipe.__len__
+    __eq__ = _ClusterRecipe.__eq__
+    __hash__ = _ClusterRecipe.__hash__

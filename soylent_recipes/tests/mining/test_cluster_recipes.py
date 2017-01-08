@@ -14,12 +14,13 @@
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Test soylent_recipes.mining.recipes
+Test soylent_recipes.mining.cluster_recipe
 '''
 
-from soylent_recipes.mining.recipes import Recipes
+from soylent_recipes.mining.cluster_recipe import ClusterRecipes, TopClusterRecipes
 from soylent_recipes.cluster import Leaf, Branch
 from soylent_recipes.tests.various import NutritionTarget
+from soylent_recipes.tests import mocks
 from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes import solver
 from functools import partial
@@ -42,10 +43,10 @@ def patch_solve(mocker, score=(False, 0.0), amounts=None):
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
     
-class TestRecipe(object):
+class TestClusterRecipe(object):
     
     '''
-    Test Recipe and Recipes.create
+    Test ClusterRecipe and ClusterRecipes.create
     '''
     
     def test_branch(self, mocker, nutrition_target):
@@ -93,7 +94,7 @@ class TestRecipe(object):
         ]
         
         # Create and assert
-        recipe = Recipes(nutrition_target, foods_).create(clusters)
+        recipe = ClusterRecipes(nutrition_target, foods_).create(clusters)
         assert recipe.score == score  # matches return of `solve`
         assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
         assert recipe.solved  # score[0] == recipe.solved
@@ -111,7 +112,7 @@ class TestRecipe(object):
         patch_solve(mocker, score)
         node = Leaf(id_=1, food_index=0)
         foods = np.ones((1,1))
-        recipe = Recipes(nutrition_target, foods).create([node])
+        recipe = ClusterRecipes(nutrition_target, foods).create([node])
         assert not recipe.solved  # score[0] == recipe.solved
         
     def test_leaf(self, mocker, nutrition_target, score):
@@ -121,13 +122,13 @@ class TestRecipe(object):
         patch_solve(mocker)
         node = Leaf(id_=1, food_index=0)
         foods = np.ones((1,1))
-        recipe = Recipes(nutrition_target, foods).create([node])
+        recipe = ClusterRecipes(nutrition_target, foods).create([node])
         assert recipe.is_leaf  # all clusters are leafs => is_leaf
         assert recipe.max_distance == 0.0
         with pytest.raises(InvalidOperationError):
             recipe.next_cluster
         
-class TestRecipes(object):
+class TestClusterRecipes(object):
     
     # Note trivial case of create() has already been tested above
     
@@ -138,7 +139,7 @@ class TestRecipes(object):
         patch_solve(mocker)
         nodes = [Leaf(id_=i, food_index=i) for i in range(2)]
         foods = np.ones((len(nodes),1))
-        recipes = Recipes(nutrition_target, foods)
+        recipes = ClusterRecipes(nutrition_target, foods)
         
         # First time, return recipe
         assert recipes.create([nodes[0], nodes[1]]) is not None
@@ -154,7 +155,7 @@ class TestRecipes(object):
         mocker.patch.object(solver, 'solve', solve)
         nodes = [Leaf(id_=i, food_index=i) for i in range(4)]
         foods = np.ones((4,1))
-        recipes = Recipes(nutrition_target, foods)
+        recipes = ClusterRecipes(nutrition_target, foods)
         recipe = recipes.create([nodes[0]])
         
         # When replacee == replacement, raise
@@ -200,4 +201,133 @@ class TestRecipes(object):
         recipe = recipes.replace(recipe, [nodes[0]], [nodes[2], nodes[3]])
         assert set(recipe.clusters) == {nodes[1], nodes[2], nodes[3]}
         
-        assert solve.call_count == 8  # number of successful Recipe creations (don't forget about the first recipe)
+        assert solve.call_count == 8  # number of successful ClusterRecipe creations (don't forget about the first recipe)
+        
+class TestTopClusterRecipes(object):
+    
+    @pytest.fixture
+    def top_recipes(self):
+        return TopClusterRecipes(max_leafs=100, max_branches=100)  # high enough k such that pruning does not kick in
+    
+    def test_push(self, top_recipes):
+        '''
+        Test push and iter (not exceeding k)
+        '''
+        # When created, iter empty
+        assert list(top_recipes) == []
+        
+        # When push None, raise
+        with pytest.raises(ValueError):
+            top_recipes.push(None)
+            
+        # When push some, pushed recipes appear in iter, sorted descendingly by score
+        leaf = mocks.ClusterRecipe(score=3)
+        branch = mocks.ClusterRecipe(is_leaf=False, score=2)
+        leaf2 = mocks.ClusterRecipe(score=1)
+        top_recipes.push(branch)
+        top_recipes.push(leaf)
+        top_recipes.push(leaf2)
+        assert list(top_recipes) == [leaf, branch, leaf2]
+        
+    def test_pushed(self, top_recipes):
+        # When constructed, not pushed
+        assert not top_recipes.pushed
+        
+        # When pushed, pushed
+        top_recipes.push(mocks.ClusterRecipe())
+        assert top_recipes.pushed
+        
+        # When unset, no longer pushed
+        top_recipes.unset_pushed()
+        assert not top_recipes.pushed
+        
+        # When pushed again, pushed
+        top_recipes.push(mocks.ClusterRecipe())
+        assert top_recipes.pushed
+
+    def test_pop_branches(self, top_recipes):
+        def Branch():
+            return mocks.ClusterRecipe(is_leaf=False)
+        # When constructed, nothing to pop
+        assert list(top_recipes.pop_branches()) == []
+        
+        # When push branch, it's returned in pop
+        branch = Branch()
+        top_recipes.push(branch)
+        assert list(top_recipes.pop_branches()) == [branch]
+        
+        # When push branch while iterating, it's returned as well
+        branch2 = Branch()
+        top_recipes.push(branch)
+        first = True
+        actual = []
+        for recipe in top_recipes.pop_branches():
+            actual.append(recipe)
+            if first:
+                top_recipes.push(branch2)
+                first = False
+        assert actual == [branch, branch2]
+        
+        # When push leafs and branches, only pop branches
+        leaf = mocks.ClusterRecipe(is_leaf=True)
+        top_recipes.push(leaf)
+        top_recipes.push(branch)
+        assert list(top_recipes.pop_branches()) == [branch]
+        
+    def test_pop_branches_order(self, top_recipes):
+        '''
+        Pop by descending max_distance
+        '''
+        recipe1 = mocks.ClusterRecipe(is_leaf=False, max_distance=30.0, score=(False, 6.0))
+        recipe2 = mocks.ClusterRecipe(is_leaf=False, max_distance=20.0, score=(False, 3.0))
+        recipe3 = mocks.ClusterRecipe(is_leaf=False, max_distance=10.0, score=(False, 4.0))
+        
+        # Push in one order and check
+        top_recipes.push(recipe3)
+        top_recipes.push(recipe2)
+        top_recipes.push(recipe1)
+        assert list(top_recipes.pop_branches()) == [recipe1, recipe2, recipe3]
+        
+    @pytest.mark.parametrize('is_leaf', (False, True))
+    def test_push_more_than_k(self, is_leaf):
+        '''
+        When pushing more than max_branches branches, prune
+        
+        The analog holds for leafs.
+        '''
+        kwargs = dict(
+            max_leafs=4,
+            max_branches=4,
+        )
+        if is_leaf:
+            kwargs['max_leafs'] = 2
+        else:
+            kwargs['max_branches'] = 2
+        top_recipes = TopClusterRecipes(**kwargs)
+        def recipe(max_distance, sub_score, is_leaf):
+            return mocks.ClusterRecipe(is_leaf=is_leaf, max_distance=max_distance, score=(False, sub_score))
+        
+        # When k recipes have better score, prune recipe
+        recipe5_10 = recipe(max_distance=5.0, sub_score=10.0, is_leaf=is_leaf)
+        recipe5_9 = recipe(max_distance=5.0, sub_score=9.0, is_leaf=is_leaf)
+        recipe5_8 = recipe(max_distance=5.0, sub_score=8.0, is_leaf=is_leaf)
+        top_recipes.push(recipe5_10)
+        top_recipes.push(recipe5_8)
+        top_recipes.push(recipe5_9)
+        assert set(top_recipes) == {recipe5_10, recipe5_9}
+        
+        # Order in which we push does not matter
+        top_recipes.push(recipe5_8)
+        assert set(top_recipes) == {recipe5_10, recipe5_9}
+        
+        # Pushing in between prunes fine too (and max_distance does not matter)
+        recipe4_9h = recipe(max_distance=4.0, sub_score=9.5, is_leaf=is_leaf)
+        top_recipes.push(recipe4_9h)
+        assert set(top_recipes) == {recipe5_10, recipe4_9h}
+        
+        # Check the other kind of recipe used the other maximum set, i.e. 4
+        original = len(top_recipes)
+        for _ in range(5):
+            top_recipes.push(recipe(1.0, 1.0, not is_leaf))
+        added = len(top_recipes) - original
+        assert added == 4  # 4 got added, 1 got pruned

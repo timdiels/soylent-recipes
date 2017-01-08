@@ -16,7 +16,10 @@
 import logging
 import attr
 from soylent_recipes.various import profile
-from soylent_recipes.mining.recipes import Recipes
+from soylent_recipes.mining.cluster_recipe import ClusterRecipes, TopClusterRecipes
+from soylent_recipes.mining.recipe import Recipe
+from soylent_recipes.mining.top_k import TopK
+import numpy as np
 
 _logger = logging.getLogger(__name__)
 
@@ -44,13 +47,14 @@ class Miner(object):
     
     def __init__(self):
         self._cancel = False
+        self._max_foods = 20
         
     def cancel(self):
         _logger.info('Cancelling')
         self._cancel = True
         
 #     @profile()
-    def mine(self, root_node, nutrition_target, top_recipes, foods):
+    def mine_cluster_walk(self, root_node, nutrition_target, foods):
         '''
         Mine recipes
         
@@ -59,18 +63,20 @@ class Miner(object):
         root_node : soylent_recipes.cluster.Node
             Root node of hierarchical clustering of normalized foods
         nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
-        top_recipes : TopK
+        max_
         foods : pd.DataFrame
             All normalized foods, matching the food indices referenced by the cluster nodes.
             
         Returns
         -------
         Stats
+        [Recipe]
+            Recipes sorted by descending score.
         '''
         assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
-        _logger.info('Mining')
-        max_foods = 20
-        recipes = Recipes(nutrition_target, foods.values)
+        _logger.info('Mining: cluster crawl')
+        recipes = ClusterRecipes(nutrition_target, foods.values)
+        top_recipes = TopClusterRecipes(max_leafs=10, max_branches=1000)
         top_recipes.push(recipes.create([root_node]))
         
         for recipe in top_recipes.pop_branches():
@@ -84,7 +90,7 @@ class Miner(object):
             recipe_both = recipes.replace(recipe, [next_cluster], [left, right])
             top_recipes.unset_pushed()
             if recipe_both and (recipe_both.score > recipe.score or not recipe.solved): #TODO always true, because never solved
-                if len(recipe_both) <= max_foods:
+                if len(recipe_both) <= self._max_foods:
                     # We have room for both and we know it improves score, so add it
                     top_recipes.push(recipe_both)
                 else:
@@ -103,16 +109,39 @@ class Miner(object):
                 recipe = recipes.replace(recipe, [next_cluster], [next_cluster.leaf_node])
                 if recipe:
                     top_recipes.push(recipe)
-                    
-        return Stats(
+        
+        _logger.info(top_recipes.format_stats())
+        stats = Stats(
             recipes.recipes_scored,
             recipes.recipes_skipped_due_to_visited
         )
+        return stats, [recipe for recipe in top_recipes if recipe.is_leaf]
         
         # old: did not yield any results in reasonable time, but then again wasn't tested for correctness either. Still, this bruteforce likely wouldn't have worked; far too large search space.
         #TODO we could throw out any foods that aren't contributing once we
         #`solved` flips to True. But in a way that history is kept so that
         #we can go back when index changes
         # Simply finding the first good combo takes a looong time
-                        
+        
+    def mine_random(self, nutrition_target, foods):
+        '''
+        Returns
+        -------
+        Stats
+        [Recipe]
+            Recipes sorted by descending score.
+        '''
+        _logger.info('Mining: randomly')
+        top_recipes = TopK(1000, key=lambda recipe: recipe.score)
+        recipes_scored = 0
+        foods_ = foods.values
+        while not self._cancel:
+            food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
+            top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
+            recipes_scored += 1
             
+        stats = Stats(
+            recipes_scored,
+            recipes_skipped_due_to_visited=0
+        )
+        return stats, list(top_recipes)

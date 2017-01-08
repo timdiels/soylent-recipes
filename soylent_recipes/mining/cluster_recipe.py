@@ -13,10 +13,109 @@
 # You should have received a copy of the GNU General Public License
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
-from soylent_recipes import solver
 from chicken_turtle_util.exceptions import InvalidOperationError
+import pandas as pd
+import numpy as np
+from textwrap import dedent
+from itertools import chain
+from soylent_recipes.mining.top_k import TopK
+from soylent_recipes.mining.recipe import Recipe
 
-class Recipes(object):
+class TopClusterRecipes(object):
+    
+    '''
+    List of top recipes
+    
+    Keeps k branches, k leafs. When exceeding k branches/leafs, drops the lowest
+    scoring branch/leaf respectively.
+    '''
+    
+    def __init__(self, max_leafs, max_branches):
+        self._key = lambda recipe: recipe.score
+        self._pushed = False
+        self._leafs = TopK(max_leafs, self._key)
+        self._branches = TopK(max_branches, self._key)
+        
+        # Note: pruning will be unused so long as k>=max_branches, given how we use this
+        self._branches_by_max_distance = TopK(max_branches, lambda recipe: -recipe.max_distance) 
+    
+    def __iter__(self):
+        '''
+        Yield top recipes, ordered by descending score
+        '''
+        return iter(sorted(chain(self._leafs, self._branches), reverse=True, key=self._key))
+    
+    def pop_branches(self):
+        '''
+        Yield all branch recipes sorted by descending max_distance
+        
+        Manipulating/accessing the TopK object while iterating is
+        supported/safe. Any branch recipes pushed while iterating will be
+        yielded.
+        
+        Yields
+        ------
+        ClusterRecipe
+        '''
+        while self._branches:
+            recipe = self._branches_by_max_distance.pop()
+            self._branches.remove(recipe)
+            assert len(self._branches) == len(self._branches_by_max_distance), '{} == {}'.format(len(self._branches), len(self._branches_by_max_distance))
+            yield recipe
+        
+    def unset_pushed(self):
+        self._pushed = False
+        
+    def push(self, recipe):
+        if recipe is None:
+            raise ValueError("recipe is None. It shouldn't.")
+        
+        #
+        if recipe.is_leaf:
+            recipes = self._leafs
+        else:
+            recipes = self._branches
+        popped = recipes.push(recipe)
+        pushed = popped != recipe
+        if pushed:
+            self._pushed = True
+            if not recipe.is_leaf:
+                if popped is not None:
+                    self._branches_by_max_distance.remove(popped)
+                self._branches_by_max_distance.push(recipe)
+        assert len(self._branches) == len(self._branches_by_max_distance), '{} == {}'.format(len(self._branches), len(self._branches_by_max_distance))
+        
+    @property
+    def pushed(self):
+        '''
+        Whether a recipe has been pushed since the last call to `unset_pushed`
+        (or since construction)
+        '''
+        return self._pushed
+    
+    def format_stats(self):
+        recipes = list(self._leafs) + list(self._branches)
+        max_distances = pd.Series(recipe.max_distance for recipe in recipes)
+        return (
+            dedent('''\
+                Solved: {solved}/{total}
+                Counts grouped by max_distance:
+                {max_distances} 
+            ''')
+            .format(
+                solved=sum(recipe.solved for recipe in recipes),
+                total=len(recipes),
+                max_distances='\n'.join('{:.2f}: {}'.format(max_distance, count) for max_distance, count in max_distances.value_counts().sort_index().items())
+            )
+        )
+        
+    def __len__(self):
+        '''
+        Number of recipes (leaf or branch) in top
+        '''
+        return len(self._leafs) + len(self._branches)
+
+class ClusterRecipes(object):
     
     '''
     Context of created recipes
@@ -51,8 +150,8 @@ class Recipes(object):
         
         Returns
         -------
-        Recipe or None
-            Recipe if first time creating it, None otherwise.
+        ClusterRecipe or None
+            ClusterRecipe if first time creating it, None otherwise.
         '''
         # clusters
         if not clusters:
@@ -66,7 +165,7 @@ class Recipes(object):
         else:
             self._recipes_scored += 1
             self._visited.add(clusters)
-            return Recipe(clusters, self._nutrition_target, self._foods)
+            return ClusterRecipe(clusters, self._nutrition_target, self._foods)
         
     def replace(self, recipe, replacee, replacement):
         '''
@@ -74,7 +173,7 @@ class Recipes(object):
         
         Parameters
         ----------
-        recipe : Recipe
+        recipe : ClusterRecipe
             Recipe whose clusters to start from
         replacee : Iterable(_Cluster)
             One or more clusters to replace
@@ -83,7 +182,7 @@ class Recipes(object):
             
         Returns
         -------
-        Recipe
+        ClusterRecipe
             Recipe with clusters replaced
         '''
         if not replacee:
@@ -100,12 +199,14 @@ class Recipes(object):
         assert len(set(clusters)) == len(clusters)
         return self.create(clusters)
 
-class Recipe(object):
+class ClusterRecipe(object):
     
     '''
-    A recipe: which foods, how much of each, resulting score.
+    Recipe of food nodes
     
-    Do not create directly, use Recipes.create instead.
+    Do not create directly, use ClusterRecipes.create instead.
+    
+    Implements soylent_recipes.mining.recipe.Recipe.
     
     Parameters
     ----------
@@ -119,11 +220,8 @@ class Recipe(object):
     
     def __init__(self, clusters, nutrition_target, all_foods):
         self._clusters = clusters
+        self._recipe = Recipe(np.fromiter((cluster.food_index for cluster in self.clusters), int), nutrition_target, all_foods)
         
-        # Solve diet problem resulting in scored recipe
-        foods = all_foods[[cluster.food_index for cluster in self.clusters]]
-        self._score, self._amounts = solver.solve(nutrition_target, foods)
-    
     @property
     def clusters(self):
         '''
@@ -134,35 +232,6 @@ class Recipe(object):
         tuple(soylent_recipes.cluster.Node)
         '''
         return self._clusters
-    
-    @property
-    def score(self):
-        '''
-        Score of recipe. 
-        
-        Returns
-        -------
-        (solved :: bool, sub_score :: float)
-            sub_score is never NaN.
-        '''
-        return self._score
-    
-    @property
-    def solved(self):
-        return self._score[0]
-    
-    @property
-    def amounts(self):
-        '''
-        Amount of each food to use to achieve the most optimal score `score`.
-        
-        `amounts[i]` is the amount of `clusters[i].food` to use.
-        
-        Returns
-        -------
-        np.array([float])
-        '''
-        return self._amounts
     
     @property
     def max_distance(self):
@@ -209,4 +278,8 @@ class Recipe(object):
         return len(self.clusters)
     
     def __repr__(self):
-        return 'Recipe(clusters=[{}])'.format(' '.join(str(cluster.id_) for cluster in self.clusters))
+        return 'ClusterRecipe(clusters=[{}])'.format(' '.join(str(cluster.id_) for cluster in self.clusters))
+    
+    def __getattr__(self, attr):
+        return getattr(self._recipe, attr)
+    

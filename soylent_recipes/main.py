@@ -20,13 +20,13 @@ import click
 from soylent_recipes import __version__
 from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, cluster as cluster_, tree
 from soylent_recipes.mining.miners import Miner
-from soylent_recipes.mining.top_recipes import TopRecipes
 from tabulate import tabulate
 import asyncio
 import signal
 import numpy as np
 import pandas as pd
 import colored_traceback
+from functools import partial
 
 _logger = logging.getLogger(__name__)
 
@@ -200,18 +200,26 @@ def mine(root_node, nutrition_target, foods):
     TopRecipes
     '''
     loop = asyncio.get_event_loop()
-    top_recipes = TopRecipes(max_leafs=10, max_branches=1000)
     miner = Miner()
     cancel = miner.cancel  # Note: cancelling an executor does not cancel the thread running inside
     loop.add_signal_handler(signal.SIGHUP, cancel)
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
-    stats = loop.run_until_complete(loop.run_in_executor(None, miner.mine, root_node, nutrition_target, top_recipes, foods))
+    # Choose mining/search algorithm
+    miner_algorithm = 'random'
+    if miner_algorithm == 'cluster_walk':
+        mine = partial(miner.mine_cluster_walk, root_node, nutrition_target, foods)
+    elif miner_algorithm == 'random':
+        mine = partial(miner.mine_random, nutrition_target, foods)
+    else:
+        assert False
+    
+    # Mine
+    stats, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
     loop.close()
     
     # Print stats
-    _logger.info(top_recipes.format_stats())
     _logger.info('Recipes scored: {}'.format(stats.recipes_scored))
     _logger.info('Recipes skipped (already visited): {}'.format(stats.recipes_skipped_due_to_visited))
     
@@ -222,11 +230,11 @@ def output_result(foods, nutrition_target, top_recipes):
     foods : pd.DataFrame
         Foods before normalisation
     nutrition_target : NutritionTarget
-    top_recipes : TopRecipes
+    top_recipes : [Recipe]
     '''
     # Write recipes.txt
     def format_recipe(recipe):
-        recipe_foods = foods.iloc[[cluster.food_index for cluster in recipe.clusters]]
+        recipe_foods = foods.iloc[recipe.food_indices]
         food_names = recipe_foods.index
          
         # amounts
@@ -257,5 +265,5 @@ def output_result(foods, nutrition_target, top_recipes):
     with open('recipes.txt', 'w') as f:
         f.write('Amounts are in grams of edible portion. E.g. if the food has bones, you should\n')
         f.write('weigh without the bones.\n\n')
-        f.write(('\n\n' + '-'*60 + '\n\n').join(format_recipe(recipe) for recipe in top_recipes if recipe.is_leaf))
+        f.write(('\n\n' + '-'*60 + '\n\n').join(format_recipe(recipe) for recipe in top_recipes))
     
