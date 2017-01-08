@@ -181,3 +181,22 @@ class TopK(object):
         '''
         yield from (item.object_ for item in self._items_heap if not item.removed)
     
+#TODO add to CTU        
+import cProfile
+import pyprof2calltree
+import functools
+class profile(object):
+    
+    def __call__(self, f):
+        @functools.wraps(f)
+        def profiled(*args, **kwargs):
+            profile = cProfile.Profile()
+            profile.enable()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                profile.disable()
+                profile.dump_stats('profile.cprofile')
+                pyprof2calltree.convert(profile.getstats(), 'profile.kgrind')
+                pyprof2calltree.visualize(profile.getstats())
+        return profiled

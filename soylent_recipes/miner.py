@@ -312,27 +312,6 @@ class Recipe(object):
     def __repr__(self):
         return 'Recipe(clusters=[{}])'.format(' '.join(str(cluster.id_) for cluster in self.clusters))
         
-#TODO add to CTU        
-import cProfile
-import pyprof2calltree
-import functools
-class profile(object):
-    
-    def __call__(self, f):
-        @functools.wraps(f)
-        def profiled(*args, **kwargs):
-            profile = cProfile.Profile()
-            profile.enable()
-            try:
-                return f(*args, **kwargs)
-            finally:
-                profile.disable()
-                profile.dump_stats('profile.cprofile')
-                pyprof2calltree.convert(profile.getstats(), 'profile.kgrind')
-                pyprof2calltree.visualize(profile.getstats())
-        return profiled
-            
-
 # Note: the current miner revisits recipes, which are then ignored by
 # TopRecipes. This is how it ends up at the same point:
 #
