@@ -34,7 +34,8 @@ _logger = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
 @click_.option('--output-clustering', is_flag=True, help='Output clustering* files summarizing/displaying the clustering')
-def main(usda_directory, output_clustering):
+@click_.option('--miner', 'miner_algorithm', type=click.Choice(['cluster_walk', 'random']), help='Miner to use')
+def main(usda_directory, output_clustering, miner_algorithm):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
@@ -51,10 +52,13 @@ def main(usda_directory, output_clustering):
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
     normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
-    root_node = cluster_.agglomerative(normalized_foods)
-    if output_clustering:
-        tree.write(root_node, foods)
-    top_recipes = mine(root_node, normalized_nutrition_target, normalized_foods)
+    if miner_algorithm == 'cluster_walk':
+        root_node = cluster_.agglomerative(normalized_foods)
+        if output_clustering:
+            tree.write(root_node, foods)
+    else:
+        root_node = None
+    top_recipes = mine(root_node, normalized_nutrition_target, normalized_foods, miner_algorithm)
     output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
@@ -186,7 +190,7 @@ def normalize(foods, nutrition_target):
     # Return
     return foods, nutrition_target
 
-def mine(root_node, nutrition_target, foods):
+def mine(root_node, nutrition_target, foods, miner_algorithm):
     '''
     Parameters
     ----------
@@ -207,7 +211,6 @@ def mine(root_node, nutrition_target, foods):
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
     # Choose mining/search algorithm
-    miner_algorithm = 'random'
     if miner_algorithm == 'cluster_walk':
         mine = partial(miner.mine_cluster_walk, root_node, nutrition_target, foods)
     elif miner_algorithm == 'random':
