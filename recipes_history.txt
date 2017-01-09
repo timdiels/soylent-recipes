@@ -1,0 +1,408 @@
+History of recipes
+==================
+
+Top recipes from completed runs, ordered from newest to oldest versions of the
+miner. I.e. roughly ordered from "That might be edible" to "Please, no! I'll tell
+you anything, just don't feed me more!".
+
+Amounts are in grams of edible portion. E.g. if the food has bones, you should
+weigh without the bones.
+
+------------------------------------------------------------------------------
+
+First run of purely randomly selecting recipes. Performs nearly half as well as
+cluster_walk, which is the clustering based miner that's been used in previous
+runs.
+
+miner: random, k=1000, max_foods=20, run time=~25min
+foods normalized by pseudo target
+clustering: distance=RED, linkage=complete
+solver: scipy.optimize.nnls
+commit aa303a918a462944da51613cf00ffeb183832cb6
+
+Score: (False, -2.935437994431956)
+
+0g     Beef, ground, 93% lean meat / 7% fat, crumbles, cooked, pan-browned (hamburger)
+2272g  Beverages, tea, Oolong, brewed
+0g     Candies, peanut brittle, prepared-from-recipe
+112g   Cereals, corn grits, white, regular and quick, enriched, cooked with water, with salt
+0g     Cranberry juice cocktail, bottled
+0g     Emu, fan fillet, raw
+170g   Fish, grouper, mixed species, cooked, dry heat
+121g   Frankfurter, beef, pork, and turkey, fat free (hot dog, wiener, frank)
+0g     Gravy, chicken, canned or bottled, ready-to-serve
+0g     Infant formula, ABBOTT NUTRITION, SIMILAC, SENSITIVE (LACTOSE FREE) ready-to-feed, with ARA and DHA
+58g    Infant formula, NESTLE, GOOD START 2 ESSENTIALS, with iron, powder
+71g    Margarine-like, vegetable oil spread, approximately 37% fat, unspecified oils, with salt, with added vitamin D
+511g   Onions, cooked, boiled, drained, without salt
+0g     PIZZA HUT 12" Cheese Pizza, THIN 'N CRISPY Crust
+447g   Sauce, chili, peppers, hot, immature green, canned
+0g     Snacks, tortilla chips, nacho cheese
+41g    Soybeans, mature seeds, sprouted, cooked, steamed
+0g     Spinach, frozen, chopped or leaf, cooked, boiled, drained, without salt
+59g    Tomato products, canned, sauce, with tomato tidbits
+256g   Yardlong beans, mature seeds, cooked, boiled, without salt
+=
+4118g
+
+                                                            min min_err        actual max_err           max  pseudo_target
+Energy from: alpha linolenic acid                  1.050000e+04          1.122247e+04          2.100000e+04   1.575000e+04
+Energy from: carbohydrate                          7.875000e+05          8.105639e+05          1.137500e+06   9.625000e+05
+Energy from: fat                                   3.500000e+05          4.183370e+05          6.125000e+05   4.812500e+05
+Energy from: linoleic acid                         8.750000e+04          1.061912e+05          1.750000e+05   1.312500e+05
+Energy from: linoleic acid + alpha linolenic acid           NaN          1.174137e+05          1.750000e+05   8.750000e+04
+Energy from: protein                               1.750000e+05          3.973756e+05          6.125000e+05   3.937500e+05
+Energy from: sugars, added                                  NaN          2.431113e+05          4.375000e+05   2.187500e+05
+alpha linolenic acid                               1.600000e+00       !  1.246941e+00                   NaN   1.760000e+00
+calcium                                            1.000000e+00       !  7.283469e-01          2.500000e+00   1.750000e+00
+carbohydrate                                       1.300000e+02          2.049473e+02                   NaN   1.430000e+02
+carotenoids                                                 NaN          3.289396e-03          6.000000e-03   3.000000e-03
+cholesterol                                                 NaN          1.330521e-01          3.000000e-01   1.500000e-01
+choline                                            5.500000e-01       !  2.076579e-01          3.500000e+00   2.025000e+00
+copper                                             9.000000e-04          1.898477e-03          1.000000e-02   5.450000e-03
+energy                                             1.750000e+06       !  1.616447e+06          1.800000e+06   1.775000e+06
+fatty acids                                                 NaN          1.426885e+01          2.000000e+01   1.000000e+01
+fiber                                              3.800000e+01       !  2.741223e+01                   NaN   4.180000e+01
+fluoride                                           4.000000e-03       !  6.261405e-05          1.000000e-02   7.000000e-03
+folate                                             4.000000e-04          6.793932e-04          1.000000e-03   7.000000e-04
+folate, added                                               NaN          5.678167e-05          1.000000e-03   5.000000e-04
+iron                                               8.000000e-03          2.037103e-02          4.500000e-02   2.650000e-02
+linoleic acid                                      1.700000e+01       !  1.179902e+01                   NaN   1.870000e+01
+magnesium                                          4.000000e-01          5.300826e-01                   NaN   4.400000e-01
+manganese                                          2.300000e-03          7.279396e-03          1.100000e-02   6.650000e-03
+mass                                                        NaN          4.117158e+03          1.000000e+04   5.000000e+03
+niacin                                             1.600000e-02          1.633666e-02                   NaN   1.760000e-02
+pantothenic acid                                   5.000000e-03       !  4.055468e-03                   NaN   5.500000e-03
+phosphorus                                         7.000000e-01          1.454249e+00          4.000000e+00   2.350000e+00
+potassium                                          4.700000e+00          6.308326e+00                   NaN   5.170000e+00
+protein                                            6.960000e+01          1.022739e+02                   NaN   7.656000e+01
+riboflavin                                         1.300000e-03       !  1.140170e-03                   NaN   1.430000e-03
+selenium                                           5.500000e-05          1.229692e-04          4.000000e-04   2.275000e-04
+sodium                                             1.500000e+00          2.147484e+00          2.300000e+00   1.900000e+00
+thiamin                                            1.200000e-03          1.673339e-03                   NaN   1.320000e-03
+vitamin a                                          9.000000e-04          1.366305e-03                   NaN   9.900000e-04
+vitamin a, preformed                                        NaN          1.212344e-03          3.000000e-03   1.500000e-03
+vitamin b12                                        2.400000e-06          3.192693e-06                   NaN   2.640000e-06
+vitamin b6                                         1.300000e-03          2.704933e-03          1.000000e-01   5.065000e-02
+vitamin c                                          9.000000e-02          4.007796e-01          2.000000e+00   1.045000e+00
+vitamin d                                          1.500000e-05       !  1.218778e-05          1.000000e-04   5.750000e-05
+vitamin e                                          1.500000e-02          1.512476e-02                   NaN   1.650000e-02
+vitamin e, added                                            NaN          3.823181e-03          1.000000e+00   5.000000e-01
+vitamin k                                          1.200000e-04          1.400894e-04                   NaN   1.320000e-04
+zinc                                               1.100000e-02          1.219323e-02          4.000000e-02   2.550000e-02
+
+
+
+------------------------------------------------------------------------------
+
+The first recipe after the addition of the 'mass' pseudo nutrient target, which
+puts an end to meals too large to eat. max_branches is what's formerly known as k.
+
+max_branches=1000, max_foods=20
+foods normalized by pseudo target
+clustering: distance=RED, linkage=complete
+solver: scipy.optimize.nnls
+commit 4771369dc1d17a23dc8ddf516b160a0590be36db
+
+Score: (False, -1.8936910280539059)
+
+35g    Babyfood, GERBER, 2nd Foods, apple, carrot and squash, organic
+30g    Beverage, instant breakfast powder, chocolate, not reconstituted
+26g    Beverage, instant breakfast powder, chocolate, sugar-free, not reconstituted
+2g     Beverages, UNILEVER, SLIMFAST Shake Mix, powder, 3-2-1 Plan
+979g   Beverages, tea, black, brewed, prepared with tap water
+779g   Beverages, tea, instant, unsweetened, prepared with water
+22g    Cereals ready-to-eat, QUAKER, HONEY GRAHAM OH!S
+13g    Cocoa, dry powder, hi-fat or breakfast, processed with alkali
+6g     Egg, yolk, dried
+33g    Grape leaves, canned
+16g    Leavening agents, baking powder, low-sodium
+158g   Mushrooms, brown, italian, or crimini, exposed to ultraviolet light, raw
+6g     Nuts, brazilnuts, dried, unblanched (brazil nuts)
+20g    Oil, industrial, canola for salads, woks and light frying
+7g     Oil, industrial, canola with antifoaming agent, principal uses salads, woks and light frying
+1394g  Pectin, liquid
+16g    Soup, clam chowder, manhattan, canned, condensed
+55g    Soy protein isolate, potassium type
+352g   Tofu yogurt
+1071g  Vinegar, distilled
+=
+5020g
+
+                                                            min min_err        actual max_err           max  pseudo_target
+Energy from: alpha linolenic acid                  1.050000e+04          1.580476e+04          2.100000e+04   1.575000e+04
+Energy from: carbohydrate                          7.875000e+05       !  6.760593e+05          1.137500e+06   9.625000e+05
+Energy from: fat                                   3.500000e+05          4.433100e+05          6.125000e+05   4.812500e+05
+Energy from: linoleic acid                         8.750000e+04          1.014386e+05          1.750000e+05   1.312500e+05
+Energy from: linoleic acid + alpha linolenic acid           NaN          1.172433e+05          1.750000e+05   8.750000e+04
+Energy from: protein                               1.750000e+05          3.225743e+05          6.125000e+05   3.937500e+05
+Energy from: sugars, added                                  NaN          2.048460e+05          4.375000e+05   2.187500e+05
+alpha linolenic acid                               1.600000e+00          1.756085e+00                   NaN   1.760000e+00
+calcium                                            1.000000e+00          1.679936e+00          2.500000e+00   1.750000e+00
+carbohydrate                                       1.300000e+02          1.742688e+02                   NaN   1.430000e+02
+carotenoids                                                 NaN          3.101606e-03          6.000000e-03   3.000000e-03
+cholesterol                                                 NaN          1.614886e-01          3.000000e-01   1.500000e-01
+choline                                            5.500000e-01          5.885222e-01          3.500000e+00   2.025000e+00
+copper                                             9.000000e-04          4.536743e-03          1.000000e-02   5.450000e-03
+energy                                             1.750000e+06       !  1.663488e+06          1.800000e+06   1.775000e+06
+fatty acids                                                 NaN          9.707609e+00          2.000000e+01   1.000000e+01
+fiber                                              3.800000e+01          4.154492e+01                   NaN   4.180000e+01
+fluoride                                           4.000000e-03          6.263738e-03          1.000000e-02   7.000000e-03
+folate                                             4.000000e-04          8.498240e-04          1.000000e-03   7.000000e-04
+folate, added                                               NaN          3.451640e-04          1.000000e-03   5.000000e-04
+iron                                               8.000000e-03          2.689953e-02          4.500000e-02   2.650000e-02
+linoleic acid                                      1.700000e+01       !  1.127095e+01                   NaN   1.870000e+01
+magnesium                                          4.000000e-01          5.243677e-01                   NaN   4.400000e-01
+manganese                                          2.300000e-03          7.141134e-03          1.100000e-02   6.650000e-03
+mass                                                        NaN          5.020506e+03          1.000000e+04   5.000000e+03
+niacin                                             1.600000e-02          2.257773e-02                   NaN   1.760000e-02
+pantothenic acid                                   5.000000e-03       !  4.984508e-03                   NaN   5.500000e-03
+phosphorus                                         7.000000e-01          2.417410e+00          4.000000e+00   2.350000e+00
+potassium                                          4.700000e+00          5.088880e+00                   NaN   5.170000e+00
+protein                                            6.960000e+01          8.914366e+01                   NaN   7.656000e+01
+riboflavin                                         1.300000e-03          1.618053e-03                   NaN   1.430000e-03
+selenium                                           5.500000e-05          2.294081e-04          4.000000e-04   2.275000e-04
+sodium                                             1.500000e+00          1.783822e+00          2.300000e+00   1.900000e+00
+thiamin                                            1.200000e-03          1.472287e-03                   NaN   1.320000e-03
+vitamin a                                          9.000000e-04          1.147708e-03                   NaN   9.900000e-04
+vitamin a, preformed                                        NaN          1.040778e-03          3.000000e-03   1.500000e-03
+vitamin b12                                        2.400000e-06          2.502421e-06                   NaN   2.640000e-06
+vitamin b6                                         1.300000e-03          1.448434e-03          1.000000e-01   5.065000e-02
+vitamin c                                          9.000000e-02          1.043687e+00          2.000000e+00   1.045000e+00
+vitamin d                                          1.500000e-05          5.114819e-05          1.000000e-04   5.750000e-05
+vitamin e                                          1.500000e-02          1.688061e-02                   NaN   1.650000e-02
+vitamin e, added                                            NaN          8.380218e-03          1.000000e+00   5.000000e-01
+vitamin k                                          1.200000e-04          1.297354e-04                   NaN   1.320000e-04
+zinc                                               1.100000e-02          1.578024e-02          4.000000e-02   2.550000e-02
+
+------------------------------------------------------------------------------
+
+Compared to the older run, the 10-fold increase of k had little improvement.
+
+k=4000, max_foods=20
+foods normalized by pseudo target
+clustering: distance=RED, linkage=complete
+solver: scipy.optimize.nnls
+commit 28d8b4079bcd94d01ec01920e68f841ac1a5534c
+
+Score: (False, -1.8468580521462925)
+
+6g - Egg, yolk, dried
+2518g - Vinegar, distilled
+18g - Oil, canola (low erucic acid rapeseed oil)
+23g - Margarine, regular, 80% fat, composite, tub, without salt
+0g - Cereals ready-to-eat, QUAKER, CAP'N CRUNCH
+5g - Cereals ready-to-eat, QUAKER, QUAKER OAT LIFE, plain
+7g - Cereals ready-to-eat, QUAKER, Christmas Crunch
+166g - Mushrooms, brown, italian, or crimini, exposed to ultraviolet light, raw
+175g - Cauliflower, green, cooked, no salt added
+7g - Nuts, brazilnuts, dried, unblanched (brazil nuts)
+59g - Beverages, NESTLE, Boost plus, nutritional drink, ready-to-drink
+2142g - Beverages, tea, green, ready-to-drink, citrus, diet, fortified with vitamin C
+1079g - Beverages, tea, ready-to-drink, lemon, diet
+4466g - Beverages, tea, black, ready to drink, decaffeinated, diet
+10037g - Beverages, water, tap, drinking
+65g - Soy protein isolate, potassium type
+58g - Lasagna with meat sauce, frozen, prepared
+85g - Vegetable juice, BOLTHOUSE FARMS, DAILY GREENS
+40g - Gums, seed gums (includes locust bean, guar)
+50g - Beverage, instant breakfast powder, chocolate, not reconstituted
+=
+21006g
+
+                                                            min min_err        actual max_err           max  pseudo_target
+calcium                                            1.000000e+00          1.699369e+00          2.500000e+00   1.750000e+00
+copper                                             9.000000e-04          4.661987e-03          1.000000e-02   5.450000e-03
+fluoride                                           4.000000e-03          7.146345e-03          1.000000e-02   7.000000e-03
+iron                                               8.000000e-03          2.672173e-02          4.500000e-02   2.650000e-02
+magnesium                                          4.000000e-01          4.834647e-01                   NaN   4.400000e-01
+manganese                                          2.300000e-03          6.787929e-03          1.100000e-02   6.650000e-03
+phosphorus                                         7.000000e-01          2.428672e+00          4.000000e+00   2.350000e+00
+selenium                                           5.500000e-05          2.274261e-04          4.000000e-04   2.275000e-04
+zinc                                               1.100000e-02          1.863635e-02          4.000000e-02   2.550000e-02
+potassium                                          4.700000e+00          5.153523e+00                   NaN   5.170000e+00
+sodium                                             1.500000e+00          1.884927e+00          2.300000e+00   1.900000e+00
+vitamin a                                          9.000000e-04          1.133028e-03                   NaN   9.900000e-04
+vitamin a, preformed                                        NaN          1.089386e-03          3.000000e-03   1.500000e-03
+vitamin c                                          9.000000e-02          1.031365e+00          2.000000e+00   1.045000e+00
+vitamin d                                          1.500000e-05          5.479925e-05          1.000000e-04   5.750000e-05
+vitamin e                                          1.500000e-02          1.610492e-02                   NaN   1.650000e-02
+vitamin e, added                                            NaN          4.678601e-03          1.000000e+00   5.000000e-01
+vitamin k                                          1.200000e-04          1.372127e-04                   NaN   1.320000e-04
+thiamin                                            1.200000e-03          1.235032e-03                   NaN   1.320000e-03
+riboflavin                                         1.300000e-03          1.585157e-03                   NaN   1.430000e-03
+niacin                                             1.600000e-02          1.978976e-02                   NaN   1.760000e-02
+vitamin b6                                         1.300000e-03          1.963838e-03          1.000000e-01   5.065000e-02
+folate                                             4.000000e-04          8.810761e-04          1.000000e-03   7.000000e-04
+folate, added                                               NaN          3.370414e-04          1.000000e-03   5.000000e-04
+vitamin b12                                        2.400000e-06          2.847124e-06                   NaN   2.640000e-06
+pantothenic acid                                   5.000000e-03          5.094436e-03                   NaN   5.500000e-03
+choline                                            5.500000e-01       !  5.207457e-01          3.500000e+00   2.025000e+00
+carbohydrate                                       1.300000e+02          1.697045e+02                   NaN   1.430000e+02
+fiber                                              3.800000e+01          4.187194e+01                   NaN   4.180000e+01
+linoleic acid                                      1.700000e+01       !  1.164160e+01                   NaN   1.870000e+01
+alpha linolenic acid                               1.600000e+00          1.691717e+00                   NaN   1.760000e+00
+protein                                            6.960000e+01          9.063810e+01                   NaN   7.656000e+01
+energy                                             1.750000e+06          1.754107e+06          1.800000e+06   1.775000e+06
+cholesterol                                                 NaN          1.583382e-01          3.000000e-01   1.500000e-01
+fatty acids                                                 NaN          9.589887e+00          2.000000e+01   1.000000e+01
+carotenoids                                                 NaN          2.985260e-03          6.000000e-03   3.000000e-03
+Energy from: sugars, added                                  NaN          2.277709e+05          4.375000e+05   2.187500e+05
+Energy from: carbohydrate                          7.875000e+05       !  6.675850e+05          1.137500e+06   9.625000e+05
+Energy from: alpha linolenic acid                  1.050000e+04          1.522546e+04          2.100000e+04   1.575000e+04
+Energy from: fat                                   3.500000e+05          4.782172e+05          6.125000e+05   4.812500e+05
+Energy from: linoleic acid                         8.750000e+04          1.047744e+05          1.750000e+05   1.312500e+05
+Energy from: protein                               1.750000e+05          3.167596e+05          6.125000e+05   3.937500e+05
+Energy from: linoleic acid + alpha linolenic acid           NaN          1.199999e+05          1.750000e+05   8.750000e+04
+
+
+------------------------------------------------------------------------------
+
+"Vinegar, plenty"
+
+k=400, max_foods=20
+foods normalized by pseudo target
+clustering: distance=RED, linkage=complete
+solver: scipy.optimize.nnls
+commit 28d8b4079bcd94d01ec01920e68f841ac1a5534c
+
+Score: (False, -1.8608931306225076)
+
+6g - Egg, yolk, dried
+2812g - Vinegar, distilled
+14g - Margarine, regular, 80% fat, composite, stick, with salt, with added vitamin D
+14g - Cereals ready-to-eat, QUAKER, QUAKER OAT LIFE, plain
+146g - Grapefruit, raw, pink and red and white, all areas
+0g - Pork, fresh, variety meats and by-products, stomach, raw
+101g - Cabbage, red, cooked, boiled, drained, without salt
+165g - Mushrooms, brown, italian, or crimini, exposed to ultraviolet light, raw
+7g - Nuts, brazilnuts, dried, unblanched (brazil nuts)
+112g - Beverages, NESTLE, Boost plus, nutritional drink, ready-to-drink
+2280g - Beverages, tea, green, ready-to-drink, citrus, diet, fortified with vitamin C
+4763g - Beverages, tea, black, ready to drink, decaffeinated, diet
+140g - Beverages, tea, instant, unsweetened, prepared with water
+9275g - Beverages, water, tap, drinking
+71g - Soy protein isolate, potassium type
+58g - Vegetable juice, BOLTHOUSE FARMS, DAILY GREENS
+42g - Gums, seed gums (includes locust bean, guar)
+24g - Oil, corn and canola
+29g - Beverage, instant breakfast powder, chocolate, not reconstituted
+12g - Beverage, instant breakfast powder, chocolate, sugar-free, not reconstituted
+=
+20071g
+
+                                                            min min_err        actual max_err           max  pseudo_target
+calcium                                            1.000000e+00          1.774124e+00          2.500000e+00   1.750000e+00
+copper                                             9.000000e-04          4.806497e-03          1.000000e-02   5.450000e-03
+fluoride                                           4.000000e-03          7.073492e-03          1.000000e-02   7.000000e-03
+iron                                               8.000000e-03          2.546366e-02          4.500000e-02   2.650000e-02
+magnesium                                          4.000000e-01          4.975129e-01                   NaN   4.400000e-01
+manganese                                          2.300000e-03          6.593649e-03          1.100000e-02   6.650000e-03
+phosphorus                                         7.000000e-01          2.458302e+00          4.000000e+00   2.350000e+00
+selenium                                           5.500000e-05          2.245830e-04          4.000000e-04   2.275000e-04
+zinc                                               1.100000e-02          1.767458e-02          4.000000e-02   2.550000e-02
+potassium                                          4.700000e+00          4.867492e+00                   NaN   5.170000e+00
+sodium                                             1.500000e+00          1.818327e+00          2.300000e+00   1.900000e+00
+vitamin a                                          9.000000e-04          1.170013e-03                   NaN   9.900000e-04
+vitamin a, preformed                                        NaN          1.078762e-03          3.000000e-03   1.500000e-03
+vitamin c                                          9.000000e-02          1.052015e+00          2.000000e+00   1.045000e+00
+vitamin d                                          1.500000e-05          5.736522e-05          1.000000e-04   5.750000e-05
+vitamin e                                          1.500000e-02          1.664063e-02                   NaN   1.650000e-02
+vitamin e, added                                            NaN          4.771127e-03          1.000000e+00   5.000000e-01
+vitamin k                                          1.200000e-04          1.324373e-04                   NaN   1.320000e-04
+thiamin                                            1.200000e-03          1.273743e-03                   NaN   1.320000e-03
+riboflavin                                         1.300000e-03          1.559031e-03                   NaN   1.430000e-03
+niacin                                             1.600000e-02          1.951428e-02                   NaN   1.760000e-02
+vitamin b6                                         1.300000e-03          1.901595e-03          1.000000e-01   5.065000e-02
+folate                                             4.000000e-04          8.760706e-04          1.000000e-03   7.000000e-04
+folate, added                                               NaN          3.598054e-04          1.000000e-03   5.000000e-04
+vitamin b12                                        2.400000e-06          2.844504e-06                   NaN   2.640000e-06
+pantothenic acid                                   5.000000e-03       !  4.860121e-03                   NaN   5.500000e-03
+choline                                            5.500000e-01       !  4.652364e-01          3.500000e+00   2.025000e+00
+carbohydrate                                       1.300000e+02          1.680824e+02                   NaN   1.430000e+02
+fiber                                              3.800000e+01          4.185741e+01                   NaN   4.180000e+01
+linoleic acid                                      1.700000e+01       !  1.178260e+01                   NaN   1.870000e+01
+alpha linolenic acid                               1.600000e+00          1.674787e+00                   NaN   1.760000e+00
+protein                                            6.960000e+01          9.203578e+01                   NaN   7.656000e+01
+energy                                             1.750000e+06          1.779427e+06          1.800000e+06   1.775000e+06
+cholesterol                                                 NaN          1.589820e-01          3.000000e-01   1.500000e-01
+fatty acids                                                 NaN          9.808412e+00          2.000000e+01   1.000000e+01
+carotenoids                                                 NaN          2.960273e-03          6.000000e-03   3.000000e-03
+Energy from: protein                               1.750000e+05          3.253777e+05          6.125000e+05   3.937500e+05
+Energy from: alpha linolenic acid                  1.050000e+04          1.507309e+04          2.100000e+04   1.575000e+04
+Energy from: fat                                   3.500000e+05          4.618156e+05          6.125000e+05   4.812500e+05
+Energy from: carbohydrate                          7.875000e+05       !  6.590285e+05          1.137500e+06   9.625000e+05
+Energy from: linoleic acid + alpha linolenic acid           NaN          1.211165e+05          1.750000e+05   8.750000e+04
+Energy from: sugars, added                                  NaN          2.236054e+05          4.375000e+05   2.187500e+05
+Energy from: linoleic acid                         8.750000e+04          1.060434e+05          1.750000e+05   1.312500e+05
+
+------------------------------------------------------------------------------
+
+"Water is good for you!"
+
+k=100, max_foods=10
+foods normalized by pseudo target
+clustering: distance=RED, linkage=complete
+solver: scipy.optimize.nnls
+commit 960917494f365b34cde157fe0cc79329510460e3
+
+Score: (False, -2.2123099956366556)
+
+399g - Infant formula, MEAD JOHNSON, ENFAMIL, Premature, 24 calo ready-to-feed
+27g - Oil, industrial, canola for salads, woks and light frying
+492g - Cauliflower, frozen, cooked, boiled, drained, without salt
+1993g - Beverages, tea, green, ready-to-drink, citrus, diet, fortified with vitamin C
+10630g - Beverages, water, tap, drinking
+62g - Mollusks, squid, mixed species, raw
+62g - Soy protein isolate, potassium type
+132g - Crackers, crispbread, rye
+91g - Lasagna, cheese, frozen, prepared
+30g - Beverage, instant breakfast powder, chocolate, not reconstituted
+=
+13918g
+
+                                                            min min_err        actual max_err           max  pseudo_target
+calcium                                            1.000000e+00          1.212105e+00          2.500000e+00   1.750000e+00
+copper                                             9.000000e-04          4.628209e-03          1.000000e-02   5.450000e-03
+fluoride                                           4.000000e-03          7.568237e-03          1.000000e-02   7.000000e-03
+iron                                               8.000000e-03          2.435153e-02          4.500000e-02   2.650000e-02
+magnesium                                          4.000000e-01          4.099069e-01                   NaN   4.400000e-01
+manganese                                          2.300000e-03          6.671019e-03          1.100000e-02   6.650000e-03
+phosphorus                                         7.000000e-01          2.249515e+00          4.000000e+00   2.350000e+00
+selenium                                           5.500000e-05          1.143054e-04          4.000000e-04   2.275000e-04
+zinc                                               1.100000e-02          1.562133e-02          4.000000e-02   2.550000e-02
+potassium                                          4.700000e+00       !  3.206992e+00                   NaN   5.170000e+00
+sodium                                             1.500000e+00          2.157455e+00          2.300000e+00   1.900000e+00
+vitamin a                                          9.000000e-04          1.227538e-03                   NaN   9.900000e-04
+vitamin a, preformed                                        NaN          1.221140e-03          3.000000e-03   1.500000e-03
+vitamin c                                          9.000000e-02          1.031227e+00          2.000000e+00   1.045000e+00
+vitamin d                                          1.500000e-05          1.557634e-05          1.000000e-04   5.750000e-05
+vitamin e                                          1.500000e-02          1.792050e-02                   NaN   1.650000e-02
+vitamin e, added                                            NaN          1.025878e-02          1.000000e+00   5.000000e-01
+vitamin k                                          1.200000e-04          1.420746e-04                   NaN   1.320000e-04
+thiamin                                            1.200000e-03          1.507218e-03                   NaN   1.320000e-03
+riboflavin                                         1.300000e-03          1.757822e-03                   NaN   1.430000e-03
+niacin                                             1.600000e-02          2.115791e-02                   NaN   1.760000e-02
+vitamin b6                                         1.300000e-03          1.604633e-03          1.000000e-01   5.065000e-02
+folate                                             4.000000e-04          7.719546e-04          1.000000e-03   7.000000e-04
+folate, added                                               NaN          2.465920e-04          1.000000e-03   5.000000e-04
+vitamin b12                                        2.400000e-06          2.485958e-06                   NaN   2.640000e-06
+pantothenic acid                                   5.000000e-03          5.049788e-03                   NaN   5.500000e-03
+choline                                            5.500000e-01       !  4.568661e-01          3.500000e+00   2.025000e+00
+carbohydrate                                       1.300000e+02          1.976926e+02                   NaN   1.430000e+02
+fiber                                              3.800000e+01       !  3.666901e+01                   NaN   4.180000e+01
+linoleic acid                                      1.700000e+01       !  1.112456e+01                   NaN   1.870000e+01
+alpha linolenic acid                               1.600000e+00          1.724441e+00                   NaN   1.760000e+00
+protein                                            6.960000e+01          1.024961e+02                   NaN   7.656000e+01
+energy                                             1.750000e+06       !  1.584389e+06          1.800000e+06   1.775000e+06
+cholesterol                                                 NaN          1.605882e-01          3.000000e-01   1.500000e-01
+fatty acids                                                 NaN          1.066597e+01          2.000000e+01   1.000000e+01
+carotenoids                                                 NaN          3.049811e-03          6.000000e-03   3.000000e-03
+Energy from: linoleic acid + alpha linolenic acid           NaN          1.156410e+05          1.750000e+05   8.750000e+04
+Energy from: carbohydrate                          7.875000e+05       !  7.831646e+05          1.137500e+06   9.625000e+05
+Energy from: alpha linolenic acid                  1.050000e+04          1.551997e+04          2.100000e+04   1.575000e+04
+Energy from: protein                               1.750000e+05          3.629842e+05          6.125000e+05   3.937500e+05
+Energy from: sugars, added                                  NaN          2.334759e+05          4.375000e+05   2.187500e+05
+Energy from: fat                                   3.500000e+05          4.464246e+05          6.125000e+05   4.812500e+05
+Energy from: linoleic acid                         8.750000e+04          1.001210e+05          1.750000e+05   1.312500e+05
+
