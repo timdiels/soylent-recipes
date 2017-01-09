@@ -74,9 +74,11 @@ class Miner(object):
             Recipes sorted by descending score.
         '''
         assert (foods.columns == nutrition_target.index).all()  # sample root node to check that foods have same nutrients as the target
-        _logger.info('Mining: cluster crawl')
+        max_leafs = 10
+        max_branches = 1000
+        _logger.info('Mining: cluster crawl, max_foods={}, max_leafs={}, max_branches={}'.format(self._max_foods, max_leafs, max_branches))
         recipes = ClusterRecipes(nutrition_target, foods.values)
-        top_recipes = TopClusterRecipes(max_leafs=10, max_branches=1000)
+        top_recipes = TopClusterRecipes(max_leafs=max_leafs, max_branches=max_branches)
         top_recipes.push(recipes.create([root_node]))
         
         for recipe in top_recipes.pop_branches():
@@ -131,8 +133,9 @@ class Miner(object):
         [Recipe]
             Recipes sorted by descending score.
         '''
-        _logger.info('Mining: randomly')
-        top_recipes = TopK(1000, key=lambda recipe: recipe.score)
+        k = 1000
+        _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
+        top_recipes = TopK(k, key=lambda recipe: recipe.score)
         recipes_scored = 0
         foods_ = foods.values
         while not self._cancel:
