@@ -127,6 +127,9 @@ class Miner(object):
         
     def mine_random(self, nutrition_target, foods):
         '''
+        Randomly grab max_foods foods, repeat until stopped, keep top k scoring
+        recipes.
+        
         Returns
         -------
         Stats
