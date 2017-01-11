@@ -85,8 +85,9 @@ class TopK(object):
             The popped object, if len(self) was k, else None. The popped object
             can be `object_`.
         '''
-        _logger.debug('-'*80)
-        _logger.debug('object_ {}'.format(object_))
+        if _logger.isEnabledFor(logging.DEBUG):
+            _logger.debug('-'*80)
+            _logger.debug('object_ {}'.format(object_))
         if object_ is None:
             raise ValueError('Object to push cannot be None.')
         if object_ in self._items_dict:
@@ -114,8 +115,9 @@ class TopK(object):
             heapq.heappush(self._items_heap, item)
         
         # Update dict
-        _logger.debug('popped {}'.format(popped))
-        _logger.debug('pushed {}'.format(pushed))
+        if _logger.isEnabledFor(logging.DEBUG):
+            _logger.debug('popped {}'.format(popped))
+            _logger.debug('pushed {}'.format(pushed))
         if pushed:
             if popped is not None:
                 del self._items_dict[popped.object_]
@@ -162,12 +164,13 @@ class TopK(object):
         heap_objects = {item.object_ for item in self._items_heap if not item.removed}
         difference = dict_objects.symmetric_difference(heap_objects)
         if difference:
-            _logger.debug('dict objects {}'.format(sorted(dict_objects, key=lambda x: x.score)))
-            _logger.debug('heap objects {}'.format(sorted(heap_objects, key=lambda x: x.score)))
-            _logger.debug('len dict objects {}'.format(len(dict_objects)))
-            _logger.debug('len heap objects {}'.format(len(heap_objects)))
-            _logger.debug('len heap items (!rmed) {}'.format(len([item for item in self._items_heap if not item.removed])))
-            _logger.debug(difference)
+            if _logger.isEnabledFor(logging.DEBUG):
+                _logger.debug('dict objects {}'.format(sorted(dict_objects, key=lambda x: x.score)))
+                _logger.debug('heap objects {}'.format(sorted(heap_objects, key=lambda x: x.score)))
+                _logger.debug('len dict objects {}'.format(len(dict_objects)))
+                _logger.debug('len heap objects {}'.format(len(heap_objects)))
+                _logger.debug('len heap items (!rmed) {}'.format(len([item for item in self._items_heap if not item.removed])))
+                _logger.debug(difference)
             assert False, difference
             
     @property
