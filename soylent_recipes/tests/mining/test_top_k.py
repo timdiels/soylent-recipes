@@ -71,6 +71,19 @@ def test_push_and_iter():
     assert top_k.push(object_25) == object_20  # when push somewhere in the middle
     assert set(top_k) == {object_25, object_30}
     
+def test_k1():
+    '''
+    When k=1, ...
+    '''
+    top_k = TopK(k=1, key=lambda x: x)
+    top_k.push(1)
+    assert set(top_k) == {1}
+    top_k.push(3)
+    assert set(top_k) == {3}
+    top_k.push(2)
+    assert set(top_k) == {3}
+    assert top_k.pop() == 3
+    
 def test_pop(top_k):
     # Pop pops the lowest object
     object_lowest = Object(10)
