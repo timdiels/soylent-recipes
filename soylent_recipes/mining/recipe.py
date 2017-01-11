@@ -32,7 +32,7 @@ class Recipe(object):
     
     def __init__(self, food_indices, nutrition_target, all_foods):
         # Solve diet problem resulting in scored recipe
-        self._food_indices = food_indices
+        self._food_indices = food_indices.copy()
         self._score, self._amounts = solver.solve(nutrition_target, all_foods[food_indices])
     
     @property
@@ -44,7 +44,7 @@ class Recipe(object):
         -------
         np.array([int])
         '''
-        return self._food_indices
+        return self._food_indices.copy()
     
     @property
     def score(self):

@@ -48,6 +48,7 @@ class Miner(object):
     def __init__(self):
         self._cancel = False
         self._max_foods = 20
+        assert self._max_foods > 0
         
     def cancel(self):
         _logger.info('Cancelling')
@@ -125,7 +126,7 @@ class Miner(object):
         #we can go back when index changes
         # Simply finding the first good combo takes a looong time
         
-    def mine_random(self, nutrition_target, foods):
+    def mine_random(self, nutrition_target, foods): #TODO reuse mine_greedy with refine_passes=0
         '''
         Randomly grab max_foods foods, repeat until stopped, keep top k scoring
         recipes.
@@ -145,6 +146,55 @@ class Miner(object):
             food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
             top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
             recipes_scored += 1
+            
+        stats = Stats(
+            recipes_scored,
+            recipes_skipped_due_to_visited=0
+        )
+        return stats, top_recipes.sorted_items
+    
+    def mine_greedy(self, nutrition_target, foods):
+        '''
+        Like mine_random but greedily refine each random selection.
+        
+        Pick max_foods foods at random. Then i in range(max_foods), try
+        replacing recipe[i] with any food in foods, keeping the one resulting in
+        the best score. Repeat until stopped. Keep top k scoring.
+        
+        Returns
+        -------
+        Stats
+        [Recipe]
+            Recipes sorted by descending score.
+        '''
+        k = 1000
+        _logger.info('Mining: greedy, max_foods={}, k={}, passes=1'.format(self._max_foods, k))
+        top_recipes = TopK(k, key=lambda recipe: recipe.score)
+        top_intermediates = TopK(1, key=lambda recipe: recipe.score)
+        recipes_scored = 0
+        foods_ = foods.values
+        while not self._cancel:
+            food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
+            
+            # Greedily select best food on each index
+            for i in range(self._max_foods):
+                # Try each food as food_indices[i]
+                for food_index in range(len(foods_)):
+                    food_indices[i] = food_index
+                    recipes_scored += 1
+                    recipe = Recipe(food_indices, nutrition_target, foods_)
+                    top_intermediates.push(recipe)
+                    if self._cancel:
+                        break
+                    
+                # Select the best
+                food_indices = top_intermediates.pop().food_indices #TODO shouldn't Recipe.food_indices return a copy instead? Test whether it'd affect performance much (probably not)
+                if self._cancel:
+                    break
+            
+            recipes_scored += 1
+            top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
+            print('.', end='', flush=True)
             
         stats = Stats(
             recipes_scored,

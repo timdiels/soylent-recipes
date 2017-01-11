@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
 @click_.option('--output-clustering', is_flag=True, help='Output clustering* files summarizing/displaying the clustering')
-@click_.option('--miner', 'miner_algorithm', type=click.Choice(['cluster_walk', 'random']), help='Miner to use')
+@click_.option('--miner', 'miner_algorithm', type=click.Choice(['cluster_walk', 'random', 'greedy']), help='Miner to use')
 def main(usda_directory, output_clustering, miner_algorithm):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
@@ -215,6 +215,8 @@ def mine(root_node, nutrition_target, foods, miner_algorithm):
         mine = partial(miner.mine_cluster_walk, root_node, nutrition_target, foods)
     elif miner_algorithm == 'random':
         mine = partial(miner.mine_random, nutrition_target, foods)
+    elif miner_algorithm == 'greedy':
+        mine = partial(miner.mine_greedy, nutrition_target, foods)
     else:
         assert False
     
