@@ -150,4 +150,4 @@ class Miner(object):
             recipes_scored,
             recipes_skipped_due_to_visited=0
         )
-        return stats, list(top_recipes)
+        return stats, top_recipes.sorted_items

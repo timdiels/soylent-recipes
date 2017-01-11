@@ -63,6 +63,7 @@ class TopK(object):
         Function which returns a comparable value corresponding to the
         object by which it will be ordered in the top k
     '''
+    
     def __init__(self, k, key):
         if k <= 0:
             raise ValueError('k must be > 0. Got: {!r}'.format(k))
@@ -168,6 +169,10 @@ class TopK(object):
             _logger.debug('len heap items (!rmed) {}'.format(len([item for item in self._items_heap if not item.removed])))
             _logger.debug(difference)
             assert False, difference
+            
+    @property
+    def sorted_items(self):
+        return sorted(self, key=self._key, reverse=True)
     
     def __len__(self):
         return len(self._items_dict)
