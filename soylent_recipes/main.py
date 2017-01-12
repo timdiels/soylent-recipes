@@ -230,6 +230,9 @@ def mine(root_node, nutrition_target, foods, miner_algorithm):
     
     return top_recipes
 
+def less_or_close_or_nan(a, b):
+    return (a < b) | np.isclose(a, b) | np.isnan(a) | np.isnan(b)
+
 def output_result(foods, nutrition_target, top_recipes):
     '''
     foods : pd.DataFrame
@@ -263,9 +266,11 @@ def output_result(foods, nutrition_target, top_recipes):
         # nutrition
         nutrition_ = recipe_foods.transpose().dot(amounts)
         nutrition = nutrition_target.copy()
-        nutrition.insert(1, 'max_err', (nutrition['max'] < nutrition_).apply(lambda x: '!' if x else ''))
+        max_err = ~less_or_close_or_nan(nutrition_, nutrition['max'])
+        nutrition.insert(1, 'max_err', max_err.apply(lambda x: '!' if x else ''))
         nutrition.insert(1, 'actual', nutrition_)
-        nutrition.insert(1, 'min_err', (nutrition['min'] > nutrition_).apply(lambda x: '!' if x else ''))
+        min_err = ~less_or_close_or_nan(nutrition['min'], nutrition_)
+        nutrition.insert(1, 'min_err', min_err.apply(lambda x: '!' if x else ''))
         nutrition = nutrition.sort_index()
         
         #
