@@ -240,24 +240,28 @@ def output_result(foods, nutrition_target, top_recipes):
     # Write recipes.txt
     def format_recipe(recipe):
         recipe_foods = foods.iloc[recipe.food_indices]
-        food_names = recipe_foods.index
          
-        # amounts
-        rounded_amounts = recipe.amounts.round()
+        # ignore foods with zero amount
+        mask = ~np.isclose(recipe.amounts, 0.0)
+        recipe_foods = recipe_foods[mask]
+        amounts = recipe.amounts[mask]
+        
+        # recipe_str
+        rounded_amounts = amounts.round()
         df = pd.concat(
             [
                 pd.Series(rounded_amounts, name='amount').apply('{:.0f}g'.format), 
-                pd.Series(food_names, name='food')
+                pd.Series(recipe_foods.index, name='food')
             ],
             axis=1
         )
         df = df.sort_values(['food'])
         df.loc['append1'] = ['=', '']
         df.loc['append2'] = ['{:.0f}g'.format(rounded_amounts.sum()), '']
-        amounts = tabulate(df, showindex=False, tablefmt='plain')
+        recipe_str = tabulate(df, showindex=False, tablefmt='plain')
         
         # nutrition
-        nutrition_ = recipe_foods.transpose().dot(recipe.amounts)
+        nutrition_ = recipe_foods.transpose().dot(amounts)
         nutrition = nutrition_target.copy()
         nutrition.insert(1, 'max_err', (nutrition['max'] < nutrition_).apply(lambda x: '!' if x else ''))
         nutrition.insert(1, 'actual', nutrition_)
@@ -265,7 +269,7 @@ def output_result(foods, nutrition_target, top_recipes):
         nutrition = nutrition.sort_index()
         
         #
-        return 'Score: {}\n\n{}\n\n{}'.format(recipe.score, amounts, nutrition.to_string())
+        return 'Score: {}\n\n{}\n\n{}'.format(recipe.score, recipe_str, nutrition.to_string())
     
     with open('recipes.txt', 'w') as f:
         f.write('Amounts are in grams of edible portion. E.g. if the food has bones, you should\n')
