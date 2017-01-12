@@ -28,22 +28,25 @@ import pytest
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
 
-def lsq(nutrition_target, foods):
-    amounts, residual = solver.solve_least_squares(foods)
-    return -float(residual), amounts
-
+def _score(nutrition_target, nutrition_):
+    # l2 norm of error to the extrema. Error is the amount it falls
+    # short of a min constraint, or the amount it exceeds a max
+    # constraint.
+    #
+    # solve should use this score
+    error = np.concatenate([
+        np.clip(nutrition_target['min'] - nutrition_, 0.0, np.inf),
+        np.clip(nutrition_ - nutrition_target['max'], 0.0, np.inf)
+    ])
+    return -np.linalg.norm(error)
+        
 def nutrition(amounts, foods):
     return pd.Series(amounts, index=foods.index, name='amount').dot(foods)
     
-def lsq_score(nutrition_target, nutrition_):
-    # score is negative of the l2-norm to the pseudo target
-    return -np.sqrt(((nutrition_ - 1)**2).sum())
-
 @pytest.fixture
 def solve(): #TODO inline
     def solve(nutrition_target, foods):
-        score, amounts = solver.solve(nutrition_target, foods.values)
-        return score[1], amounts
+        return solver.solve(nutrition_target, foods.values)
     return solve
 
 def test_minima(solve):
@@ -118,7 +121,7 @@ def test_minmax_overlap(solve):
     nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
     assert np.isclose(score, 0.0)  # perfect match
             
-def test_lsq_approximate():
+def test_approximate(solve):
     '''
     When pseudo target cannot be met perfectly, least squares score is correct
     and amounts are optimal
@@ -139,17 +142,16 @@ def test_lsq_approximate():
         columns=nutrients
     )
     foods, nutrition_target = main.normalize(foods, nutrition_target)
-    score, amounts = lsq(nutrition_target, foods)
-    nutrition_ = nutrition(amounts, foods)
+    score, amounts = solve(nutrition_target, foods)
     
-    # Assert score is calculated correctly
-    expected = lsq_score(nutrition_target, nutrition_)
+    # Assert score
+    expected = _score(nutrition_target, nutrition(amounts, foods))
     assert np.isclose(score, expected)
     
     # Assert the latter food is unused, as it is less optimal than the former
     assert np.isclose(amounts[1], 0.0)
     
-    # Double-check amount is positive
+    # Check the amount is positive
     assert amounts[0] > 0.0
       
     # Assert amounts is (locally) optimal
@@ -159,7 +161,7 @@ def test_lsq_approximate():
     for sign in (1.0, -1.0):
         for _ in range(10):
             amounts_[0] += step * sign
-            scores.append(lsq_score(nutrition_target, nutrition(amounts_, foods)))
+            scores.append(_score(nutrition_target, nutrition(amounts_, foods)))
     assert score > min(scores) # if this fails, increase `step`
     max_score = max(scores)
     assert score > max_score or np.isclose(score, max_score)

@@ -33,9 +33,9 @@ def nutrition_target():
     
 @pytest.fixture
 def score():
-    return (False, 0.0)
+    return -1.0
 
-def patch_solve(mocker, score=(False, 0.0), amounts=None):
+def patch_solve(mocker, score=-1.0, amounts=None):
     '''
     Patch solver.solve to return mock value instead of actually solving
     '''
@@ -71,7 +71,7 @@ class TestClusterRecipe(object):
         )
         
         # Mock `solve`
-        score = (True, 2.5)
+        score = 0.0
         amounts = np.array([2.0, 1.1, 3.0])
         def solve(nutrition_target_, foods):
             # Correct args passed in
@@ -97,7 +97,7 @@ class TestClusterRecipe(object):
         recipe = ClusterRecipes(nutrition_target, foods_).create(clusters)
         assert recipe.score == score  # matches return of `solve`
         assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
-        assert recipe.solved  # score[0] == recipe.solved
+        assert recipe.solved  # score close to 0 == recipe.solved
         assert not recipe.is_leaf  # some clusters are branches => not is_leaf
         assert recipe.clusters == tuple(clusters)
         assert len(recipe) == len(clusters)
@@ -108,12 +108,12 @@ class TestClusterRecipe(object):
         '''
         Test things specific to the `not recipe.solved` case
         '''
-        score = (False, 2.0)
+        score = -2.0
         patch_solve(mocker, score)
         node = Leaf(id_=1, food_index=0)
         foods = np.ones((1,1))
         recipe = ClusterRecipes(nutrition_target, foods).create([node])
-        assert not recipe.solved  # score[0] == recipe.solved
+        assert not recipe.solved  # score not close to 0 => not recipe.solved
         
     def test_leaf(self, mocker, nutrition_target, score):
         '''
@@ -278,9 +278,9 @@ class TestTopClusterRecipes(object):
         '''
         Pop by descending max_distance
         '''
-        recipe1 = mocks.ClusterRecipe(is_leaf=False, max_distance=30.0, score=(False, 6.0))
-        recipe2 = mocks.ClusterRecipe(is_leaf=False, max_distance=20.0, score=(False, 3.0))
-        recipe3 = mocks.ClusterRecipe(is_leaf=False, max_distance=10.0, score=(False, 4.0))
+        recipe1 = mocks.ClusterRecipe(is_leaf=False, max_distance=30.0, score=6.0)
+        recipe2 = mocks.ClusterRecipe(is_leaf=False, max_distance=20.0, score=3.0)
+        recipe3 = mocks.ClusterRecipe(is_leaf=False, max_distance=10.0, score=4.0)
         
         # Push in one order and check
         top_recipes.push(recipe3)
@@ -305,7 +305,7 @@ class TestTopClusterRecipes(object):
             kwargs['max_branches'] = 2
         top_recipes = TopClusterRecipes(**kwargs)
         def recipe(max_distance, sub_score, is_leaf):
-            return mocks.ClusterRecipe(is_leaf=is_leaf, max_distance=max_distance, score=(False, sub_score))
+            return mocks.ClusterRecipe(is_leaf=is_leaf, max_distance=max_distance, score=sub_score)
         
         # When k recipes have better score, prune recipe
         recipe5_10 = recipe(max_distance=5.0, sub_score=10.0, is_leaf=is_leaf)

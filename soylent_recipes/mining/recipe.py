@@ -14,6 +14,7 @@
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
 from soylent_recipes import solver
+import numpy as np
 
 class Recipe(object):
     
@@ -60,7 +61,7 @@ class Recipe(object):
     
     @property
     def solved(self):
-        return self._score[0]
+        return np.isclose(self._score, 0.0)
     
     @property
     def amounts(self):

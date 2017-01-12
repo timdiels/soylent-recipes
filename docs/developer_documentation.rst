@@ -157,3 +157,158 @@ algorithm to start with low detail (the center of clusters closer to the root)
 and then split clusters to increase detail. By splitting, we mean to replace a
 cluster by its children. Agglomerative clustering is used, resulting in a
 binary tree of clusters with foods as leafs.
+
+Finding the amounts
+^^^^^^^^^^^^^^^^^^^
+TODO the readme.md also docs an older version of this.
+
+Having combined foods, we need to figure out the right amount to use of each
+to satisfy the nutrition target. This is a relaxed form of what's called the
+diet problem, which additionally requires that the cost (e.g. price) is
+minimized. While the diet problem requires linear programming to be solved,
+here we all we need is bounded least squares (which is faster than solving a
+linear program).
+
+With `x`, real vector >=0, the amounts of each food, the unknown we want to
+solve for. With `A`, matrix, with A_ij is the amount of nutrient_i in (1g of)
+food_j. `m`, vector>=0, minima (nan replaced by 0) of the nutrition target m_i
+is minimum of nutrient_i to have. `M`, maxima. M>m.
+
+We want to solve x for: Ax>=m and Ax<=M. A least squares problem is of the form
+Ax=b. We can rewrite the former into the latter by first noting that:
+
+    Ax>=m <=> -Ax<=-m
+    =>
+    solving Ax>=m and Ax<=M
+    <=>
+    solving [-A;A] x <= [-m;M]
+
+we rewrite this as:
+
+    D=[-A;A]
+    b=[-m;M]
+    solve Dx<=b
+
+and finally:
+
+    Dx<=b
+    <=>
+    Dx + z = b,  z>=0,vector of length b
+    <=>
+    [D,I] [x;z] = b
+
+So our least squares problem is:
+
+    [[-A;A], I] [x;z] = [-m;M]
+
+The nutrition target is achieved iff the least squares residual is (close to)
+0. In this case, the residual is the L2 norm of the vector of shortages to
+minima and excesses to maxima.
+
+.. TODO rewrite matrices: M_{n,m}(R) is proper notation of a real matrix
+.. TODO also rewrite vectors
+
+Terminology
+^^^^^^^^^^^
+In the context of this project, search or mining refers to finding food
+combinations whereas solving refers to finding the right amount of each food
+when already given a combination of foods. A combination of foods, with amounts
+and score is called a Recipe.
+
+Solver history
+^^^^^^^^^^^^^^
+Things tried before realising the full problem could be written as least
+squares. This is when we still believed we needed a clever search algorithm
+to find good recipes, i.e. unsolved recipes needed to give a score proportional
+(or rather resulting in the same ordering; TODO ask what it's called;
+proportional is too strict) to the distance to a valid solution, i.e. the
+distance of the closest point Ax to the hyperrectangle corresponding to the
+nutrition target.
+
+- least squares
+
+  Solved Ax=b with b being averages of the min/max of the nutrition target.
+  Thus it solves an approximate (biased) problem.
+
+  Sometimes can bound x. Can bound the result via the Ax<=b <=> Ax+z=b, z>=0
+  trick. Possibly requires x>=0
+
+  Some allow passing in an initial x, which hints it's an iterative algorithm
+  (I did not check the source). At first glance, all listed algorithms
+  converge, so the initial x must be for improving performance (less
+  iterations when making a good guess). Would have been especially useful
+  with search that incrementally builds the recipe by adding/replacing foods 1
+  or a couple at a time.
+
+  - scipy.optimize.nnls
+
+    solves a whopping 3767 recipes per second (measured over 11s)
+    initial x: cannot provide
+    x>=0
+    residual when impossible: L2 norm to target
+
+  - scipy.optimize.least_squares
+
+    initial x: can provide
+    x: bounds of choice
+    residual when impossible: ?
+
+  - scipy.optimize.lsq_linear
+
+    initial x: can provide
+    x: bounds of choice
+    residual when impossible: ?
+
+  - scipy.optimize.leastsq
+
+    initial x: can provide
+    x: bounds of choice
+    residual when impossible: ?
+
+- linear program
+
+  They have a linear objective to minimize (or mazimize), solve Ax=b, and
+  constrain to Bx <= u.
+
+  When given just inequalities, they will return either `x` or raise
+  'Infeasible' and return some other things that were of no use to us.
+
+  - scipy.optimize.linprog
+
+    initial x: cannot provide
+    result: bounds of choice
+    x: bounds of choice
+
+  - cvxopt.solvers.lp:
+
+    initial x: can provide
+    result: bounds of choice
+    x: bounds of choice
+
+    Quite advanced, has a couple of options to exploit the structure of our
+    problem (which is quite specific).
+
+- solve system of inequalities:
+
+  - sympy (symbolic):
+
+    - Matrix.gauss_jordan_solve, LUsolve:
+
+      When used to solve Ax<=M, Ax>=m via Ax=b. The idea was to symbolically
+      solve with b = symbols('b1 ...'), then subs b for m and M to get a vector
+      of minima and maxima. This does not work as A could be singular leading
+      to row_i = b_i or b_j, for which most methods raise "No solution".
+
+      Would have had to write a modified version to make it work. Would have
+      used a modified version of a numeric LU decomposition then as numeric is
+      faster to compute than symbolic; and LU decomposition generally
+      introduces less numerical error than Gauss Jordan.
+
+    - linsolve
+
+      is just a wrapper around Matrix.gauss_jordan_solve
+
+    - reduce_inequalities:
+
+      Only supports univariate inequalities.
+
