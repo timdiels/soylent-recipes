@@ -39,86 +39,84 @@ def lsq_score(nutrition_target, nutrition_):
     # score is negative of the l2-norm to the pseudo target
     return -np.sqrt(((nutrition_ - 1)**2).sum())
 
-class TestBoth(object):
-    
-    @pytest.fixture
-    def solve(self): #TODO inline, rm class, ...
-        def solve(nutrition_target, foods):
-            score, amounts = solver.solve(nutrition_target, foods.values)
-            return score[1], amounts
-        return solve
-    
-    def test_minima(self, solve):
-        '''
-        When target has minima, adhere to them
-        '''
-        nutrition_target = NutritionTarget(
-            [
-                [5, np.nan],
-                [2, np.nan],
-            ],
-            index=['nutrient1', 'nutrient2']
-        )
-        foods = pd.DataFrame(
-            [
-                [2.0, 0.0],
-                [0.0, 4.0],
-            ],
-            columns=['nutrient1', 'nutrient2']
-        )
-        foods, nutrition_target = main.normalize(foods, nutrition_target)
-        score, amounts = solve(nutrition_target, foods)
-        nutrition_ = nutrition(amounts, foods)
-        nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
-        assert np.isclose(score, 0.0)  # perfect match
-            
-    def test_maxima(self, solve):
-        '''
-        When target has maxima, adhere to them
-        '''
-        nutrition_target = NutritionTarget(
-            [
-                [np.nan, 5],
-                [np.nan, 2],
-            ],
-            index=['nutrient1', 'nutrient2']
-        )
-        foods = pd.DataFrame(
-            [
-                [2.0, 0.0],
-                [0.0, 4.0],
-            ],
-            columns=['nutrient1', 'nutrient2']
-        )
-        foods, nutrition_target = main.normalize(foods, nutrition_target)
-        score, amounts = solve(nutrition_target, foods)
-        nutrition_ = nutrition(amounts, foods)
-        nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
-        assert np.isclose(score, 0.0)  # perfect match
+@pytest.fixture
+def solve(): #TODO inline
+    def solve(nutrition_target, foods):
+        score, amounts = solver.solve(nutrition_target, foods.values)
+        return score[1], amounts
+    return solve
+
+def test_minima(solve):
+    '''
+    When target has minima, adhere to them
+    '''
+    nutrition_target = NutritionTarget(
+        [
+            [5, np.nan],
+            [2, np.nan],
+        ],
+        index=['nutrient1', 'nutrient2']
+    )
+    foods = pd.DataFrame(
+        [
+            [2.0, 0.0],
+            [0.0, 4.0],
+        ],
+        columns=['nutrient1', 'nutrient2']
+    )
+    foods, nutrition_target = main.normalize(foods, nutrition_target)
+    score, amounts = solve(nutrition_target, foods)
+    nutrition_ = nutrition(amounts, foods)
+    nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
+    assert np.isclose(score, 0.0)  # perfect match
         
-    def test_minmax_overlap(self, solve):
-        '''
-        When target has min and max, with some foods sharing nutrients, do fine
-        '''
-        nutrition_target = NutritionTarget(
-            [
-                [2, 3],
-                [1, 2],
-            ],
-            index=['nutrient1', 'nutrient2']
-        )
-        foods = pd.DataFrame(
-            [
-                [3.0, 0.0],  # unlike previous tests, these values are asymmetric
-                [2.0, 4.0],
-            ],
-            columns=['nutrient1', 'nutrient2']
-        )
-        foods, nutrition_target = main.normalize(foods, nutrition_target)
-        score, amounts = solve(nutrition_target, foods)
-        nutrition_ = nutrition(amounts, foods)
-        nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
-        assert np.isclose(score, 0.0)  # perfect match
+def test_maxima(solve):
+    '''
+    When target has maxima, adhere to them
+    '''
+    nutrition_target = NutritionTarget(
+        [
+            [np.nan, 5],
+            [np.nan, 2],
+        ],
+        index=['nutrient1', 'nutrient2']
+    )
+    foods = pd.DataFrame(
+        [
+            [2.0, 0.0],
+            [0.0, 4.0],
+        ],
+        columns=['nutrient1', 'nutrient2']
+    )
+    foods, nutrition_target = main.normalize(foods, nutrition_target)
+    score, amounts = solve(nutrition_target, foods)
+    nutrition_ = nutrition(amounts, foods)
+    nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
+    assert np.isclose(score, 0.0)  # perfect match
+    
+def test_minmax_overlap(solve):
+    '''
+    When target has min and max, with some foods sharing nutrients, do fine
+    '''
+    nutrition_target = NutritionTarget(
+        [
+            [2, 3],
+            [1, 2],
+        ],
+        index=['nutrient1', 'nutrient2']
+    )
+    foods = pd.DataFrame(
+        [
+            [3.0, 0.0],  # unlike previous tests, these values are asymmetric
+            [2.0, 4.0],
+        ],
+        columns=['nutrient1', 'nutrient2']
+    )
+    foods, nutrition_target = main.normalize(foods, nutrition_target)
+    score, amounts = solve(nutrition_target, foods)
+    nutrition_ = nutrition(amounts, foods)
+    nutrition_target_.assert_satisfied(nutrition_target, nutrition_)
+    assert np.isclose(score, 0.0)  # perfect match
             
 def test_lsq_approximate():
     '''
