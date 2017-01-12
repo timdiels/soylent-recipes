@@ -32,8 +32,6 @@ def lsq(nutrition_target, foods):
     amounts, residual = solver.solve_least_squares(foods)
     return -float(residual), amounts
 
-lp = solver._solve_linear_program
-
 def nutrition(amounts, foods):
     return pd.Series(amounts, index=foods.index, name='amount').dot(foods)
     
@@ -41,10 +39,14 @@ def lsq_score(nutrition_target, nutrition_):
     # score is negative of the l2-norm to the pseudo target
     return -np.sqrt(((nutrition_ - 1)**2).sum())
 
-#TODO not testing _solve_linear_program at the moment as we're temporarily not
-#using it, and it's broken because wrong interpretation of A,x params to lp
-@pytest.mark.parametrize('solve', (lsq,))# lp))
 class TestBoth(object):
+    
+    @pytest.fixture
+    def solve(self): #TODO inline, rm class, ...
+        def solve(nutrition_target, foods):
+            score, amounts = solver.solve(nutrition_target, foods.values)
+            return score[1], amounts
+        return solve
     
     def test_minima(self, solve):
         '''
