@@ -53,7 +53,7 @@ class Miner(object):
         _logger.info('Cancelling')
         self._cancel = True
         
-    def mine_random(self, nutrition_target, foods): #TODO reuse mine_greedy with refine_passes=0
+    def mine_random(self, nutrition_target, foods):
         '''
         Randomly grab max_foods foods, repeat until stopped, keep top k scoring
         recipes.
@@ -66,19 +66,7 @@ class Miner(object):
         '''
         k = 1000
         _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
-        top_recipes = TopK(k, key=lambda recipe: recipe.score)
-        recipes_scored = 0
-        foods_ = foods.values
-        while not self._cancel:
-            food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
-            top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
-            recipes_scored += 1
-            
-        stats = Stats(
-            recipes_scored,
-            recipes_skipped_due_to_visited=0
-        )
-        return stats, top_recipes.sorted_items
+        return self._mine_random(nutrition_target, foods, k, greedy=False)
     
     def mine_greedy(self, nutrition_target, foods):
         '''
@@ -95,7 +83,10 @@ class Miner(object):
             Recipes sorted by descending score.
         '''
         k = 1000
-        _logger.info('Mining: greedy, max_foods={}, k={}, passes=1'.format(self._max_foods, k))
+        _logger.info('Mining: greedy, max_foods={}, k={}'.format(self._max_foods, k))
+        return self._mine_random(nutrition_target, foods, k, greedy=True)
+    
+    def _mine_random(self, nutrition_target, foods, k, greedy):
         top_recipes = TopK(k, key=lambda recipe: recipe.score)
         top_intermediates = TopK(1, key=lambda recipe: recipe.score)
         recipes_scored = 0
@@ -103,25 +94,26 @@ class Miner(object):
         while not self._cancel:
             food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
             
-            # Greedily select best food on each index
-            for i in range(self._max_foods):
-                # Try each food as food_indices[i]
-                for food_index in range(len(foods_)):
-                    food_indices[i] = food_index
-                    recipes_scored += 1
-                    recipe = Recipe(food_indices, nutrition_target, foods_)
-                    top_intermediates.push(recipe)
+            if greedy:
+                # Greedily select best food on each index
+                for i in range(self._max_foods):
+                    # Try each food as food_indices[i]
+                    for food_index in range(len(foods_)):
+                        food_indices[i] = food_index
+                        recipes_scored += 1
+                        recipe = Recipe(food_indices, nutrition_target, foods_)
+                        top_intermediates.push(recipe)
+                        if self._cancel:
+                            break
+                        
+                    # Select the best
+                    food_indices = top_intermediates.pop().food_indices
                     if self._cancel:
                         break
-                    
-                # Select the best
-                food_indices = top_intermediates.pop().food_indices
-                if self._cancel:
-                    break
+                print('.', end='', flush=True)
             
             recipes_scored += 1
             top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
-            print('.', end='', flush=True)
             
         stats = Stats(
             recipes_scored,
