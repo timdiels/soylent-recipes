@@ -18,7 +18,7 @@ from pathlib import Path
 from chicken_turtle_util import click as click_, logging as logging_
 import click
 from soylent_recipes import __version__
-from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_, cluster as cluster_, tree
+from soylent_recipes import nutrition_target as nutrition_target_, foods as foods_
 from soylent_recipes.mining.miners import Miner
 from tabulate import tabulate
 import asyncio
@@ -33,9 +33,8 @@ _logger = logging.getLogger(__name__)
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
-@click_.option('--output-clustering', is_flag=True, help='Output clustering* files summarizing/displaying the clustering')
 @click_.option('--miner', 'miner_algorithm', type=click.Choice(['random', 'greedy']), help='Miner to use')
-def main(usda_directory, output_clustering, miner_algorithm):
+def main(usda_directory, miner_algorithm):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
@@ -52,9 +51,6 @@ def main(usda_directory, output_clustering, miner_algorithm):
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
     normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
-    if output_clustering:
-        root_node = cluster_.agglomerative(normalized_foods)
-        tree.write(root_node, foods)
     top_recipes = mine(normalized_nutrition_target, normalized_foods, miner_algorithm)
     output_result(foods, nutrition_target, top_recipes)
 

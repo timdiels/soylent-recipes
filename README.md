@@ -13,7 +13,7 @@ simply want to know the amounts to take of each, use this
 
 ## Usage
 
-Packages to install with package manager: pyqt, suitesparse
+Packages to install with package manager: suitesparse
 
 - git clone https://github.com/timdiels/soylent-recipes.git
 - pip install .
