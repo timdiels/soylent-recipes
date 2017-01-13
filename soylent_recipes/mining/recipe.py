@@ -81,7 +81,7 @@ class Recipe(object):
         '''
         Number of foods
         '''
-        return len(self._foods)
+        return len(self._food_indices)
     
     def __repr__(self):
         return 'Recipe(food_indices={})'.format(self._food_indices)

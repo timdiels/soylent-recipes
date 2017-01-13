@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
 @click_.option('--output-clustering', is_flag=True, help='Output clustering* files summarizing/displaying the clustering')
-@click_.option('--miner', 'miner_algorithm', type=click.Choice(['cluster_walk', 'random', 'greedy']), help='Miner to use')
+@click_.option('--miner', 'miner_algorithm', type=click.Choice(['random', 'greedy']), help='Miner to use')
 def main(usda_directory, output_clustering, miner_algorithm):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
@@ -52,13 +52,10 @@ def main(usda_directory, output_clustering, miner_algorithm):
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
     normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
-    if miner_algorithm == 'cluster_walk':
+    if output_clustering:
         root_node = cluster_.agglomerative(normalized_foods)
-        if output_clustering:
-            tree.write(root_node, foods)
-    else:
-        root_node = None
-    top_recipes = mine(root_node, normalized_nutrition_target, normalized_foods, miner_algorithm)
+        tree.write(root_node, foods)
+    top_recipes = mine(normalized_nutrition_target, normalized_foods, miner_algorithm)
     output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
@@ -190,11 +187,10 @@ def normalize(foods, nutrition_target):
     # Return
     return foods, nutrition_target
 
-def mine(root_node, nutrition_target, foods, miner_algorithm):
+def mine(nutrition_target, foods, miner_algorithm):
     '''
     Parameters
     ----------
-    root_node : soylent_recipes.cluster.Node
     nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
     foods : pd.DataFrame
         Normalized foods
@@ -211,9 +207,7 @@ def mine(root_node, nutrition_target, foods, miner_algorithm):
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
     # Choose mining/search algorithm
-    if miner_algorithm == 'cluster_walk':
-        mine = partial(miner.mine_cluster_walk, root_node, nutrition_target, foods)
-    elif miner_algorithm == 'random':
+    if miner_algorithm == 'random':
         mine = partial(miner.mine_random, nutrition_target, foods)
     elif miner_algorithm == 'greedy':
         mine = partial(miner.mine_greedy, nutrition_target, foods)
