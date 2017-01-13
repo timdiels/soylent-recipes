@@ -20,6 +20,7 @@ Diet problem solver
 import numpy as np
 import logging
 import scipy
+import scipy.optimize  # Note: not always included when just importing scipy
 
 _logger = logging.getLogger(__name__)
 
