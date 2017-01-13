@@ -115,7 +115,7 @@ class Miner(object):
                         break
                     
                 # Select the best
-                food_indices = top_intermediates.pop().food_indices #TODO shouldn't Recipe.food_indices return a copy instead? Test whether it'd affect performance much (probably not)
+                food_indices = top_intermediates.pop().food_indices
                 if self._cancel:
                     break
             
