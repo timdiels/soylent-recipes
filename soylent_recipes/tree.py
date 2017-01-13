@@ -71,6 +71,11 @@ def _write(root, foods, max_depth):
         _logger.info('Writing clustering tree to file {}'.format(file))
         tree.render(file, tree_style=style)
     
+    # Write as newick to file
+    file = 'clustering_depth{}.newick'.format(max_depth)
+    _logger.info('Writing clustering tree to file {}'.format(file))
+    tree.write(format=1, outfile=file)
+    
 def _tree_depth(node):
     '''
     Get length of longest path from node to leaf (node and leaf included)
