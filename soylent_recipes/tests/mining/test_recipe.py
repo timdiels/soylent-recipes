@@ -76,7 +76,6 @@ def test_solved(mocker, nutrition_target):
     assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
     assert recipe.solved  # score close to 0 == recipe.solved
     np.testing.assert_array_equal(recipe.food_indices, food_indices)
-    assert len(recipe) == len(food_indices)
     
 def test_not_solved(mocker, nutrition_target):
     '''
