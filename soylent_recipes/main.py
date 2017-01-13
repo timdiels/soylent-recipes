@@ -211,12 +211,11 @@ def mine(nutrition_target, foods, miner_algorithm):
         assert False
     
     # Mine
-    stats, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
+    recipes_scored, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
     loop.close()
     
     # Print stats
-    _logger.info('Recipes scored: {}'.format(stats.recipes_scored))
-    _logger.info('Recipes skipped (already visited): {}'.format(stats.recipes_skipped_due_to_visited))
+    _logger.info('Recipes scored: {}'.format(recipes_scored))
     
     return top_recipes
 

@@ -60,7 +60,7 @@ class Miner(object):
         
         Returns
         -------
-        Stats
+        recipes_scored : int
         [Recipe]
             Recipes sorted by descending score.
         '''
@@ -78,7 +78,7 @@ class Miner(object):
         
         Returns
         -------
-        Stats
+        recipes_scored : int
         [Recipe]
             Recipes sorted by descending score.
         '''
@@ -115,8 +115,4 @@ class Miner(object):
             recipes_scored += 1
             top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
             
-        stats = Stats(
-            recipes_scored,
-            recipes_skipped_due_to_visited=0
-        )
-        return stats, top_recipes.sorted_items
+        return recipes_scored, top_recipes.sorted_items
