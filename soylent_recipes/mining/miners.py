@@ -55,14 +55,13 @@ class Miner(object):
         
     def mine_random(self, nutrition_target, foods):
         '''
-        Randomly grab max_foods foods, repeat until stopped, keep top k scoring
-        recipes.
+        Randomly grab max_foods foods, repeat until k solved recipes are found.
         
         Returns
         -------
         recipes_scored : int
         [Recipe]
-            Recipes sorted by descending score.
+            Up to k solved recipes.
         '''
         k = 1000
         _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
@@ -74,21 +73,21 @@ class Miner(object):
         
         Pick max_foods foods at random. Then i in range(max_foods), try
         replacing recipe[i] with any food in foods, keeping the one resulting in
-        the best score. Repeat until stopped. Keep top k scoring.
+        the best score. Repeat until k solved recipes are found.
         
         Returns
         -------
         recipes_scored : int
         [Recipe]
-            Recipes sorted by descending score.
+            Up to k solved recipes.
         '''
         k = 1000
         _logger.info('Mining: greedy, max_foods={}, k={}'.format(self._max_foods, k))
         return self._mine_random(nutrition_target, foods, k, greedy=True)
     
     def _mine_random(self, nutrition_target, foods, k, greedy):
-        top_recipes = TopK(k, key=lambda recipe: recipe.score)
         top_intermediates = TopK(1, key=lambda recipe: recipe.score)
+        solved_recipes = []
         recipes_scored = 0
         foods_ = foods.values
         while not self._cancel:
@@ -103,16 +102,20 @@ class Miner(object):
                         recipes_scored += 1
                         recipe = Recipe(food_indices, nutrition_target, foods_)
                         top_intermediates.push(recipe)
-                        if self._cancel:
+                        if recipe.solved or self._cancel:
                             break
                         
                     # Select the best
                     food_indices = top_intermediates.pop().food_indices
-                    if self._cancel:
+                    if recipe.solved or self._cancel:
                         break
                 print('.', end='', flush=True)
+            else:
+                recipes_scored += 1
+                recipe = Recipe(food_indices, nutrition_target, foods_)
+            if recipe.solved:
+                solved_recipes.append(recipe)
+                if len(solved_recipes) == k:
+                    break
             
-            recipes_scored += 1
-            top_recipes.push(Recipe(food_indices, nutrition_target, foods_))
-            
-        return recipes_scored, top_recipes.sorted_items
+        return recipes_scored, solved_recipes
