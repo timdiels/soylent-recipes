@@ -110,7 +110,7 @@ class TestCreate(object):
                 [np.nan, 2],
                 [2, np.nan],
             ],
-            index=['food0', 'food1', 'food2'],
+            index=['nutrient0', 'nutrient1', 'nutrient2'],
             columns=['min', 'max']
         )
         expected = pd.DataFrame(
