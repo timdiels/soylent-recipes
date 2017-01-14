@@ -105,11 +105,11 @@ class Miner(object):
                     if recipe.solved or self._cancel:
                         break
                     food_indices[i] = original_index
-                print('.', end='', flush=True)
             else:
                 recipes_scored += 1
                 recipe = Recipe(food_indices, nutrition_target, foods_)
             if recipe.solved:
+                print('.', end='', flush=True)
                 solved_recipes.append(recipe)
                 if len(solved_recipes) == k:
                     break
