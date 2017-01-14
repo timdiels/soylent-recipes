@@ -19,8 +19,7 @@ Diet problem solver
 
 import numpy as np
 import logging
-import scipy
-import scipy.optimize  # Note: not always included when just importing scipy
+import ecyglpki
 
 _logger = logging.getLogger(__name__)
 
@@ -40,19 +39,59 @@ def solve(nutrition_target, foods):
         
     Returns
     -------
-    score : float
-        Score of recipe. Never NaN. Higher score is better.
-    amounts : np.array(float)
+    amounts : np.array(int) or None
         The amounts of each food to use to optimally achieve the nutrition
-        target. ``amounts[i]`` is the amount of the i-th food to use.
+        target. ``amounts[i]`` is the amount of the i-th food to use. If the
+        nutrition target cannot be achieved, returns None.
     '''
+    # Implementation: using the GLPK C library via ecyglpki Python library binding
+    # GLPK documentation: http://kam.mff.cuni.cz/~elias/glpk.pdf
+    # GLPK wikibook: https://en.wikibooks.org/wiki/GLPK
+    # ecyglpki documentation: http://pythonhosted.org/ecyglpki/
+    #
+    # GPLK lingo: rows and columns refer to Ax=b where b_i are auxiliary
+    # variables, x_i are structural variables. Setting constraints on rows, set
+    # constraints on b_i, while column constraints are applied to x_i.
+    
+    # Note: glpk is powerful. We're using mostly the default settings.
+    # Performance likely can be improved by tinkering with the settings; or even
+    # by providing the solution to the least squares equivalent, with amounts
+    # rounded afterwards, as starting point could improve performance.
+    
     nutrition_target = nutrition_target.values
-    transposed_foods = foods.transpose()
-    A = np.vstack((-transposed_foods, transposed_foods))
-    b = np.concatenate((-nutrition_target[:,0], nutrition_target[:,1]))
-    mask = ~np.isnan(b)
-    A = A[mask]
-    b = b[mask]
-    A = np.hstack([A, np.eye(len(b), len(b))])
-    amounts, residual = scipy.optimize.nnls(A, b)
-    return -residual, amounts[:len(foods)]
+    
+    problem = ecyglpki.Problem()
+    problem.add_rows(len(nutrition_target))
+    problem.add_cols(len(foods))
+    
+    # Fill nan with None
+    mask = np.isnan(nutrition_target)
+    nutrition_target = nutrition_target.astype(object)
+    nutrition_target[mask] = None
+    
+    # Configure columns/amounts
+    for i in range(len(foods)):
+        problem.set_col_kind(i+1, 'integer')  # int
+        problem.set_col_bnds(i+1, 0, None)  # >=0
+    
+    # Configure rows/nutrients
+    for i, extrema in enumerate(nutrition_target):
+        problem.set_row_bnds(i+1, *extrema)
+        
+    # Load A of our Ax=b
+    A = dict(((index[1]+1,index[0]+1), value) for index, value in np.ndenumerate(foods))
+    problem.load_matrix(A)
+    
+    # Solve
+    int_opt_options = ecyglpki.IntOptControls()
+    int_opt_options.presolve = True  # without this, you have to provide an LP relaxation basis
+    int_opt_options.msg_lev = 'no'  # be quiet, no stdout
+    try:
+        problem.intopt(int_opt_options)
+    except ValueError:
+        return None
+    if not np.isclose(problem.check_kkt('intopt', 'bounds')['abs'][0], 0.0):
+        return None
+    amounts = np.fromiter((problem.mip_col_val(i+1) for i in range(len(foods))), int)
+    
+    return amounts

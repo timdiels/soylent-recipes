@@ -5,8 +5,8 @@ click==6.7
 colored-traceback==0.2.2
 coverage==4.3.1
 coverage-pth==0.0.1
-cvxopt==1.1.9
 decorator==4.0.10
+ecyglpki==0.2.0
 execnet==1.4.1
 networkx==1.11
 numpy==1.11.3
@@ -25,8 +25,6 @@ pytest-mock==1.5.0
 pytest-xdist==1.15.0
 python-dateutil==2.6.0
 pytz==2016.10
-scipy==0.18.1
 six==1.10.0
--e git+git@github.com:timdiels/soylent-recipes.git@28f73466f203a141f556b0ee4b1517fe09a74452#egg=soylent_recipes
 tabulate==0.7.7
 Werkzeug==0.11.15

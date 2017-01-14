@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Soylent Recipes.  If not, see <http://www.gnu.org/licenses/>.
 
+from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes import solver
-import numpy as np
 
 class Recipe(object):
     
@@ -34,7 +34,7 @@ class Recipe(object):
     def __init__(self, food_indices, nutrition_target, all_foods):
         # Solve diet problem resulting in scored recipe
         self._food_indices = food_indices.copy()
-        self._score, self._amounts = solver.solve(nutrition_target, all_foods[food_indices])
+        self._amounts = solver.solve(nutrition_target, all_foods[food_indices])
     
     @property
     def food_indices(self):
@@ -48,20 +48,8 @@ class Recipe(object):
         return self._food_indices.copy()
     
     @property
-    def score(self):
-        '''
-        Score of recipe. 
-        
-        Returns
-        -------
-        (solved :: bool, sub_score :: float)
-            sub_score is never NaN.
-        '''
-        return self._score
-    
-    @property
     def solved(self):
-        return np.isclose(self._score, 0.0)
+        return self._amounts is not None
     
     @property
     def amounts(self):
@@ -73,8 +61,10 @@ class Recipe(object):
         
         Returns
         -------
-        np.array([float])
+        np.array([int])
         '''
+        if not self.solved:
+            raise InvalidOperationError('Unsolved recipe has no amounts')
         return self._amounts
     
     def __repr__(self):

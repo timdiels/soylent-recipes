@@ -17,6 +17,7 @@
 Test soylent_recipes.mining.recipe
 '''
 
+from chicken_turtle_util.exceptions import InvalidOperationError
 from soylent_recipes.mining.recipe import Recipe
 from soylent_recipes.tests.various import NutritionTarget
 from soylent_recipes import solver
@@ -28,11 +29,11 @@ import pytest
 def nutrition_target():
     return NutritionTarget([], [])
     
-def patch_solve(mocker, score=-1.0, amounts=None):
+def patch_solve(mocker, amounts=None):
     '''
     Patch solver.solve to return mock value instead of actually solving
     '''
-    mocker.patch.object(solver, 'solve', lambda *args: (score, amounts))
+    mocker.patch.object(solver, 'solve', lambda *args: amounts)
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
     
@@ -58,7 +59,6 @@ def test_solved(mocker, nutrition_target):
     )
     
     # Mock `solve`
-    score = 0.0
     amounts = np.array([2.0, 1.1, 3.0])
     def solve(nutrition_target_, foods):
         # Correct args passed in
@@ -66,13 +66,12 @@ def test_solved(mocker, nutrition_target):
         np.testing.assert_allclose(foods, expected_foods)  # Note: column order does not matter
         
         # Return mock values 
-        return (score, amounts)
+        return amounts
     mocker.patch.object(solver, 'solve', solve)
     
     # Create and assert
     food_indices = np.array([1,3,0])
     recipe = Recipe(food_indices, nutrition_target, foods_)
-    assert recipe.score == score  # matches return of `solve`
     assert_allclose(recipe.amounts, amounts)  # matches return of `solve`
     assert recipe.solved  # score close to 0 == recipe.solved
     np.testing.assert_array_equal(recipe.food_indices, food_indices)
@@ -81,9 +80,10 @@ def test_not_solved(mocker, nutrition_target):
     '''
     Test things specific to an unsolved recipe
     '''
-    score = -2.0
-    patch_solve(mocker, score)
+    patch_solve(mocker, None)
     food_indices = np.array([0])
     foods = np.ones((1,1))
     recipe = Recipe(food_indices, nutrition_target, foods)
-    assert not recipe.solved  # score not close to 0 => not recipe.solved
+    assert not recipe.solved
+    with pytest.raises(InvalidOperationError):
+        recipe.amounts

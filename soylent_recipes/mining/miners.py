@@ -17,7 +17,6 @@ import logging
 import attr
 from soylent_recipes.various import profile
 from soylent_recipes.mining.recipe import Recipe
-from soylent_recipes.mining.top_k import TopK
 import numpy as np
 
 _logger = logging.getLogger(__name__)
@@ -71,9 +70,9 @@ class Miner(object):
         '''
         Like mine_random but greedily refine each random selection.
         
-        Pick max_foods foods at random. Then i in range(max_foods), try
-        replacing recipe[i] with any food in foods, keeping the one resulting in
-        the best score. Repeat until k solved recipes are found.
+        Pick max_foods foods at random. For i in range(max_foods), try replacing
+        recipe[i] with any food in foods, until the recipe solves. Repeat until
+        k solved recipes are found.
         
         Returns
         -------
@@ -86,7 +85,6 @@ class Miner(object):
         return self._mine_random(nutrition_target, foods, k, greedy=True)
     
     def _mine_random(self, nutrition_target, foods, k, greedy):
-        top_intermediates = TopK(1, key=lambda recipe: recipe.score)
         solved_recipes = []
         recipes_scored = 0
         foods_ = foods.values
@@ -96,19 +94,17 @@ class Miner(object):
             if greedy:
                 # Greedily select best food on each index
                 for i in range(self._max_foods):
+                    original_index = food_indices[i]
                     # Try each food as food_indices[i]
                     for food_index in range(len(foods_)):
                         food_indices[i] = food_index
                         recipes_scored += 1
                         recipe = Recipe(food_indices, nutrition_target, foods_)
-                        top_intermediates.push(recipe)
                         if recipe.solved or self._cancel:
                             break
-                        
-                    # Select the best
-                    food_indices = top_intermediates.pop().food_indices
                     if recipe.solved or self._cancel:
                         break
+                    food_indices[i] = original_index
                 print('.', end='', flush=True)
             else:
                 recipes_scored += 1

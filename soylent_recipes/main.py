@@ -239,17 +239,16 @@ def output_result(foods, nutrition_target, top_recipes):
         amounts = recipe.amounts[mask]
         
         # recipe_str
-        rounded_amounts = amounts.round()
         df = pd.concat(
             [
-                pd.Series(rounded_amounts, name='amount').apply('{:.0f}g'.format), 
+                pd.Series(amounts, name='amount').apply('{:.0f}g'.format), 
                 pd.Series(recipe_foods.index, name='food')
             ],
             axis=1
         )
         df = df.sort_values(['food'])
         df.loc['append1'] = ['=', '']
-        df.loc['append2'] = ['{:.0f}g'.format(rounded_amounts.sum()), '']
+        df.loc['append2'] = ['{:.0f}g'.format(amounts.sum()), '']
         recipe_str = tabulate(df, showindex=False, tablefmt='plain')
         
         # nutrition
@@ -263,7 +262,7 @@ def output_result(foods, nutrition_target, top_recipes):
         nutrition = nutrition.sort_index()
         
         #
-        return 'Score: {}\n\n{}\n\n{}'.format(recipe.score, recipe_str, nutrition.to_string())
+        return '{}\n\n{}'.format(recipe_str, nutrition.to_string())
     
     with open('recipes.txt', 'w') as f:
         f.write('Amounts are in grams of edible portion. E.g. if the food has bones, you should\n')

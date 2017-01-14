@@ -13,8 +13,6 @@ simply want to know the amounts to take of each, use this
 
 ## Usage
 
-Packages to install with package manager: suitesparse
-
 - git clone https://github.com/timdiels/soylent-recipes.git
 - pip install .
 - Download food data from https://www.ars.usda.gov/northeast-area/beltsville-md/beltsville-human-nutrition-research-center/nutrient-data-laboratory/docs/usda-national-nutrient-database-for-standard-reference/
