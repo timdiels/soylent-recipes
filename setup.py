@@ -42,6 +42,7 @@ setup(
                             'numpy',
                             'pandas',
                             'tabulate',
+                            'swiglpk',
                             'pyprof2calltree',
                             'colored-traceback'],
     'keywords': 'soylent diet-problem',

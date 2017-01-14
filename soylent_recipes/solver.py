@@ -19,7 +19,7 @@ Diet problem solver
 
 import numpy as np
 import logging
-import ecyglpki
+import swiglpk as glp
 
 _logger = logging.getLogger(__name__)
 
@@ -45,9 +45,8 @@ def solve(nutrition_target, foods):
         nutrition target cannot be achieved, returns None.
     '''
     # Implementation: using the GLPK C library via ecyglpki Python library binding
-    # GLPK documentation: http://kam.mff.cuni.cz/~elias/glpk.pdf
+    # GLPK documentation: download it and look inside the package (http://ftp.gnu.org/gnu/glpk/)
     # GLPK wikibook: https://en.wikibooks.org/wiki/GLPK
-    # ecyglpki documentation: http://pythonhosted.org/ecyglpki/
     #
     # GPLK lingo: rows and columns refer to Ax=b where b_i are auxiliary
     # variables, x_i are structural variables. Setting constraints on rows, set
@@ -60,38 +59,64 @@ def solve(nutrition_target, foods):
     
     nutrition_target = nutrition_target.values
     
-    problem = ecyglpki.Problem()
-    problem.add_rows(len(nutrition_target))
-    problem.add_cols(len(foods))
-    
-    # Fill nan with None
-    mask = np.isnan(nutrition_target)
-    nutrition_target = nutrition_target.astype(object)
-    nutrition_target[mask] = None
-    
-    # Configure columns/amounts
-    for i in range(len(foods)):
-        problem.set_col_kind(i+1, 'integer')  # int
-        problem.set_col_bnds(i+1, 0, None)  # >=0
-    
-    # Configure rows/nutrients
-    for i, extrema in enumerate(nutrition_target):
-        problem.set_row_bnds(i+1, *extrema)
-        
-    # Load A of our Ax=b
-    A = dict(((index[1]+1,index[0]+1), value) for index, value in np.ndenumerate(foods))
-    problem.load_matrix(A)
-    
-    # Solve
-    int_opt_options = ecyglpki.IntOptControls()
-    int_opt_options.presolve = True  # without this, you have to provide an LP relaxation basis
-    int_opt_options.msg_lev = 'no'  # be quiet, no stdout
+    problem = glp.glp_create_prob()
     try:
-        problem.intopt(int_opt_options)
-    except ValueError:
-        return None
-    if not np.isclose(problem.check_kkt('intopt', 'bounds')['abs'][0], 0.0):
-        return None
-    amounts = np.fromiter((problem.mip_col_val(i+1) for i in range(len(foods))), int)
-    
-    return amounts
+        glp.glp_add_rows(problem, len(nutrition_target))
+        glp.glp_add_cols(problem, len(foods))
+        
+        # Configure columns/amounts
+        for i in range(len(foods)):
+            glp.glp_set_col_kind(problem, i+1, glp.GLP_IV)  # int
+            glp.glp_set_col_bnds(problem, i+1, glp.GLP_LO, 0.0, np.nan)  # >=0
+        
+        # Configure rows/nutrients
+        for i, extrema in enumerate(nutrition_target):
+            if np.isnan(extrema[0]):
+                bounds_type = glp.GLP_UP
+            elif np.isnan(extrema[1]):
+                bounds_type = glp.GLP_LO
+            else:
+                # Note: a nutrition target has either min, max or both and min!=max
+                bounds_type = glp.GLP_DB
+            glp.glp_set_row_bnds(problem, i+1, bounds_type, *extrema)
+            
+        # Load A of our Ax=b
+        non_zero_count = foods.size
+        row_indices = glp.intArray(non_zero_count+1)  # +1 because (insane) 1-indexing
+        column_indices = glp.intArray(non_zero_count+1)
+        values = glp.doubleArray(non_zero_count+1)
+        for i, ((row, column), value) in enumerate(np.ndenumerate(foods.transpose())):
+            row_indices[i+1] = row+1
+            column_indices[i+1] = column+1
+            values[i+1] = value
+        glp.glp_load_matrix(problem, non_zero_count, row_indices, column_indices, values)
+        
+        # Solve
+        int_opt_args = glp.glp_iocp()
+        glp.glp_init_iocp(int_opt_args)
+        int_opt_args.presolve = glp.GLP_ON  # without this, you have to provide an LP relaxation basis
+        int_opt_args.msg_lev = glp.GLP_MSG_OFF  # be quiet, no stdout
+        glp.glp_intopt(problem, int_opt_args)  # returns an error code; can safely ignore
+        
+        # Check we've got a valid solution
+        #
+        # Note: glp_intopt returns whether the algorithm completed successfully.
+        # This does not imply you've got a good solution, it could even be
+        # infeasible. glp_mip_status returns whether the solution is optimal,
+        # feasible, infeasible or undefined. An optimal/feasible solution is not
+        # necessarily a good solution. An optimal solution may even violate
+        # bounds constraints. The thing you actually need to use is
+        # glp_check_kkt and check that the solution satisfies KKT.PB (all within
+        # bounds)
+        max_error = glp.doubleArray(1)
+        glp.glp_check_kkt(problem, glp.GLP_MIP, glp.GLP_KKT_PB, max_error, None, None, None)
+        if not np.isclose(max_error[0], 0.0):
+            # A row/column value exceeds its bounds
+            return None
+        
+        # Return solution
+        amounts = np.fromiter((glp.glp_mip_col_val(problem, i+1) for i in range(len(foods))), int)
+        
+        return amounts
+    finally:
+        glp.glp_delete_prob(problem)
