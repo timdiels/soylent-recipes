@@ -64,50 +64,15 @@ class Miner(object):
         '''
         k = 1000
         _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
-        return self._mine_random(nutrition_target, foods, k, greedy=False)
-    
-    def mine_greedy(self, nutrition_target, foods):
-        '''
-        Like mine_random but greedily refine each random selection.
-        
-        Pick max_foods foods at random. For i in range(max_foods), try replacing
-        recipe[i] with any food in foods, until the recipe solves. Repeat until
-        k solved recipes are found.
-        
-        Returns
-        -------
-        recipes_scored : int
-        [Recipe]
-            Up to k solved recipes.
-        '''
-        k = 1000
-        _logger.info('Mining: greedy, max_foods={}, k={}'.format(self._max_foods, k))
-        return self._mine_random(nutrition_target, foods, k, greedy=True)
-    
-    def _mine_random(self, nutrition_target, foods, k, greedy):
         solved_recipes = []
         recipes_scored = 0
         foods_ = foods.values
         while not self._cancel:
             food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
             
-            if greedy:
-                # Greedily select best food on each index
-                for i in range(self._max_foods):
-                    original_index = food_indices[i]
-                    # Try each food as food_indices[i]
-                    for food_index in range(len(foods_)):
-                        food_indices[i] = food_index
-                        recipes_scored += 1
-                        recipe = Recipe(food_indices, nutrition_target, foods_)
-                        if recipe.solved or self._cancel:
-                            break
-                    if recipe.solved or self._cancel:
-                        break
-                    food_indices[i] = original_index
-            else:
-                recipes_scored += 1
-                recipe = Recipe(food_indices, nutrition_target, foods_)
+            recipes_scored += 1
+            recipe = Recipe(food_indices, nutrition_target, foods_)
+            
             if recipe.solved:
                 print('.', end='', flush=True)
                 solved_recipes.append(recipe)

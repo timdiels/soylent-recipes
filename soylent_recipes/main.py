@@ -33,8 +33,7 @@ _logger = logging.getLogger(__name__)
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(version=__version__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
-@click_.option('--miner', 'miner_algorithm', type=click.Choice(['random', 'greedy']), help='Miner to use')
-def main(usda_directory, miner_algorithm):
+def main(usda_directory):
     '''
     To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
     '''
@@ -51,7 +50,7 @@ def main(usda_directory, miner_algorithm):
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
     normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
-    top_recipes = mine(normalized_nutrition_target, normalized_foods, miner_algorithm)
+    top_recipes = mine(normalized_nutrition_target, normalized_foods)
     output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
@@ -183,7 +182,7 @@ def normalize(foods, nutrition_target):
     # Return
     return foods, nutrition_target
 
-def mine(nutrition_target, foods, miner_algorithm):
+def mine(nutrition_target, foods):
     '''
     Parameters
     ----------
@@ -202,15 +201,8 @@ def mine(nutrition_target, foods, miner_algorithm):
     loop.add_signal_handler(signal.SIGINT, cancel)
     loop.add_signal_handler(signal.SIGTERM, cancel)
     
-    # Choose mining/search algorithm
-    if miner_algorithm == 'random':
-        mine = partial(miner.mine_random, nutrition_target, foods)
-    elif miner_algorithm == 'greedy':
-        mine = partial(miner.mine_greedy, nutrition_target, foods)
-    else:
-        assert False
-    
     # Mine
+    mine = partial(miner.mine_random, nutrition_target, foods)
     recipes_scored, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
     loop.close()
     
