@@ -188,7 +188,3 @@ vitamin e, added                                            NaN  1.000000e+00
 vitamin k                                          1.200000e-04           NaN
 zinc                                               1.100000e-02  4.000000e-02
 '''
-
-# TODO
-#
-# Test config validation: give invalid input, expect ValueError raised

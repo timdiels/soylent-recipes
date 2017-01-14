@@ -26,21 +26,6 @@ class Stats(object):
     recipes_scored = attr.ib()
     recipes_skipped_due_to_visited = attr.ib()
     
-# Note: the current miner revisits recipes, which are then ignored by
-# TopRecipes. This is how it ends up at the same point:
-#
-#   a b
-#   split a and drop one
-#   a1 b  ,  a2 b  , ...
-#   split b and drop one
-#   b1 b2 ,  b1 b2 , ...
-#
-# TODO could this be avoided?
-
-# TODO ideas:
-# - instead of >, require to be at least x% better
-# - instead of NaN score, solve a diet problem without min-max, or try to get the solver to solve it as close as possible and then add errors for it. Scores of relaxed problem should always be < score of real problem
-
 class Miner(object):
     
     def __init__(self):
