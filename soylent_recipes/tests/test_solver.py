@@ -28,18 +28,6 @@ import pytest
 
 assert_allclose = partial(np.testing.assert_allclose, atol=1e-8)
 
-def _score(nutrition_target, nutrition_):
-    # l2 norm of error to the extrema. Error is the amount it falls
-    # short of a min constraint, or the amount it exceeds a max
-    # constraint.
-    #
-    # solve should use this score
-    error = np.concatenate([
-        np.clip(nutrition_target['min'] - nutrition_, 0.0, np.inf),
-        np.clip(nutrition_ - nutrition_target['max'], 0.0, np.inf)
-    ])
-    return -np.linalg.norm(error[~np.isnan(error)])
-        
 def nutrition(amounts, foods):
     return pd.Series(amounts, index=foods.index, name='amount').dot(foods)
     
