@@ -43,19 +43,20 @@ class Miner(object):
         
         Returns
         -------
-        recipes_scored : int
+        recipes_tried : int
+            Number of recipes tried.
         [Recipe]
             Up to k solved recipes.
         '''
         k = 1000
         _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
         solved_recipes = []
-        recipes_scored = 0
+        recipes_tried = 0
         foods_ = foods.values
         while not self._cancel:
             food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
             
-            recipes_scored += 1
+            recipes_tried += 1
             recipe = Recipe(food_indices, nutrition_target, foods_)
             
             if recipe.solved:
@@ -64,4 +65,4 @@ class Miner(object):
                 if len(solved_recipes) == k:
                     break
             
-        return recipes_scored, solved_recipes
+        return recipes_tried, solved_recipes

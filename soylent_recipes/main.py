@@ -172,11 +172,11 @@ def mine(nutrition_target, foods):
     
     # Mine
     mine = partial(miner.mine_random, nutrition_target, foods)
-    recipes_scored, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
+    recipes_tried, top_recipes = loop.run_until_complete(loop.run_in_executor(None, mine))
     loop.close()
     
     # Print stats
-    _logger.info('Recipes scored: {}'.format(recipes_scored))
+    _logger.info('Recipes tried: {}'.format(recipes_tried))
     
     return top_recipes
 
