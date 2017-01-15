@@ -53,11 +53,6 @@ _weight = 87
 # Energy intake target, calculate it with
 # http://www.calculator.net/calorie-calculator.html
 #
-# Due to limitations of the solver, it won't aim for this target, but you can
-# limit the range of accepted intakes with ``extrema['energy']``. Further you
-# can prefer either the lower or upper end of the range by adding 'energy' to
-# `minimize` or `maximize` respectively.
-#
 # 1 Cal = 1 kcal (case matters!)
 _energy_target = 1750e3
 
