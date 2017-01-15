@@ -19,7 +19,7 @@ Test soylent_recipes.solver
 
 from chicken_turtle_util import data_frame as df_
 from soylent_recipes import solver
-from soylent_recipes import nutrition_target as nutrition_target_, main
+from soylent_recipes import nutrition_target as nutrition_target_
 from .various import NutritionTarget
 import pandas as pd
 import numpy as np
@@ -70,7 +70,6 @@ def test_minima(solve):
         ],
         columns=['nutrient1', 'nutrient2']
     )
-    foods, nutrition_target = main.normalize(foods, nutrition_target)
     amounts = solve(nutrition_target, foods)
     assert_all_integer(amounts)
     nutrition_ = nutrition(amounts, foods)
@@ -94,7 +93,6 @@ def test_maxima(solve):
         ],
         columns=['nutrient1', 'nutrient2']
     )
-    foods, nutrition_target = main.normalize(foods, nutrition_target)
     amounts = solve(nutrition_target, foods)
     assert_all_integer(amounts)
     nutrition_ = nutrition(amounts, foods)
@@ -118,7 +116,6 @@ def test_minmax_overlap(solve):
         ],
         columns=['nutrient1', 'nutrient2']
     )
-    foods, nutrition_target = main.normalize(foods, nutrition_target)
     amounts = solve(nutrition_target, foods)
     assert_all_integer(amounts)
     nutrition_ = nutrition(amounts, foods)
@@ -143,7 +140,6 @@ def test_infeasible(solve):
         ],
         columns=nutrients
     )
-    foods, nutrition_target = main.normalize(foods, nutrition_target)
     assert solve(nutrition_target, foods) is None
     
 def test_infeasible_ints(solve):
@@ -164,5 +160,4 @@ def test_infeasible_ints(solve):
         ],
         columns=['nutrient1', 'nutrient2']
     )
-    foods, nutrition_target = main.normalize(foods, nutrition_target)
     assert solve(nutrition_target, foods) is None

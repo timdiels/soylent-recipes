@@ -113,16 +113,7 @@ class TestCreate(object):
             index=['nutrient0', 'nutrient1', 'nutrient2'],
             columns=['min', 'max']
         )
-        expected = pd.DataFrame(
-            [
-                [1, 3, 2],  # pseudo-target = (min+max)/2.0 if both are finite
-                [np.nan, 2, 1],  # pseudo-target = max/2.0 if only max is finite
-                [2, np.nan, 2.2],  # pseudo-target = 1.1*min if only min is finite
-            ],
-            index=input_.index,
-            columns=['min', 'max', 'pseudo_target'],
-            dtype=float
-        )
+        expected = input_.astype(float)
         original = input_.copy()
         actual = nutrition_target_.create(input_)
         df_.assert_equals(input_, original)  # don't mutate input
@@ -136,7 +127,6 @@ def test_from_config():
     # print(actual), manually verify and paste in _expected_config.
     
     actual = nutrition_target_.from_config()
-    del actual['pseudo_target']
     actual = actual.sort_index()
     actual = actual.to_string()
     test.assert_text_equals(actual.strip(), _expected_config.strip())

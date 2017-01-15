@@ -59,23 +59,6 @@ def create(target):
     # Validate
     _validate(target, original)
     
-    # Add pseudo targets
-    def pseudo_target(row):
-        if np.isnan(row['max']):
-            # Has only a min constraint:
-            # *1.1 for less likelihood of undershooting the min
-            return 1.1 * row['min']
-        elif np.isnan(row['min']):
-            # Has only a max constraint:
-            # *0.5 for less likelihood of overshooting the max. Not 0.9
-            # as that would require far too much of something we just
-            # don't want too much of
-            return 0.5 * row['max']
-        else:
-            # Has a min and a max constraint:
-            return (row['min'] + row['max']) / 2.0
-    target['pseudo_target'] = target.apply(pseudo_target, axis=1)
-    
     # Return
     return target
 
@@ -143,25 +126,8 @@ class NutritionTarget(object):
     max : float
         Maximum allowed amount of nutrient. max > min, 0 or is NaN. If NaN,
         no maximum constraint is imposed on the nutrient.
-    pseudo_target : float
-        Target to use instead of extrema (min and max) when using a solver which
-        does not support constraints. In calculating error to the pseudo target,
-        euclidean distance must be used (or a metric proportional to it, e.g.
-        squared euclidean distance).
         
     min or max (or both) is finite.
-    '''
-    
-    def __init__(self, *args, **kwargs):
-        raise Exception('This is an interface, for use in documentation only. Do not reference it in code')
-    
-class NormalizedNutritionTarget(object):
-    '''
-    Interface: constraints and nutrition preferences
-    
-    NutritionTarget after it has been normalized. Values have been normalized
-    and the pseudo_target column dropped. As pseudo target, use 1 (vector of
-    ones).
     '''
     
     def __init__(self, *args, **kwargs):

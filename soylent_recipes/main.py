@@ -49,8 +49,7 @@ def main(usda_directory):
     foods = add_energy_components(foods)
     foods = foods[nutrition_target.index]  # ignore nutrients which do not appear in nutrition target
     foods = foods.astype(float)
-    normalized_foods, normalized_nutrition_target = normalize(foods, nutrition_target)
-    top_recipes = mine(normalized_nutrition_target, normalized_foods)
+    top_recipes = mine(nutrition_target, foods)
     output_result(foods, nutrition_target, top_recipes)
 
 # TODO not hardcoding conversion factors could easily be achieved by moving this to config.py 
@@ -153,42 +152,12 @@ def add_energy_components(foods):
     
     return foods
 
-def normalize(foods, nutrition_target):
-    '''
-    Normalize foods and nutrition target such that all pseudo targets are 1.0
-    
-    Parameters
-    ----------
-    foods : pd.DataFrame
-    soylent_recipes.nutrition_target.NutritionTarget
-    
-    Returns
-    -------
-    foods : pd.DataFrame
-    soylent_recipes.nutrition_target.NormalizedNutritionTarget
-    '''
-    _logger.info('Normalizing foods and nutrition target')
-    
-    # Normalize foods
-    foods = foods / nutrition_target['pseudo_target']
-    
-    # Normalize nutrition_target
-    nutrition_target = nutrition_target.apply(lambda row: row/row['pseudo_target'], axis=1)
-
-    # Drop pseudo_target column
-    assert (nutrition_target['pseudo_target'].apply(lambda x: np.isclose(x, 1.0))).all()
-    del nutrition_target['pseudo_target']
-    
-    # Return
-    return foods, nutrition_target
-
 def mine(nutrition_target, foods):
     '''
     Parameters
     ----------
-    nutrition_target : soylent_recipes.nutrition_target.NormalizedNutritionTarget
+    nutrition_target : soylent_recipes.nutrition_target.NutritionTarget
     foods : pd.DataFrame
-        Normalized foods
     
     Returns
     -------
@@ -217,7 +186,6 @@ def less_or_close_or_nan(a, b):
 def output_result(foods, nutrition_target, top_recipes):
     '''
     foods : pd.DataFrame
-        Foods before normalisation
     nutrition_target : NutritionTarget
     top_recipes : [Recipe]
     '''
