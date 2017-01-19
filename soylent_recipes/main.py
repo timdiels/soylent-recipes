@@ -42,7 +42,6 @@ def main(usda_directory):
     colored_traceback.add_hook()
     logging_.configure('soylent.log')
     logging.getLogger().setLevel(logging.DEBUG)
-    _logger.info('Hi!!! This is version none!')
     nutrition_target = nutrition_target_.from_config()
     foods = foods_.import_usda(Path(usda_directory))
     foods = foods.set_index('description')
