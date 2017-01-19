@@ -27,8 +27,6 @@ The values used are for males aged between 19 and 30 (inclusive), taken at 2016-
 values, adjust the values using these tables
 https://ods.od.nih.gov/Health_Information/Dietary_Reference_Intakes.aspx
 
-Body weight and daily energy intake can easily be set below 
-
 .. _dietary reference intake: https://en.wikipedia.org/wiki/Dietary_Reference_Intake 
 '''
 
@@ -37,9 +35,8 @@ import pandas as pd
 
 # All values are in grams (g) unless otherwise listed (in a comment that follows it)
 
-# TODO The link to the tables also has a bunch of reports we forgot to look at.
-# Searching these could clear up a bunch of things (e.g. macronutrients:
-# different cal/g conversion factors perhaps)
+# Note: In putting together the nutrition target below, I only considered the
+# tables in the above link, but not the reports that accompany them.
 
 
 ############################################
@@ -64,7 +61,7 @@ _energy_target = 1750e3
 
 # For each of the below nutrients, the min-max fraction it may make up of your
 # energy_target. E.g. if the recipe is pure carbs, carbs will make up 100% of
-# the total energy (though note you must enter values between 0 and 1 below).
+# the total energy (though note you must enter values between 0 and 1).
 # Only the below nutrients are supported (need to add calorie conversion factors
 # in the code if you want more).
 _energy_fractions = {
@@ -77,19 +74,16 @@ _energy_fractions = {
     'sugars, added': (0, .25),
 }
 
-
-#########################################################################
-# Required
-#
-# The only bits of the config that actually get used by soylent_recipes
-
-# See nutrition_target.create for info on the DataFrame columns.
+# Extrema/bounds on each nutrient (For details, see
+# soylent_recipes.nutrition_target.create)
 #
 # Minima are set to RDA or AI by default, maxima are set to UL.
 #
 # If the min or max is unknown, set it to ``np.nan``. If it's safe to eat any
 # amount, think again, you never know for sure; set it to ``np.nan``. If it's
 # not necessary to eat it, set ``min=np.nan``.
+#
+# Units are in SI units, i.e. in g most of the time (cal being an exception)
 target = pd.DataFrame.from_items(
     orient='index',
     columns=('min', 'max'),
@@ -136,10 +130,10 @@ target = pd.DataFrame.from_items(
     # Other
     ('cholesterol', (np.nan, 300e-3)),
 
-    # roughly no more than 20 g/day (source: google)  #TODO this originally seemed to indicate 13g, need to google again and double check #TODO would it be healthy to eat near the max? We want a similar risk as with UL values
+    # source: google
     ('fatty acids', (np.nan, 20.0)),
     
-    # roughly no more than 6e-3 g/day (source: google)  #TODO would it be healthy to eat near the max? We want a similar risk as with UL values
+    # source: google
     # foot note on carotenoids: "beta Carotene supplements are advised only to serve as a provitamin A source for individuals at risk of vitamin A deficiency."
     ('carotenoids', (np.nan, 6e-3)),
     
@@ -183,7 +177,7 @@ target = pd.DataFrame.from_items(
 ######################################################
 # Internal
 #
-# Don't change this unless you know what you're doing
+# Do not change this unless you know what you're doing
 energy_target = {}
 for nutrient, (min_, max_) in _energy_fractions.items():
     assert min_ >= 0, nutrient
