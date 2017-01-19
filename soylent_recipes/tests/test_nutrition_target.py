@@ -141,6 +141,7 @@ Energy from: linoleic acid + alpha linolenic acid           NaN  1.750000e+05
 Energy from: protein                               1.750000e+05  6.125000e+05
 Energy from: sugars, added                                  NaN  4.375000e+05
 alpha linolenic acid                               1.600000e+00           NaN
+caffeine                                                    NaN  4.000000e-01
 calcium                                            1.000000e+00  2.500000e+00
 carbohydrate                                       1.300000e+02           NaN
 carotenoids                                                 NaN  6.000000e-03

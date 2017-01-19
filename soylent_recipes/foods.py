@@ -195,5 +195,7 @@ _mapping = {
     'cholesterol': {'Cholesterol'},
     'fatty acids': {'Fatty acids, total trans', 'Fatty acids, total saturated'},
     'sugars, added': {'Sugars, total'},  # we assume the worst by using total sugars as "[added] sugar is chemically indistinguishable from naturally-occurring sugars" https://en.wikipedia.org/wiki/Added_sugar
+    
+    'caffeine': {"Caffeine"},
 }
     

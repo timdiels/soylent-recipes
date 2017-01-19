@@ -36,6 +36,7 @@ def test_import_usda(usda_data_dir):
         Conversion factor: fat                            8790
         Conversion factor: carbohydrate                   3870
         alpha linolenic acid                           0.00315
+        caffeine                                             0
         calcium                                        0.00024
         carbohydrate                                    0.0006
         carotenoids                                   1.58e-06
