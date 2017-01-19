@@ -1,6 +1,10 @@
 History
 =======
 
+.. _clustering newick: file/clustering_depth37.newick
+.. _clustering pdf: file/clustering_depth37_rectangular.pdf
+.. _ecyglpki memleak issue: https://github.com/equaeghe/ecyglpki/issues/9
+
 Summary of the project's history. This is not intended to be a changelog.
 
 Some terminology:
@@ -9,7 +13,7 @@ Some terminology:
 - nutrition target: the daily amount of nutrients to achieve. There are 2
   different models of this through the course of the project's history.
 - recipe: a combination of foods along with amounts of each food to use
-- search/mining: a way of combining foods
+- search/mining: combining foods in a way that (hopefully) yields good recipes
 - solving: finding the amounts to use of each food, given a list of foods to
   use
 
@@ -247,8 +251,8 @@ With the simple nutrition target (just extrema):
 
   and these notations:
 
-  - [A;B]: stack matrices vertically, on top of each other
-  - [A,B]: stack matrices horizontally, next to each other
+  - `[A;B]`: stack matrices vertically, on top of each other
+  - `[A,B]`: stack matrices horizontally, next to each other
 
   We want to solve `Ax>=m and Ax<=M`.  A least squares problem is of the form
   `Ax=b`.
@@ -310,6 +314,4 @@ With the simple nutrition target (just extrema):
   loss in switching to this wrapper. Perhaps this could be optimized away using
   Cython, or rather swiglpk should offer an interface by which we can provide a
   numpy array. Still, the current speed may still be acceptable.
-
-.. _ecyglpki memleak issue: https://github.com/equaeghe/ecyglpki/issues/9
 

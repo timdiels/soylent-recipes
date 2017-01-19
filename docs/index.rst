@@ -1,4 +1,4 @@
-Welcome to Soylent Recipe's documentation!
+Welcome to Soylent Recipes' documentation!
 ==========================================
 
 Contents:
@@ -6,8 +6,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   user_documentation
-   developer_documentation
+   user_guide
+   ideas
+   history
 
 
 Indices and tables
