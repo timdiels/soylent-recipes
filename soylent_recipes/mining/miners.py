@@ -15,6 +15,7 @@
 
 import logging
 import attr
+from soylent_recipes.config import max_foods, max_recipes
 from soylent_recipes.various import profile
 from soylent_recipes.mining.recipe import Recipe
 import numpy as np
@@ -30,8 +31,8 @@ class Miner(object):
     
     def __init__(self):
         self._cancel = False
-        self._max_foods = 20
-        assert self._max_foods > 0
+        assert max_foods > 0
+        assert max_recipes > 0
         
     def cancel(self):
         _logger.info('Cancelling')
@@ -48,13 +49,12 @@ class Miner(object):
         [Recipe]
             Up to k solved recipes.
         '''
-        k = 1000
-        _logger.info('Mining: random, max_foods={}, k={}'.format(self._max_foods, k))
+        _logger.info('Mining: random, max_foods={}, max_recipes={}'.format(max_foods, max_recipes))
         solved_recipes = []
         recipes_tried = 0
         foods_ = foods.values
         while not self._cancel:
-            food_indices = np.random.choice(len(foods_), self._max_foods, replace=False)
+            food_indices = np.random.choice(len(foods_), max_foods, replace=False)
             
             recipes_tried += 1
             recipe = Recipe(food_indices, nutrition_target, foods_)
@@ -62,7 +62,7 @@ class Miner(object):
             if recipe.solved:
                 print('.', end='', flush=True)
                 solved_recipes.append(recipe)
-                if len(solved_recipes) == k:
+                if len(solved_recipes) == max_recipes:
                     break
             
         return recipes_tried, solved_recipes

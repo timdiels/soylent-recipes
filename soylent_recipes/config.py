@@ -42,10 +42,16 @@ import pandas as pd
 # different cal/g conversion factors perhaps)
 
 
-#################
-# Syntactic sugar
-#
-# These make the config easier but they're not needed
+############################################
+# User config: change these to your needs
+
+# Max number of foods to include in a recipe
+max_foods = 15
+
+# Max number of solved recipes to return, search stops when this many have been
+# found. Search can also be stopped by pressing Ctrl-C, in which case it outputs
+# the solved recipes found so far.
+max_recipes = 1000
 
 # Body weight (kg)
 _weight = 87
