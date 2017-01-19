@@ -35,7 +35,9 @@ _logger = logging.getLogger(__name__)
 @click_.option('--usda-data', 'usda_directory', type=click.Path(exists=True, file_okay=False), help='USDA data directory to mine')
 def main(usda_directory):
     '''
-    To run, e.g.: soylent --usda-data data/usda_nutrient_db_sr28
+    Generate soylent recipes. Output is written to recipes.txt
+     
+    E.g. soylent --usda-data data/usda_nutrient_db_sr28
     '''
     colored_traceback.add_hook()
     logging_.configure('soylent.log')
