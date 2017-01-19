@@ -186,7 +186,7 @@ setup(
                         'ad-hoc method which turned out to be pretty bad.\n',
     'name': 'soylent-recipes',
     'package_data': {},
-    'packages': ['soylent_recipes', 'soylent_recipes.tests'],
+    'packages': ['soylent_recipes', 'soylent_recipes.tests', 'soylent_recipes.mining'],
     'url': 'https://github.com/timdiels/soylent-recipes',
     'version': '0.0.0'}
 )
