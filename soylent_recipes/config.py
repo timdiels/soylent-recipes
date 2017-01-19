@@ -141,7 +141,14 @@ target = pd.DataFrame.from_items(
     ('caffeine', (np.nan, 0.4)),
     
     # Pseudo nutrients, aka "nutrients"
-    ('mass', (np.nan, 10e3))  # mass in g of food. Max set to 9kg = 4kg non-liquid + 6kg liquid. The average American eats 2.7kg non-liquid, 6kg liquid is probably on the high side but I had no numbers on it. This should be set to whatever you're comfortable with eating and drinking in total. 
+    
+    # mass in g of food. Set this to whatever you're comfortable with eating and
+    # drinking in total per day.
+    #
+    # Default max set to 8kg = 4kg non-liquid + 4kg liquid. The
+    # average American eats 2.7kg non-liquid. 4kg liquid is a guess. 
+    ('mass', (np.nan, 8e3))
+    
 ))
 
 # Dropped water requirement as trivial to add water source manually afterwards

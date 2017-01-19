@@ -158,7 +158,7 @@ iron                                               8.000000e-03  4.500000e-02
 linoleic acid                                      1.700000e+01           NaN
 magnesium                                          4.000000e-01           NaN
 manganese                                          2.300000e-03  1.100000e-02
-mass                                                        NaN  1.000000e+04
+mass                                                        NaN  8.000000e+03
 niacin                                             1.600000e-02           NaN
 pantothenic acid                                   5.000000e-03           NaN
 phosphorus                                         7.000000e-01  4.000000e+00
