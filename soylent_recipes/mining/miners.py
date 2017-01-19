@@ -40,7 +40,7 @@ class Miner(object):
         
     def mine_random(self, nutrition_target, foods):
         '''
-        Randomly grab max_foods foods, repeat until k solved recipes are found.
+        Randomly pick max_foods foods, repeat until k solved recipes are found.
         
         Returns
         -------
