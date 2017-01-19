@@ -3,6 +3,16 @@ History
 
 Summary of the project's history. This is not intended to be a changelog.
 
+Some terminology:
+
+- food: a vector of nutrient values, named after the food it represents
+- nutrition target: the daily amount of nutrients to achieve. There are 2
+  different models of this through the course of the project's history.
+- recipe: a combination of foods along with amounts of each food to use
+- search/mining: a way of combining foods
+- solving: finding the amounts to use of each food, given a list of foods to
+  use
+
 C++ version
 -----------
 About 3 years ago, I made the first attempt to find soylent recipes. It was
