@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>User guide &mdash; Soylent Recipes 0.0.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Soylent Recipes 0.0.0 documentation" href="index.html"/>
+        <link rel="next" title="Ideas" href="ideas.html"/>
+        <link rel="prev" title="Welcome to Soylent Recipes’ documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Soylent Recipes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">User guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#concepts-background">Concepts, background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-and-usage">Installation and usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ideas.html">Ideas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Soylent Recipes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>User guide</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/user_guide.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="user-guide">
+<h1>User guide<a class="headerlink" href="#user-guide" title="Permalink to this headline">¶</a></h1>
+<p>This guide introduces concepts and shows how to mine recipes on your own
+machine.</p>
+<div class="section" id="concepts-background">
+<h2>Concepts, background<a class="headerlink" href="#concepts-background" title="Permalink to this headline">¶</a></h2>
+<p>Each iteration, the miner randomly picks <cite>max_foods</cite> from the food database.
+Then it applies a solver to find the amounts to use of each food. If the recipe
+satisfies the nutrition target, the recipe is outputted to <cite>recipes.txt</cite>.</p>
+<p>As food database, the USDA food database is used. Generally, food databases
+mostly contain foods with generic names (as opposed to brand names); these
+generic foods are usually the average of measurements of a similar food from a
+couple of brands.  The food database contains no price data, so returned
+recipes are not optimized for being cheap.</p>
+<p>The solver returns food amounts as integers (it solves an integer linear
+program with GLPK library).  Amounts are expressed in grams, I assumed 1g to be
+the granularity at which one can still accurately use a weighing scale to cook
+the recipe.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>Soylent Recipes has been tested on Linux with Python 3.5. It is expected to
+work on Python&gt;=3.4. It probably works on Mac and may work on Windows too.</p>
+</div>
+<div class="section" id="installation-and-usage">
+<h2>Installation and usage<a class="headerlink" href="#installation-and-usage" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Download and unpack <a class="reference external" href="https://github.com/timdiels/soylent-recipes/archive/master.zip">https://github.com/timdiels/soylent-recipes/archive/master.zip</a></p>
+</li>
+<li><p class="first">cd into the unpacked directory: cd soylent-recipes-master</p>
+</li>
+<li><p class="first">Configure it to match your needs (you can skip this if you want to use the
+defaults):</p>
+<p><cite>max_foods</cite>, <cite>max_recipes</cite> (number of solved recipes to output) and the
+nutrition target can be configured by editing <cite>soylent_recipes/config.py</cite>.</p>
+</li>
+<li><p class="first">Run <code class="docutils literal"><span class="pre">pip3</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code>. If this conflicts with your installed packages, do
+it in a virtual environment instead</p>
+</li>
+<li><p class="first">Run <code class="docutils literal"><span class="pre">soylent</span> <span class="pre">--usda-data</span> <span class="pre">data/usda_nutrient_db_sr28</span></code> to run the miner.</p>
+</li>
+<li><p class="first">The output is in <cite>recipes.txt</cite>. Windows users may need to use notepad++ to
+view it.</p>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ideas.html" class="btn btn-neutral float-right" title="Ideas" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to Soylent Recipes’ documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, your name.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
