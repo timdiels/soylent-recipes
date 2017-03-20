@@ -43,7 +43,7 @@ import pandas as pd
 # User config: change these to your needs
 
 # Max number of foods to include in a recipe
-max_foods = 15
+max_foods = 20
 
 # Max number of solved recipes to return, search stops when this many have been
 # found. Search can also be stopped by pressing Ctrl-C, in which case it outputs
